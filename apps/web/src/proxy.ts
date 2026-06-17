@@ -22,7 +22,7 @@ export default auth((req) => {
   const session = req.auth;
 
   // Rutas públicas
-  if (pathname === "/login" || pathname === "/") {
+  if (pathname === "/login" || pathname === "/" || pathname === "/registro") {
     if (session?.user?.rol) {
       return NextResponse.redirect(
         new URL(ROLE_HOME[session.user.rol], req.url)
@@ -49,5 +49,6 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

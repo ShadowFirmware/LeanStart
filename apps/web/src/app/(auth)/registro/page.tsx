@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,38 +22,46 @@ import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import logo from "../../../../public/logo.png";
 
-const loginSchema = z.object({
+const registroSchema = z.object({
+  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   email: z.email("Correo electrónico inválido"),
-  password: z.string().min(1, "La contraseña es requerida"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type RegistroFormValues = z.infer<typeof registroSchema>;
 
-export default function LoginPage() {
+export default function RegistroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+  const form = useForm<RegistroFormValues>({
+    resolver: zodResolver(registroSchema),
+    defaultValues: { nombre: "", email: "", password: "" },
   });
 
-  async function onSubmit(values: LoginFormValues) {
+  async function onSubmit(values: RegistroFormValues) {
     setLoading(true);
-    const result = await signIn("credentials", {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    });
-    setLoading(false);
+    try {
+      const res = await fetch("/api/auth/registro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
 
-    if (result?.error) {
-      toast.error("Credenciales incorrectas. Verifica tu correo y contraseña.");
-      return;
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.message ?? "No se pudo crear la cuenta. Inténtalo de nuevo.");
+        return;
+      }
+
+      toast.success("Cuenta creada correctamente. Inicia sesión para continuar.");
+      router.push("/login");
+    } catch {
+      toast.error("Error de conexión. Verifica tu red e inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
     }
-
-    router.refresh();
   }
 
   return (
@@ -126,19 +133,16 @@ export default function LoginPage() {
               className="text-xl font-semibold tracking-tight"
               style={{ color: "#FBFBFC" }}
             >
-              Inicia sesión en tu cuenta
+              Crea tu cuenta
             </h1>
             <p className="text-sm" style={{ color: "#9B9A9F" }}>
-              Ingresa tus credenciales para continuar
+              Empieza a construir tu modelo de negocio hoy
             </p>
           </div>
         </div>
 
         {/* Divider */}
-        <div
-          className="h-px w-full"
-          style={{ background: "rgba(255,255,255,0.06)" }}
-        />
+        <div className="h-px w-full" style={{ background: "rgba(255,255,255,0.06)" }} />
 
         {/* Form */}
         <Form {...form}>
@@ -148,12 +152,32 @@ export default function LoginPage() {
           >
             <FormField
               control={form.control}
+              name="nombre"
+              render={({ field }: { field: ControllerRenderProps<RegistroFormValues, "nombre"> }) => (
+                <FormItem className="gap-1.5">
+                  <FormLabel
+                    className="text-xs font-medium uppercase tracking-wider"
+                    style={{ color: "#9B9A9F" }}
+                  >
+                    Nombre completo
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Tu nombre"
+                      className="input-auth focus-visible:ring-0"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="email"
-              render={({
-                field,
-              }: {
-                field: ControllerRenderProps<LoginFormValues, "email">;
-              }) => (
+              render={({ field }: { field: ControllerRenderProps<RegistroFormValues, "email"> }) => (
                 <FormItem className="gap-1.5">
                   <FormLabel
                     className="text-xs font-medium uppercase tracking-wider"
@@ -177,40 +201,19 @@ export default function LoginPage() {
             <FormField
               control={form.control}
               name="password"
-              render={({
-                field,
-              }: {
-                field: ControllerRenderProps<LoginFormValues, "password">;
-              }) => (
+              render={({ field }: { field: ControllerRenderProps<RegistroFormValues, "password"> }) => (
                 <FormItem className="gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <FormLabel
-                      className="text-xs font-medium uppercase tracking-wider"
-                      style={{ color: "#9B9A9F" }}
-                    >
-                      Contraseña
-                    </FormLabel>
-                    <button
-                      type="button"
-                      className="text-xs transition-colors"
-                      style={{ color: "#9A62FA" }}
-                      onMouseEnter={(e) =>
-                        ((e.currentTarget as HTMLElement).style.color =
-                          "#C687F5")
-                      }
-                      onMouseLeave={(e) =>
-                        ((e.currentTarget as HTMLElement).style.color =
-                          "#9A62FA")
-                      }
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
+                  <FormLabel
+                    className="text-xs font-medium uppercase tracking-wider"
+                    style={{ color: "#9B9A9F" }}
+                  >
+                    Contraseña
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder="Mínimo 8 caracteres"
                         className="input-auth focus-visible:ring-0 pr-11"
                         {...field}
                       />
@@ -241,10 +244,9 @@ export default function LoginPage() {
                 color: "#FBFBFC",
               }}
               onMouseEnter={(e) => {
-                if (!loading) {
+                if (!loading)
                   (e.currentTarget as HTMLElement).style.background =
                     "linear-gradient(135deg, #8E58EE 0%, #9A62FA 100%)";
-                }
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.background =
@@ -273,22 +275,23 @@ export default function LoginPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Iniciando sesión...
+                  Creando cuenta...
                 </span>
               ) : (
-                "Iniciar sesión"
+                "Crear cuenta"
               )}
             </Button>
+
             <p className="text-center text-sm" style={{ color: "#7E7C86" }}>
-              ¿No tienes cuenta?{" "}
+              ¿Ya tienes una cuenta?{" "}
               <Link
-                href="/registro"
+                href="/login"
                 className="transition-colors"
                 style={{ color: "#9A62FA" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
               >
-                Crear cuenta
+                Inicia sesión
               </Link>
             </p>
           </form>
