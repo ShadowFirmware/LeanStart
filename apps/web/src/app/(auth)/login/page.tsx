@@ -118,7 +118,8 @@ export default function LoginPage() {
             src={logo}
             alt="LeanStart"
             height={32}
-            className="w-auto object-contain"
+            style={{ width: "auto" }}
+            className="object-contain"
             priority
           />
           <div className="text-center space-y-1">

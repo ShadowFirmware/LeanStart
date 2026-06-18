@@ -59,6 +59,7 @@ export default function LandingPage() {
               width={130}
               height={130}
               unoptimized
+              style={{ height: "auto" }}
               className="rounded-md"
             />
           </Link>
