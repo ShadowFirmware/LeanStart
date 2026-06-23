@@ -5,15 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Building2, Bell, LogOut } from "lucide-react";
-
-// Datos de prueba — reemplazar con conteo real del API cuando el backend esté listo
-const notificacionesNoLeidas = 2;
-
-const navItems = [
-  { href: "/emprendedor/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: 0 },
-  { href: "/emprendedor/empresas", label: "Mis Empresas", icon: Building2, badge: 0 },
-  { href: "/emprendedor/notificaciones", label: "Notificaciones", icon: Bell, badge: notificacionesNoLeidas },
-];
+import { useNotificacionesStore } from "@/store/notificaciones";
 
 interface EmprendedorSidebarProps {
   userName: string;
@@ -22,6 +14,13 @@ interface EmprendedorSidebarProps {
 
 export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarProps) {
   const pathname = usePathname();
+  const noLeidas = useNotificacionesStore((s) => s.notificaciones.filter((n) => !n.leida).length);
+
+  const navItems = [
+    { href: "/emprendedor/dashboard",       label: "Dashboard",       icon: LayoutDashboard, badge: 0 },
+    { href: "/emprendedor/empresas",         label: "Mis Empresas",    icon: Building2,       badge: 0 },
+    { href: "/emprendedor/notificaciones",   label: "Notificaciones",  icon: Bell,            badge: noLeidas },
+  ];
 
   return (
     <aside
