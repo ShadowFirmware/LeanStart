@@ -8,6 +8,24 @@ export interface Progreso {
   tieneHipotesis: boolean;
 }
 
+export interface CanvasData {
+  problema: string[];
+  solucion: string;
+  pvp: string;
+  ventajaInjusta: string;
+  segmentosClientes: string[];
+  metricasClave: string[];
+  canales: string[];
+  estructuraCostos: string[];
+  fuentesIngresos: string[];
+}
+
+export const DEFAULT_CANVAS: CanvasData = {
+  problema: [], solucion: "", pvp: "", ventajaInjusta: "",
+  segmentosClientes: [], metricasClave: [], canales: [],
+  estructuraCostos: [], fuentesIngresos: [],
+};
+
 export interface ExperimentoDiseno {
   tipo: TipoExperimento;
   descripcion: string;
@@ -58,6 +76,7 @@ export interface Empresa {
   logoUrl?: string;
   productosList: Producto[];
   canvasBloques: number;
+  canvas: CanvasData;
   hipotesisList: Hipotesis[];
   creadaEn: string;
   updatedAt: string;
@@ -75,6 +94,7 @@ interface EmpresasStore {
   }) => string;
   actualizarEmpresa: (id: string, data: Partial<Empresa>) => void;
   eliminarEmpresa: (id: string) => void;
+  actualizarCanvas: (empresaId: string, canvas: Partial<CanvasData>) => void;
   agregarProducto: (empresaId: string, producto: Omit<Producto, "id" | "creadoEn">) => void;
   eliminarProducto: (empresaId: string, productoId: string) => void;
   agregarHipotesis: (empresaId: string, hipotesis: Omit<Hipotesis, "id">) => string;
@@ -104,6 +124,7 @@ export const useEmpresasStore = create<EmpresasStore>()(
           estado: "borrador",
           productosList: [],
           canvasBloques: 0,
+          canvas: { ...DEFAULT_CANVAS },
           hipotesisList: [],
           creadaEn: ahora,
           updatedAt: "Justo ahora",
@@ -123,6 +144,33 @@ export const useEmpresasStore = create<EmpresasStore>()(
 
       eliminarEmpresa(id) {
         set({ empresas: get().empresas.filter((e) => e.id !== id) });
+      },
+
+      actualizarCanvas(empresaId, canvasUpdate) {
+        set({
+          empresas: get().empresas.map((e) => {
+            if (e.id !== empresaId) return e;
+            const newCanvas = { ...(e.canvas ?? DEFAULT_CANVAS), ...canvasUpdate };
+            const completados = [
+              newCanvas.problema.some((v) => v.trim()),
+              !!newCanvas.solucion.trim(),
+              !!newCanvas.pvp.trim(),
+              !!newCanvas.ventajaInjusta.trim(),
+              newCanvas.segmentosClientes.some((v) => v.trim()),
+              newCanvas.metricasClave.some((v) => v.trim()),
+              newCanvas.canales.some((v) => v.trim()),
+              newCanvas.estructuraCostos.some((v) => v.trim()),
+              newCanvas.fuentesIngresos.some((v) => v.trim()),
+            ].filter(Boolean).length;
+            return {
+              ...e,
+              canvas: newCanvas,
+              canvasBloques: completados,
+              progreso: { ...e.progreso, tieneCanvas: completados > 0 },
+              updatedAt: "Justo ahora",
+            };
+          }),
+        });
       },
 
       agregarProducto(empresaId, producto) {

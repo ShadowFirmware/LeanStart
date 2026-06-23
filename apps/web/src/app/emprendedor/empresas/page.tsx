@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2 } from "lucide-react";
+import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@/types";
 import { useEmpresasStore, type Progreso } from "@/store/empresas";
 
@@ -97,6 +98,7 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
 export default function MisEmpresasPage() {
   const empresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
+  const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState(TODOS_LOS_ESTADOS);
 
@@ -298,11 +300,29 @@ export default function MisEmpresasPage() {
                   <ProgressoBorrador progreso={empresa.progreso} />
                 )}
 
-                {/* Pie: botón eliminar */}
+                {/* Pie: enviar a mentoría (izq) + eliminar (der) */}
                 <div
-                  className="flex justify-end mt-3 pt-3"
+                  className="flex items-center justify-between mt-3 pt-3"
                   style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
                 >
+                  {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
+                        toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
+                      style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                    >
+                      <Send className="w-3 h-3" />
+                      Enviar a mentoría
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+
                   <button
                     onClick={(e) => {
                       e.preventDefault();

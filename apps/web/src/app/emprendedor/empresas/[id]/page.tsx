@@ -10,7 +10,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
-  Plus, AlertCircle, ChevronRight, Trash2,
+  Plus, AlertCircle, ChevronRight, Trash2, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -439,6 +439,31 @@ export default function EmpresaDetailPage() {
             </div>
 
             <p className="text-xs mt-4" style={{ color: "#4A4850" }}>Creada el {empresa.creadaEn}</p>
+
+            {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
+              <>
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>Proyecto listo para enviar</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                      Completaste todos los requisitos: producto, canvas e hipótesis.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      actualizarEmpresa(id, { estado: "pendiente_mentoria" });
+                      toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                    }}
+                    className="inline-flex items-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Enviar a mentoría
+                  </button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
