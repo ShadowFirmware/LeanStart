@@ -38,6 +38,9 @@ export type GiroEmpresa =
   | 'comercio'
   | 'servicios';
 
+// Tipos de producto
+export type TipoProducto = 'producto' | 'servicio';
+
 // Tipos de experimento
 export type TipoExperimento =
   | 'encuesta'

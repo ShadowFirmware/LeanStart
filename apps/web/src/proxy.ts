@@ -18,6 +18,11 @@ const ROLE_PREFIXES: Record<Role, string> = {
 };
 
 export default auth((req) => {
+  // Bypass de autenticación en desarrollo — remover cuando el backend esté listo
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   const { pathname } = req.nextUrl;
   const session = req.auth;
 

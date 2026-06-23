@@ -43,7 +43,7 @@ export default function RegistroPage() {
   async function onSubmit(values: RegistroFormValues) {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/registro", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/registro`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
