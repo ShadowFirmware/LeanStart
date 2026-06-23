@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb } from "lucide-react";
+import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EstadoEmpresa, GiroEmpresa } from "@/types";
 import { useEmpresasStore, type Progreso } from "@/store/empresas";
@@ -96,6 +96,7 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
 
 export default function MisEmpresasPage() {
   const empresas = useEmpresasStore((s) => s.empresas);
+  const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState(TODOS_LOS_ESTADOS);
 
@@ -110,7 +111,7 @@ export default function MisEmpresasPage() {
   });
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -184,7 +185,7 @@ export default function MisEmpresasPage() {
         </div>
       </div>
 
-      {/* Lista */}
+      {/* Grilla de tarjetas */}
       {empresasFiltradas.length === 0 ? (
         <div
           className="rounded-xl p-14 text-center"
@@ -218,14 +219,14 @@ export default function MisEmpresasPage() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {empresasFiltradas.map((empresa) => {
             const estadoConfig = ESTADO_CONFIG[empresa.estado];
             return (
               <Link
                 key={empresa.id}
                 href={`/emprendedor/empresas/${empresa.id}`}
-                className="flex gap-4 rounded-xl px-5 py-4 transition-[border-color]"
+                className="flex flex-col rounded-xl p-5 transition-[border-color]"
                 style={{
                   backgroundColor: "#131219",
                   border: "1px solid rgba(255,255,255,0.06)",
@@ -237,72 +238,93 @@ export default function MisEmpresasPage() {
                   ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")
                 }
               >
-                {/* Avatar */}
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-base font-bold shrink-0 mt-0.5 overflow-hidden"
-                  style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
-                >
-                  {empresa.logoUrl ? (
-                    <Image src={empresa.logoUrl} alt={empresa.nombre} width={44} height={44} className="object-cover w-full h-full" unoptimized />
-                  ) : (
-                    empresa.nombre.charAt(0)
-                  )}
+                {/* Header: logo + nombre/giro + estado */}
+                <div className="flex items-start gap-3 mb-4">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden"
+                    style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+                  >
+                    {empresa.logoUrl ? (
+                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+                    ) : (
+                      empresa.nombre.charAt(0)
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "#F2F0F7" }}>
+                      {empresa.nombre}
+                    </p>
+                    <span
+                      className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#7E7C86" }}
+                    >
+                      {GIRO_LABELS[empresa.giro]}
+                    </span>
+                  </div>
+                  <span
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
+                    style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}
+                  >
+                    {estadoConfig.label}
+                  </span>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  {/* Top row */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>
-                          {empresa.nombre}
-                        </p>
-                        <span
-                          className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#7E7C86" }}
-                        >
-                          {GIRO_LABELS[empresa.giro]}
-                        </span>
-                      </div>
-                      <p
-                        className="text-xs mt-1 line-clamp-2 leading-relaxed"
-                        style={{ color: "#7E7C86" }}
-                      >
-                        {empresa.descripcion}
-                      </p>
-                    </div>
-                    <span
-                      className="text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
-                      style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}
-                    >
-                      {estadoConfig.label}
+                {/* Stats */}
+                <div
+                  className="flex items-center gap-4 pt-3.5"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
+                    <span className="text-xs" style={{ color: "#7E7C86" }}>
+                      {empresa.productosList?.length ?? 0} {(empresa.productosList?.length ?? 0) === 1 ? "producto" : "productos"}
                     </span>
                   </div>
-
-                  {/* Stats row */}
-                  <div className="flex items-center gap-5 mt-3">
-                    <div className="flex items-center gap-1.5">
-                      <Package className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
-                      <span className="text-xs" style={{ color: "#7E7C86" }}>
-                        {empresa.productosList?.length ?? 0} {(empresa.productosList?.length ?? 0) === 1 ? "producto" : "productos"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Lightbulb className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
-                      <span className="text-xs" style={{ color: "#7E7C86" }}>
-                        {(empresa.hipotesisList ?? []).length} hipótesis
-                      </span>
-                    </div>
-                    <span className="text-xs ml-auto" style={{ color: "#4A4850" }}>
-                      Creada el {empresa.creadaEn}
+                  <div className="flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
+                    <span className="text-xs" style={{ color: "#7E7C86" }}>
+                      {(empresa.hipotesisList ?? []).length} hipótesis
                     </span>
                   </div>
+                </div>
 
-                  {/* Progreso borrador */}
-                  {empresa.estado === "borrador" && empresa.progreso && (
-                    <ProgressoBorrador progreso={empresa.progreso} />
-                  )}
+                {/* Fecha */}
+                <span className="text-[11px] mt-2" style={{ color: "#4A4850" }}>
+                  Creada el {empresa.creadaEn}
+                </span>
+
+                {/* Progreso borrador */}
+                {empresa.estado === "borrador" && empresa.progreso && (
+                  <ProgressoBorrador progreso={empresa.progreso} />
+                )}
+
+                {/* Pie: botón eliminar */}
+                <div
+                  className="flex justify-end mt-3 pt-3"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (window.confirm(`¿Eliminar "${empresa.nombre}"? Esta acción no se puede deshacer.`)) {
+                        eliminarEmpresa(empresa.id);
+                      }
+                    }}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                    style={{ color: "#4A4850" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#EF4444";
+                      e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#4A4850";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                    title="Eliminar empresa"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </Link>
             );

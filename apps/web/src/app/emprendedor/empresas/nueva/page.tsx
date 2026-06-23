@@ -116,7 +116,8 @@ export default function NuevaEmpresaPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="max-w-2xl mx-auto">
       {/* Back */}
       <Link
         href="/emprendedor/empresas"
@@ -402,6 +403,7 @@ export default function NuevaEmpresaPage() {
 
         </form>
       </Form>
+      </div>
     </div>
   );
 }

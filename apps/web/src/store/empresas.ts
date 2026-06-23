@@ -43,6 +43,7 @@ export interface Producto {
   nombre: string;
   tipo: TipoProducto;
   descripcion: string;
+  caracteristicas?: string;
   precio?: number;
   creadoEn: string;
 }
@@ -73,7 +74,9 @@ interface EmpresasStore {
     logoUrl?: string;
   }) => string;
   actualizarEmpresa: (id: string, data: Partial<Empresa>) => void;
+  eliminarEmpresa: (id: string) => void;
   agregarProducto: (empresaId: string, producto: Omit<Producto, "id" | "creadoEn">) => void;
+  eliminarProducto: (empresaId: string, productoId: string) => void;
   agregarHipotesis: (empresaId: string, hipotesis: Omit<Hipotesis, "id">) => string;
   actualizarHipotesis: (empresaId: string, hipotesisId: string, data: Partial<Hipotesis>) => void;
   eliminarHipotesis: (empresaId: string, hipotesisId: string) => void;
@@ -118,6 +121,10 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
+      eliminarEmpresa(id) {
+        set({ empresas: get().empresas.filter((e) => e.id !== id) });
+      },
+
       agregarProducto(empresaId, producto) {
         const id = crypto.randomUUID();
         const ahora = new Date().toLocaleDateString("es-MX", {
@@ -131,6 +138,21 @@ export const useEmpresasStore = create<EmpresasStore>()(
               ...e,
               productosList: lista,
               progreso: { ...e.progreso, tieneProducto: true },
+              updatedAt: "Justo ahora",
+            };
+          }),
+        });
+      },
+
+      eliminarProducto(empresaId, productoId) {
+        set({
+          empresas: get().empresas.map((e) => {
+            if (e.id !== empresaId) return e;
+            const lista = e.productosList.filter((p) => p.id !== productoId);
+            return {
+              ...e,
+              productosList: lista,
+              progreso: { ...e.progreso, tieneProducto: lista.length > 0 },
               updatedAt: "Justo ahora",
             };
           }),

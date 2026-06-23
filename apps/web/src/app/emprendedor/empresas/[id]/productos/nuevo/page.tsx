@@ -32,6 +32,7 @@ const schema = z.object({
     error: "Selecciona un tipo",
   }),
   descripcion: z.string().min(10, "Mínimo 10 caracteres"),
+  caracteristicas: z.string().optional(),
   precio: z.string().optional(),
 });
 
@@ -52,7 +53,7 @@ export default function NuevoProductoPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nombre: "", tipo: "" as TipoProducto, descripcion: "", precio: "" },
+    defaultValues: { nombre: "", tipo: "" as TipoProducto, descripcion: "", caracteristicas: "", precio: "" },
   });
 
   if (!empresa) return null;
@@ -64,6 +65,7 @@ export default function NuevoProductoPage() {
       nombre: values.nombre,
       tipo: values.tipo,
       descripcion: values.descripcion,
+      caracteristicas: values.caracteristicas || undefined,
       precio: isNaN(precio!) ? undefined : precio,
     });
     toast.success(`"${values.nombre}" fue agregado correctamente.`);
@@ -71,7 +73,8 @@ export default function NuevoProductoPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="max-w-2xl mx-auto">
       {/* Back */}
       <Link
         href={`/emprendedor/empresas/${id}/productos`}
@@ -183,6 +186,36 @@ export default function NuevoProductoPage() {
             />
           </div>
 
+          {/* Características (opcional) */}
+          <div
+            className="rounded-2xl p-6"
+            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <FormField
+              control={form.control}
+              name="caracteristicas"
+              render={({ field }: { field: ControllerRenderProps<FormValues, "caracteristicas"> }) => (
+                <FormItem className="gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                      Características
+                    </FormLabel>
+                    <span className="text-xs" style={{ color: "#4A4850" }}>Opcional · una por línea</span>
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      placeholder={"Ej.\nMaterial resistente al agua\nCarga rápida\nCompatible con iOS y Android"}
+                      className="min-h-28 resize-none text-sm focus-visible:ring-0"
+                      style={inputStyle}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+          </div>
+
           {/* Precio (opcional) */}
           <div
             className="rounded-2xl p-6"
@@ -247,6 +280,7 @@ export default function NuevoProductoPage() {
 
         </form>
       </Form>
+      </div>
     </div>
   );
 }
