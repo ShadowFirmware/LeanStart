@@ -1,10 +1,17 @@
 {
   "name": "leanstart",
   "private": true,
+  "workspaces": [
+    "apps/frontend/web-shell",
+    "apps/frontend/commons",
+    "apps/frontend/dashboard-front",
+    "apps/frontend/empresas-front",
+    "apps/frontend/notificaciones-front"
+  ],
   "scripts": {
-    "dev": "npm run dev --workspace=apps/web",
-    "build": "npm run build --workspace=apps/web",
-    "lint": "npm run lint --workspace=apps/web"
+    "dev": "npm run dev --workspace=@leanstart/web-shell",
+    "build": "npm run build --workspace=@leanstart/web-shell",
+    "lint": "npm run lint --workspace=@leanstart/web-shell"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
