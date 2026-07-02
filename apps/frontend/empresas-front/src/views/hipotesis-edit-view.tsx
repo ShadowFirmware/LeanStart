@@ -1,15 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, FileText, ExternalLink, X as XIcon } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  fileToDataUrl,
-} from "@leanstart/commons";
+import { fileToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import type { TipoExperimento } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
@@ -22,6 +18,23 @@ const TIPOS_EXPERIMENTO: { value: TipoExperimento; label: string; descripcion: s
   { value: "prueba_de_mercado", label: "Prueba de mercado", descripcion: "Venta o prueba real" },
   { value: "otro",              label: "Otro",              descripcion: "Otro tipo de experimento" },
 ];
+
+const TIPO_EXPERIMENTO_LABELS: Record<TipoExperimento, string> = Object.fromEntries(
+  TIPOS_EXPERIMENTO.map((t) => [t.value, t.label])
+) as Record<TipoExperimento, string>;
+
+const ESTADO_HIPOTESIS_CONFIG = {
+  pendiente_validacion: { label: "Pendiente", color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  requiere_mas_evidencia: { label: "Más evidencia", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
+  validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
+  invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
+} as const;
+
+const FASE_CONFIG = {
+  1: { label: "Creación",    color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  2: { label: "Experimento", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
+  3: { label: "Completa",    color: "#10B981", bg: "rgba(16,185,129,0.12)" },
+} as const;
 
 const MAX_TITULO = 120;
 const MAX_TEXTAREA = 600;
@@ -40,29 +53,54 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, icon: Icon, children }: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
     <div
-      className="rounded-2xl p-4 md:p-6 flex flex-col gap-5"
+      className="rounded-2xl overflow-hidden"
       style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
     >
-      <p className="text-base font-semibold" style={{ color: "#F2F0F7" }}>{title}</p>
-      <div className="h-px" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
-      {children}
+      <div
+        className="flex items-center gap-2.5 px-4 md:px-6 py-4"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+      >
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
+        >
+          <Icon className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
+        </div>
+        <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>{title}</span>
+      </div>
+      <div className="px-4 md:px-6 py-5 flex flex-col gap-5">{children}</div>
+    </div>
+  );
+}
+
+function ReadField({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
+      <Label>{label}</Label>
+      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}>
+        {value && value.trim() ? value : <span style={{ color: "#4A4850" }}>Sin información</span>}
+      </p>
     </div>
   );
 }
 
 export function HipotesisEditView() {
   const { id, hid } = useParams<{ id: string; hid: string }>();
-  const router = useRouter();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const hipotesis = useMemo(
     () => empresa?.hipotesisList?.find((h) => h.id === hid),
     [empresa, hid]
   );
   const actualizarHipotesis = useEmpresasStore((s) => s.actualizarHipotesis);
-  const eliminarHipotesis = useEmpresasStore((s) => s.eliminarHipotesis);
+
+  const [editando, setEditando] = useState(false);
 
   // Fase 1
   const [titulo, setTitulo] = useState(hipotesis?.titulo ?? "");
@@ -91,6 +129,37 @@ export function HipotesisEditView() {
   );
   const [conclusion, setConclusion]     = useState(hipotesis?.resultados?.conclusion ?? "");
 
+  function resetForm() {
+    if (!hipotesis) return;
+    setTitulo(hipotesis.titulo);
+    setDescripcion(hipotesis.descripcion);
+    setTipoExp(hipotesis.experimento?.tipo ?? "");
+    setDescExp(hipotesis.experimento?.descripcion ?? "");
+    setObjetivo(hipotesis.experimento?.objetivo ?? "");
+    setCriterio(hipotesis.experimento?.criterioExito ?? "");
+    setFechaObj(hipotesis.experimento?.fechaObjetivo ?? "");
+    setResultado(hipotesis.resultados?.resultado ?? "");
+    setTipoEvidencia(hipotesis.resultados?.tipoEvidencia ?? "");
+    setEvidenciaDataUrl(
+      hipotesis.resultados?.tipoEvidencia && hipotesis.resultados.tipoEvidencia !== "url"
+        ? (hipotesis.resultados.evidencia ?? "")
+        : ""
+    );
+    setEvidenciaNombre(hipotesis.resultados?.evidenciaNombre ?? "");
+    setEvidenciaUrl(hipotesis.resultados?.tipoEvidencia === "url" ? (hipotesis.resultados.evidencia ?? "") : "");
+    setConclusion(hipotesis.resultados?.conclusion ?? "");
+  }
+
+  function entrarEdicion() {
+    resetForm();
+    setEditando(true);
+  }
+
+  function cancelarEdicion() {
+    resetForm();
+    setEditando(false);
+  }
+
   async function handleEvidenciaFile(file: File) {
     // Validar tamaño (máx 3MB para PDFs/imágenes)
     if (file.size > 3 * 1024 * 1024) {
@@ -112,8 +181,6 @@ export function HipotesisEditView() {
     setEvidenciaNombre("");
     setEvidenciaUrl("");
   }
-
-  const [showDelete, setShowDelete] = useState(false);
 
   if (!empresa || !hipotesis) {
     return (
@@ -167,20 +234,150 @@ export function HipotesisEditView() {
       fase: nuevaFase,
     });
     toast.success("Hipótesis actualizada correctamente.");
-    router.push(`/emprendedor/empresas/${id}`);
+    setEditando(false);
   }
 
-  function confirmarEliminar() {
-    eliminarHipotesis(id, hid);
-    toast.success("Hipótesis eliminada.");
-    setShowDelete(false);
-    router.push(`/emprendedor/empresas/${id}`);
+  const estadoCfg = ESTADO_HIPOTESIS_CONFIG[hipotesis.estado] ?? ESTADO_HIPOTESIS_CONFIG.pendiente_validacion;
+  const fase = (hipotesis.fase ?? 1) as 1 | 2 | 3;
+  const faseCfg = FASE_CONFIG[fase];
+
+  if (!editando) {
+    return (
+      <div className="p-4 md:p-8 max-w-3xl mx-auto">
+        <Link
+          href={`/emprendedor/empresas/${id}`}
+          className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
+          style={{ color: "#7E7C86" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="truncate max-w-[180px] md:max-w-none">{empresa.nombre}</span>
+        </Link>
+
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>{hipotesis.titulo}</h1>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
+                Fase {fase}: {faseCfg.label}
+              </span>
+              {fase === 3 && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: estadoCfg.color, backgroundColor: estadoCfg.bg }}>
+                  {estadoCfg.label}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={entrarEdicion}
+            className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
+            style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
+          >
+            <Pencil className="w-3.5 h-3.5" /> Editar
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <SectionCard title="Creación" icon={Lightbulb}>
+            <ReadField label="Título" value={hipotesis.titulo} />
+            <ReadField label="Descripción" value={hipotesis.descripcion} />
+            <ReadField
+              label="Tipo de experimento"
+              value={hipotesis.experimento?.tipo ? TIPO_EXPERIMENTO_LABELS[hipotesis.experimento.tipo] : undefined}
+            />
+          </SectionCard>
+
+          <SectionCard title="Diseño del experimento" icon={FlaskConical}>
+            {hipotesis.experimento ? (
+              <>
+                <ReadField label="Descripción del experimento" value={hipotesis.experimento.descripcion} />
+                <ReadField label="Objetivo" value={hipotesis.experimento.objetivo} />
+                <ReadField label="Criterio de éxito" value={hipotesis.experimento.criterioExito} />
+                {hipotesis.experimento.fechaObjetivo && (
+                  <ReadField label="Fecha objetivo" value={hipotesis.experimento.fechaObjetivo} />
+                )}
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "#7E7C86" }}>Aún no se ha diseñado el experimento.</p>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Resultados" icon={BarChart3}>
+            {hipotesis.resultados ? (
+              <>
+                <ReadField label="Resultado" value={hipotesis.resultados.resultado} />
+                {hipotesis.resultados.evidencia && (
+                  <div>
+                    <Label>Evidencia</Label>
+                    {hipotesis.resultados.tipoEvidencia === "url" ? (
+                      <a
+                        href={hipotesis.resultados.evidencia}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm"
+                        style={{ color: "#C687F5" }}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> {hipotesis.resultados.evidencia}
+                      </a>
+                    ) : (
+                      <div
+                        className="rounded-xl p-3 flex items-start gap-3"
+                        style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
+                      >
+                        {hipotesis.resultados.tipoEvidencia === "imagen" ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={hipotesis.resultados.evidencia}
+                            alt={hipotesis.resultados.evidenciaNombre || "Evidencia"}
+                            className="w-20 h-20 rounded-lg object-cover shrink-0"
+                            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                          />
+                        ) : (
+                          <div
+                            className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                          >
+                            <FileText className="w-8 h-8" style={{ color: "#C687F5" }} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>
+                            {hipotesis.resultados.evidenciaNombre || "Archivo cargado"}
+                          </p>
+                          <a
+                            href={hipotesis.resultados.evidencia}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 mt-2 rounded-md transition-colors"
+                            style={{ color: "#C687F5", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid rgba(154,98,250,0.2)" }}
+                          >
+                            <ExternalLink className="w-3 h-3" /> Abrir
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <ReadField label="Conclusión" value={hipotesis.resultados.conclusion} />
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "#7E7C86" }}>Aún no hay resultados registrados.</p>
+            )}
+          </SectionCard>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto">
-      <Link
-        href={`/emprendedor/empresas/${id}`}
+      <button
+        type="button"
+        onClick={cancelarEdicion}
         className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
         style={{ color: "#7E7C86" }}
         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
@@ -188,30 +385,18 @@ export function HipotesisEditView() {
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="truncate max-w-[180px] md:max-w-none">{empresa.nombre}</span>
-      </Link>
+      </button>
 
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>Editar hipótesis</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
-            Actualiza cualquier campo. Los cambios se guardan al dar &quot;Guardar cambios&quot;.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowDelete(true)}
-          className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
-          style={{ color: "#EF4444", border: "1px solid rgba(239,68,68,0.25)", backgroundColor: "rgba(239,68,68,0.06)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.12)")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.06)")}
-        >
-          <Trash2 className="w-3.5 h-3.5" /> Eliminar
-        </button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>Editar hipótesis</h1>
+        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          Actualiza cualquier campo. Los cambios se guardan al dar &quot;Guardar cambios&quot;.
+        </p>
       </div>
 
       <div className="flex flex-col gap-5">
         {/* Sección Creación */}
-        <SectionCard title="Creación">
+        <SectionCard title="Creación" icon={Lightbulb}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Título</Label>
@@ -271,7 +456,7 @@ export function HipotesisEditView() {
         </SectionCard>
 
         {/* Sección Experimento */}
-        <SectionCard title="Diseño del experimento">
+        <SectionCard title="Diseño del experimento" icon={FlaskConical}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Descripción del experimento</Label>
@@ -325,7 +510,7 @@ export function HipotesisEditView() {
         </SectionCard>
 
         {/* Sección Resultados */}
-        <SectionCard title="Resultados">
+        <SectionCard title="Resultados" icon={BarChart3}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Resultado</Label>
@@ -505,13 +690,14 @@ export function HipotesisEditView() {
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3">
-          <Link
-            href={`/emprendedor/empresas/${id}`}
+          <button
+            type="button"
+            onClick={cancelarEdicion}
             className="inline-flex items-center justify-center gap-2 text-sm px-5 h-9 rounded-lg"
             style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             Cancelar
-          </Link>
+          </button>
           <button
             type="button"
             onClick={guardar}
@@ -522,27 +708,6 @@ export function HipotesisEditView() {
           </button>
         </div>
       </div>
-
-      {/* Confirmación eliminar */}
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar hipótesis</AlertDialogTitle>
-            <AlertDialogDescription>
-              ¿Seguro que quieres eliminar &quot;{hipotesis.titulo}&quot;? Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmarEliminar}
-              className="bg-red-500 hover:bg-red-600 text-white border-0"
-            >
-              <Trash2 className="w-4 h-4" /> Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
