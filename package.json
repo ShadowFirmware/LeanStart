@@ -6,7 +6,8 @@
     "apps/frontend/commons",
     "apps/frontend/dashboard-front",
     "apps/frontend/empresas-front",
-    "apps/frontend/notificaciones-front"
+    "apps/frontend/notificaciones-front",
+    "apps/frontend/administrador-front"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@leanstart/web-shell",
