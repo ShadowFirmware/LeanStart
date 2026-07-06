@@ -84,6 +84,8 @@ export interface Empresa {
   creadaEn: string;
   updatedAt: string;
   progreso: Progreso;
+  mentorId?: string;
+  evaluadorId?: string;
 }
 
 interface EmpresasStore {
@@ -104,6 +106,8 @@ interface EmpresasStore {
   agregarHipotesis: (empresaId: string, hipotesis: Omit<Hipotesis, "id">) => string;
   actualizarHipotesis: (empresaId: string, hipotesisId: string, data: Partial<Hipotesis>) => void;
   eliminarHipotesis: (empresaId: string, hipotesisId: string) => void;
+  asignarMentor: (empresaId: string, mentorId: string) => void;
+  asignarEvaluador: (empresaId: string, evaluadorId: string) => void;
 }
 
 export const useEmpresasStore = create<EmpresasStore>()(
@@ -268,6 +272,26 @@ export const useEmpresasStore = create<EmpresasStore>()(
               updatedAt: "Justo ahora",
             };
           }),
+        });
+      },
+
+      asignarMentor(empresaId, mentorId) {
+        set({
+          empresas: get().empresas.map((e) =>
+            e.id === empresaId
+              ? { ...e, mentorId, estado: "en_mentoria", updatedAt: "Justo ahora" }
+              : e
+          ),
+        });
+      },
+
+      asignarEvaluador(empresaId, evaluadorId) {
+        set({
+          empresas: get().empresas.map((e) =>
+            e.id === empresaId
+              ? { ...e, evaluadorId, estado: "en_evaluacion", updatedAt: "Justo ahora" }
+              : e
+          ),
         });
       },
     }),

@@ -10,7 +10,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
-  Plus, AlertCircle, ChevronRight, Trash2, Send,
+  Plus, AlertCircle, ChevronRight, Trash2, Send, UserCog,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
@@ -25,7 +25,8 @@ import {
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  Dialog, DialogContent, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter,
+  useUsuariosStore,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa } from "@leanstart/commons";
@@ -250,21 +251,31 @@ interface EmpresaDetailViewProps {
   readOnly?: boolean;
   /** Texto del enlace "volver". */
   backLabel?: string;
+  /** Cuando es true, permite asignar mentor/evaluador a proyectos pendientes (uso exclusivo del administrador). */
+  permitirAsignaciones?: boolean;
 }
+
+type TipoAsignacion = "mentor" | "evaluador";
 
 /* ─── Página principal ─── */
 export function EmpresaDetailView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
   backLabel = "Mis Empresas",
+  permitirAsignaciones = false,
 }: EmpresaDetailViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const { empresas, actualizarEmpresa } = useEmpresasStore();
+  const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
+  const asignarEvaluador = useEmpresasStore((s) => s.asignarEvaluador);
+  const usuarios = useUsuariosStore((s) => s.usuarios);
   const empresa = empresas.find((e) => e.id === id);
 
   const [editando, setEditando] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoLightboxOpen, setLogoLightboxOpen] = useState(false);
+  const [asignarTipo, setAsignarTipo] = useState<TipoAsignacion | null>(null);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
@@ -335,6 +346,27 @@ export function EmpresaDetailView({
     setLogoPreview(null);
     setEditando(false);
   }
+
+  function abrirAsignar(tipo: TipoAsignacion) {
+    setAsignarTipo(tipo);
+    setUsuarioSeleccionado((tipo === "mentor" ? empresa?.mentorId : empresa?.evaluadorId) ?? "");
+  }
+
+  function confirmarAsignar() {
+    if (!asignarTipo || !usuarioSeleccionado) return;
+    const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
+    if (asignarTipo === "mentor") {
+      asignarMentor(id, usuarioSeleccionado);
+    } else {
+      asignarEvaluador(id, usuarioSeleccionado);
+    }
+    toast.success(`${asignarTipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado.`);
+    setAsignarTipo(null);
+  }
+
+  const opcionesAsignables = asignarTipo
+    ? usuarios.filter((u) => u.rol === asignarTipo && u.estado === "activo")
+    : [];
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -564,6 +596,33 @@ export function EmpresaDetailView({
                 </div>
               </>
             )}
+
+            {permitirAsignaciones && (empresa.estado === "pendiente_mentoria" || empresa.estado === "pendiente_evaluacion") && (
+              <>
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>
+                      {empresa.estado === "pendiente_mentoria" ? "Pendiente de asignar mentor" : "Pendiente de asignar evaluador"}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                      {empresa.estado === "pendiente_mentoria"
+                        ? "Elige un mentor activo para comenzar la revisión."
+                        : "Elige un evaluador activo para comenzar la evaluación."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => abrirAsignar(empresa.estado === "pendiente_mentoria" ? "mentor" : "evaluador")}
+                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                    style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                  >
+                    <UserCog className="w-3.5 h-3.5" />
+                    {empresa.estado === "pendiente_mentoria" ? "Asignar mentor" : "Asignar evaluador"}
+                  </button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -676,6 +735,50 @@ export function EmpresaDetailView({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: asignar mentor/evaluador */}
+      {permitirAsignaciones && (
+        <Dialog open={asignarTipo !== null} onOpenChange={(open) => { if (!open) setAsignarTipo(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{asignarTipo === "mentor" ? "Asignar mentor" : "Asignar evaluador"}</DialogTitle>
+              <DialogDescription>
+                {asignarTipo ? `Elige un ${asignarTipo} activo para "${empresa.nombre}".` : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <Select value={usuarioSeleccionado} onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}>
+              <SelectTrigger className="w-full" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
+                <SelectValue placeholder={`Selecciona un ${asignarTipo ?? ""}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {opcionesAsignables.length === 0 ? (
+                  <div className="px-2 py-4 text-sm text-center" style={{ color: "#7E7C86" }}>
+                    No hay {asignarTipo === "mentor" ? "mentores" : "evaluadores"} activos.
+                  </div>
+                ) : (
+                  opcionesAsignables.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.nombre}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAsignarTipo(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={!usuarioSeleccionado}
+                onClick={confirmarAsignar}
+                className="border-0"
+                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              >
+                Asignar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

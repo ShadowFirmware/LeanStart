@@ -6,6 +6,7 @@ export default function Page() {
       basePath="/administrador/empresas"
       readOnly
       backLabel="Empresas"
+      permitirAsignaciones
     />
   );
 }

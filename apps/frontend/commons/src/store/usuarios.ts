@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Role } from "@leanstart/commons";
+import type { Role } from "../types";
 
 export type EstadoUsuario = "activo" | "inactivo";
 

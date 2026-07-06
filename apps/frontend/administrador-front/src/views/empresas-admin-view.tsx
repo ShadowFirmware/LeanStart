@@ -8,6 +8,7 @@ export function EmpresasAdminView() {
       basePath="/administrador/empresas"
       readOnly
       title="Empresas"
+      permitirAsignaciones
     />
   );
 }

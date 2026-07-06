@@ -3,15 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2, Send } from "lucide-react";
+import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
 import {
   Button,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  useUsuariosStore,
 } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
-import { useEmpresasStore, type Progreso } from "../store/empresas";
+import { useEmpresasStore, type Empresa, type Progreso } from "../store/empresas";
 
 const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
   borrador: { label: "Borrador", color: "#9A62FA", bg: "rgba(154,98,250,0.12)" },
@@ -106,19 +109,29 @@ interface EmpresasListViewProps {
   readOnly?: boolean;
   /** Título de la página. */
   title?: string;
+  /** Cuando es true, permite asignar mentor/evaluador a proyectos pendientes (uso exclusivo del administrador). */
+  permitirAsignaciones?: boolean;
 }
+
+type TipoAsignacion = "mentor" | "evaluador";
 
 export function EmpresasListView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
   title = "Mis Empresas",
+  permitirAsignaciones = false,
 }: EmpresasListViewProps = {}) {
   const empresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
+  const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
+  const asignarEvaluador = useEmpresasStore((s) => s.asignarEvaluador);
+  const usuarios = useUsuariosStore((s) => s.usuarios);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState(TODOS_LOS_ESTADOS);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nombre: string } | null>(null);
+  const [asignarTarget, setAsignarTarget] = useState<{ empresa: Empresa; tipo: TipoAsignacion } | null>(null);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
 
   function confirmDelete() {
     if (!deleteTarget) return;
@@ -127,13 +140,37 @@ export function EmpresasListView({
     setDeleteTarget(null);
   }
 
+  function abrirAsignar(empresa: Empresa, tipo: TipoAsignacion) {
+    setAsignarTarget({ empresa, tipo });
+    setUsuarioSeleccionado(empresa[tipo === "mentor" ? "mentorId" : "evaluadorId"] ?? "");
+  }
+
+  function confirmarAsignar() {
+    if (!asignarTarget || !usuarioSeleccionado) return;
+    const { empresa, tipo } = asignarTarget;
+    const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
+    if (tipo === "mentor") {
+      asignarMentor(empresa.id, usuarioSeleccionado);
+    } else {
+      asignarEvaluador(empresa.id, usuarioSeleccionado);
+    }
+    toast.success(`${tipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado a "${empresa.nombre}".`);
+    setAsignarTarget(null);
+  }
+
+  const opcionesAsignables = asignarTarget
+    ? usuarios.filter((u) => u.rol === asignarTarget.tipo && u.estado === "activo")
+    : [];
+
   const empresasFiltradas = empresas.filter((e) => {
     const coincideBusqueda = e.nombre.toLowerCase().includes(busqueda.toLowerCase());
     const coincideEstado =
       filtroEstado === TODOS_LOS_ESTADOS ||
-      (filtroEstado === "pendiente_mentoria"
-        ? ["pendiente_mentoria", "en_mentoria", "observaciones_pendientes", "observaciones_atendidas", "pendiente_evaluacion", "en_evaluacion"].includes(e.estado)
-        : e.estado === filtroEstado);
+      (readOnly
+        ? e.estado === filtroEstado
+        : filtroEstado === "pendiente_mentoria"
+          ? ["pendiente_mentoria", "en_mentoria", "observaciones_pendientes", "observaciones_atendidas", "pendiente_evaluacion", "en_evaluacion"].includes(e.estado)
+          : e.estado === filtroEstado);
     return coincideBusqueda && coincideEstado;
   });
 
@@ -191,27 +228,44 @@ export function EmpresasListView({
         </div>
 
         {/* Filtros de estado */}
-        <div
-          className="flex items-center gap-1 rounded-lg p-1 shrink-0"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          {FILTROS_ESTADO.map(({ value, label }) => {
-            const isActive = filtroEstado === value;
-            return (
-              <button
-                key={value}
-                onClick={() => setFiltroEstado(value)}
-                className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: isActive ? "rgba(154,98,250,0.18)" : "transparent",
-                  color: isActive ? "#F2F0F7" : "#7E7C86",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        {readOnly ? (
+          <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}>
+            <SelectTrigger
+              className="w-full sm:w-56 h-9 text-sm shrink-0"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+            >
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_LOS_ESTADOS}>Todos los estados</SelectItem>
+              {(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][]).map(([value, cfg]) => (
+                <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div
+            className="flex items-center gap-1 rounded-lg p-1 shrink-0"
+            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            {FILTROS_ESTADO.map(({ value, label }) => {
+              const isActive = filtroEstado === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setFiltroEstado(value)}
+                  className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: isActive ? "rgba(154,98,250,0.18)" : "transparent",
+                    color: isActive ? "#F2F0F7" : "#7E7C86",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Grilla de tarjetas */}
@@ -375,6 +429,24 @@ export function EmpresasListView({
                     </button>
                   </div>
                 )}
+
+                {/* Asignación de mentor/evaluador (solo administrador) */}
+                {permitirAsignaciones && (empresa.estado === "pendiente_mentoria" || empresa.estado === "pendiente_evaluacion") && (
+                  <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        abrirAsignar(empresa, empresa.estado === "pendiente_mentoria" ? "mentor" : "evaluador");
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85 w-full justify-center"
+                      style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                    >
+                      <UserCog className="w-3 h-3" />
+                      {empresa.estado === "pendiente_mentoria" ? "Asignar mentor" : "Asignar evaluador"}
+                    </button>
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -404,6 +476,52 @@ export function EmpresasListView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      )}
+
+      {/* Dialog: asignar mentor/evaluador */}
+      {permitirAsignaciones && (
+        <Dialog open={asignarTarget !== null} onOpenChange={(open) => { if (!open) setAsignarTarget(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{asignarTarget?.tipo === "mentor" ? "Asignar mentor" : "Asignar evaluador"}</DialogTitle>
+              <DialogDescription>
+                {asignarTarget
+                  ? `Elige un ${asignarTarget.tipo} activo para "${asignarTarget.empresa.nombre}".`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <Select value={usuarioSeleccionado} onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}>
+              <SelectTrigger className="w-full" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
+                <SelectValue placeholder={`Selecciona un ${asignarTarget?.tipo ?? ""}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {opcionesAsignables.length === 0 ? (
+                  <div className="px-2 py-4 text-sm text-center" style={{ color: "#7E7C86" }}>
+                    No hay {asignarTarget?.tipo === "mentor" ? "mentores" : "evaluadores"} activos.
+                  </div>
+                ) : (
+                  opcionesAsignables.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.nombre}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAsignarTarget(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={!usuarioSeleccionado}
+                onClick={confirmarAsignar}
+                className="border-0"
+                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              >
+                Asignar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

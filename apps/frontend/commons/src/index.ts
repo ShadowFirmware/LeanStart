@@ -26,6 +26,10 @@ export * from "./components/ui/tooltip";
 export { useIsMobile } from "./hooks/use-mobile";
 export { usePrivilegios } from "./hooks/use-privilegios";
 
+// Store
+export { useUsuariosStore } from "./store/usuarios";
+export type { Usuario, EstadoUsuario } from "./store/usuarios";
+
 // Utils
 export { cn } from "./lib/utils";
 export { fileToDataUrl } from "./lib/file-to-data-url";

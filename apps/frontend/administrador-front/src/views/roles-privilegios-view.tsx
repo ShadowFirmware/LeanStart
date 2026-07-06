@@ -14,8 +14,8 @@ import {
   Input, Textarea,
 } from "@leanstart/commons";
 import type { Role, Modulo, Accion } from "@leanstart/commons";
+import { useUsuariosStore } from "@leanstart/commons";
 import { useRolesStore, type RolPersonalizado } from "../store/roles";
-import { useUsuariosStore } from "../store/usuarios";
 import { usePrivilegiosStore, MODULOS, ACCIONES } from "../store/privilegios";
 
 const ROLES_CONFIG: Record<Role, { label: string; color: string; icon: React.ElementType }> = {

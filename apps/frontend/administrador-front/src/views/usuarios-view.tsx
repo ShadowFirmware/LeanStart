@@ -15,8 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
-import type { Role } from "@leanstart/commons";
-import { useUsuariosStore, type Usuario, type EstadoUsuario } from "../store/usuarios";
+import { useUsuariosStore, type Role, type Usuario, type EstadoUsuario } from "@leanstart/commons";
 
 const ROL_CONFIG: Record<Role, { label: string; color: string }> = {
   administrador: { label: "Administrador", color: "#9A62FA" },
