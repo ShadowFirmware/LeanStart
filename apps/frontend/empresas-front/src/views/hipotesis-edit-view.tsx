@@ -91,7 +91,15 @@ function ReadField({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function HipotesisEditView() {
+interface HipotesisEditViewProps {
+  basePath?: string;
+  readOnly?: boolean;
+}
+
+export function HipotesisEditView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+}: HipotesisEditViewProps = {}) {
   const { id, hid } = useParams<{ id: string; hid: string }>();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const hipotesis = useMemo(
@@ -185,7 +193,7 @@ export function HipotesisEditView() {
   if (!empresa || !hipotesis) {
     return (
       <div className="p-4 md:p-8 max-w-3xl mx-auto">
-        <Link href={`/emprendedor/empresas/${id}`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+        <Link href={`${basePath}/${id}`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
           <ArrowLeft className="w-4 h-4" /> Volver
         </Link>
         <p className="text-sm" style={{ color: "#7E7C86" }}>Esta hipótesis no existe o fue eliminada.</p>
@@ -241,11 +249,11 @@ export function HipotesisEditView() {
   const fase = (hipotesis.fase ?? 1) as 1 | 2 | 3;
   const faseCfg = FASE_CONFIG[fase];
 
-  if (!editando) {
+  if (!editando || readOnly) {
     return (
       <div className="p-4 md:p-8 max-w-3xl mx-auto">
         <Link
-          href={`/emprendedor/empresas/${id}`}
+          href={`${basePath}/${id}`}
           className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
           style={{ color: "#7E7C86" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
@@ -269,16 +277,18 @@ export function HipotesisEditView() {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={entrarEdicion}
-            className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
-            style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
-          >
-            <Pencil className="w-3.5 h-3.5" /> Editar
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={entrarEdicion}
+              className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
+              style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
+            >
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col gap-5">

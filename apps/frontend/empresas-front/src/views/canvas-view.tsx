@@ -117,8 +117,16 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
 
 const GAP = 6;
 
+interface CanvasViewProps {
+  basePath?: string;
+  readOnly?: boolean;
+}
+
 /* ─── Página ─── */
-export function CanvasView() {
+export function CanvasView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+}: CanvasViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const actualizarCanvas = useEmpresasStore((s) => s.actualizarCanvas);
@@ -160,7 +168,7 @@ export function CanvasView() {
       {/* Header */}
       <div className="max-w-5xl mx-auto mb-5">
         <Link
-          href={`/emprendedor/empresas/${id}`}
+          href={`${basePath}/${id}`}
           className="inline-flex items-center gap-2 text-sm mb-5 transition-colors"
           style={{ color: "#7E7C86" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
@@ -277,7 +285,28 @@ export function CanvasView() {
             </div>
 
             {/* Modal body */}
-            {openMeta.type === "single" ? (
+            {readOnly ? (
+              openMeta.type === "single" ? (
+                (draft as string).trim() ? (
+                  <p style={{ color: "#C4C2CC", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                    {draft as string}
+                  </p>
+                ) : (
+                  <p style={{ color: "#4A4850", fontSize: 13 }}>Sin información registrada.</p>
+                )
+              ) : (draft as string[]).filter((v) => v.trim()).length > 0 ? (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(draft as string[]).filter((v) => v.trim()).map((item, i) => (
+                    <li key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "#C4C2CC", fontSize: 13, lineHeight: 1.5 }}>
+                      <span style={{ color: "#4A4850", flexShrink: 0 }}>·</span>
+                      <span style={{ overflowWrap: "anywhere" }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ color: "#4A4850", fontSize: 13 }}>Sin información registrada.</p>
+              )
+            ) : openMeta.type === "single" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <textarea
                   value={draft as string}
@@ -337,18 +366,29 @@ export function CanvasView() {
 
             {/* Modal footer */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button
-                onClick={() => setOpenBlock(null)}
-                style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                style={{ padding: "8px 20px", background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", border: "none", borderRadius: 10, color: "#FBFBFC", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                Guardar
-              </button>
+              {readOnly ? (
+                <button
+                  onClick={() => setOpenBlock(null)}
+                  style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Cerrar
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setOpenBlock(null)}
+                    style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    style={{ padding: "8px 20px", background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", border: "none", borderRadius: 10, color: "#FBFBFC", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    Guardar
+                  </button>
+                </>
+              )}
             </div>
 
           </div>

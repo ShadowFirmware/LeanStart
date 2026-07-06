@@ -99,7 +99,20 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
   );
 }
 
-export function EmpresasListView() {
+interface EmpresasListViewProps {
+  /** Ruta base para los enlaces (crear, detalle). */
+  basePath?: string;
+  /** Cuando es true, oculta crear/eliminar/enviar a mentoría — solo consulta. */
+  readOnly?: boolean;
+  /** Título de la página. */
+  title?: string;
+}
+
+export function EmpresasListView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+  title = "Mis Empresas",
+}: EmpresasListViewProps = {}) {
   const empresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
@@ -130,25 +143,27 @@ export function EmpresasListView() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
-            Mis Empresas
+            {title}
           </h1>
           <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
             {empresas.length} {empresas.length === 1 ? "empresa registrada" : "empresas registradas"}
           </p>
         </div>
-        <Button
-          size="lg"
-          nativeButton={false}
-          className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
-          style={{
-            background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-            color: "#FBFBFC",
-          }}
-          render={<Link href="/emprendedor/empresas/nueva" />}
-        >
-          <Plus className="w-4 h-4" />
-          Crear empresa
-        </Button>
+        {!readOnly && (
+          <Button
+            size="lg"
+            nativeButton={false}
+            className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
+            style={{
+              background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
+              color: "#FBFBFC",
+            }}
+            render={<Link href={`${basePath}/nueva`} />}
+          >
+            <Plus className="w-4 h-4" />
+            Crear empresa
+          </Button>
+        )}
       </div>
 
       {/* Búsqueda y filtros */}
@@ -209,14 +224,14 @@ export function EmpresasListView() {
           <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>
             {busqueda || filtroEstado !== TODOS_LOS_ESTADOS
               ? "Sin resultados"
-              : "Aún no tienes empresas"}
+              : readOnly ? "Aún no hay empresas registradas" : "Aún no tienes empresas"}
           </p>
           <p className="text-sm" style={{ color: "#7E7C86" }}>
             {busqueda || filtroEstado !== TODOS_LOS_ESTADOS
               ? "Prueba con otros términos o filtros."
-              : "Crea tu primera empresa para comenzar."}
+              : readOnly ? "Cuando se registren empresas aparecerán aquí." : "Crea tu primera empresa para comenzar."}
           </p>
-          {!busqueda && filtroEstado === TODOS_LOS_ESTADOS && (
+          {!readOnly && !busqueda && filtroEstado === TODOS_LOS_ESTADOS && (
             <Button
               size="sm"
               nativeButton={false}
@@ -225,7 +240,7 @@ export function EmpresasListView() {
                 background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
                 color: "#FBFBFC",
               }}
-              render={<Link href="/emprendedor/empresas/nueva" />}
+              render={<Link href={`${basePath}/nueva`} />}
             >
               <Plus className="w-3.5 h-3.5" />
               Crear empresa
@@ -239,7 +254,7 @@ export function EmpresasListView() {
             return (
               <Link
                 key={empresa.id}
-                href={`/emprendedor/empresas/${empresa.id}`}
+                href={`${basePath}/${empresa.id}`}
                 className="flex flex-col rounded-xl p-5 transition-[border-color]"
                 style={{
                   backgroundColor: "#131219",
@@ -313,51 +328,53 @@ export function EmpresasListView() {
                 )}
 
                 {/* Pie: enviar a mentoría (izq) + eliminar (der) */}
-                <div
-                  className="flex items-center justify-between mt-3 pt-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-                >
-                  {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
+                {!readOnly && (
+                  <div
+                    className="flex items-center justify-between mt-3 pt-3"
+                    style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                  >
+                    {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
+                          toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
+                        style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                      >
+                        <Send className="w-3 h-3" />
+                        Enviar a mentoría
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
-                        toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                        setDeleteTarget({ id: empresa.id, nombre: empresa.nombre });
                       }}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
-                      style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                      style={{ color: "#7E7C86" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#EF4444";
+                        e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "#7E7C86";
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                      title="Eliminar empresa"
+                      aria-label="Eliminar empresa"
                     >
-                      <Send className="w-3 h-3" />
-                      Enviar a mentoría
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  ) : (
-                    <span />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteTarget({ id: empresa.id, nombre: empresa.nombre });
-                    }}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                    style={{ color: "#7E7C86" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#EF4444";
-                      e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#7E7C86";
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                    title="Eliminar empresa"
-                    aria-label="Eliminar empresa"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -365,6 +382,7 @@ export function EmpresasListView() {
       )}
 
       {/* Confirmación de eliminado */}
+      {!readOnly && (
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -386,6 +404,7 @@ export function EmpresasListView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      )}
     </div>
   );
 }

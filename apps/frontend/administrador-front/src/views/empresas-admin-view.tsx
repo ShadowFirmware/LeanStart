@@ -1,14 +1,13 @@
 "use client";
 
-import { Building2 } from "lucide-react";
-import { PlaceholderView } from "../components/placeholder-view";
+import { EmpresasListView } from "@leanstart/empresas-front";
 
 export function EmpresasAdminView() {
   return (
-    <PlaceholderView
+    <EmpresasListView
+      basePath="/administrador/empresas"
+      readOnly
       title="Empresas"
-      description="Supervisa todas las empresas registradas en la plataforma."
-      icon={Building2}
     />
   );
 }

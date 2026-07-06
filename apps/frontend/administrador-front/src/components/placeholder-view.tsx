@@ -6,7 +6,7 @@ export function PlaceholderView({ title, description, icon: Icon }: {
   icon: React.ElementType;
 }) {
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>{title}</h1>
         <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>{description}</p>

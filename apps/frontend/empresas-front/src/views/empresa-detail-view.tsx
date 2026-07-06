@@ -121,9 +121,11 @@ const FASE_CONFIG = {
 } as const;
 
 /* ─── Sección Hipótesis ─── */
-function HipotesisSection({ empresaId, hipotesisList }: {
+function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
   empresaId: string;
   hipotesisList: import("../store/empresas").Hipotesis[];
+  basePath: string;
+  readOnly: boolean;
 }) {
   const eliminarHipotesis = useEmpresasStore((s) => s.eliminarHipotesis);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; titulo: string } | null>(null);
@@ -141,9 +143,9 @@ function HipotesisSection({ empresaId, hipotesisList }: {
       title="Hipótesis"
       icon={Lightbulb}
       action={
-        !limite ? (
+        readOnly ? undefined : !limite ? (
           <Link
-            href={`/emprendedor/empresas/${empresaId}/hipotesis/nueva`}
+            href={`${basePath}/${empresaId}/hipotesis/nueva`}
             className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
             style={{ color: "#9A62FA", backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.2)" }}
           >
@@ -157,7 +159,7 @@ function HipotesisSection({ empresaId, hipotesisList }: {
       <div className="flex flex-col gap-3">
         {hipotesisList.length === 0 && (
           <p className="text-sm" style={{ color: "#7E7C86" }}>
-            No tienes hipótesis registradas. Las hipótesis te ayudan a validar las suposiciones de tu modelo de negocio.
+            {readOnly ? "Esta empresa no tiene hipótesis registradas." : "No tienes hipótesis registradas. Las hipótesis te ayudan a validar las suposiciones de tu modelo de negocio."}
           </p>
         )}
 
@@ -165,7 +167,7 @@ function HipotesisSection({ empresaId, hipotesisList }: {
           const estadoCfg = ESTADO_HIPOTESIS_CONFIG[h.estado] ?? ESTADO_HIPOTESIS_CONFIG.pendiente_validacion;
           const fase = (h.fase ?? 1) as 1 | 2 | 3;
           const faseCfg = FASE_CONFIG[fase];
-          const editHref = `/emprendedor/empresas/${empresaId}/hipotesis/${h.id}/editar`;
+          const editHref = `${basePath}/${empresaId}/hipotesis/${h.id}/editar`;
           return (
             <Link
               key={h.id}
@@ -192,53 +194,70 @@ function HipotesisSection({ empresaId, hipotesisList }: {
                   )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDeleteTarget({ id: h.id, titulo: h.titulo });
-                }}
-                className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-40 hover:opacity-100 transition-opacity"
-                style={{ color: "#EF4444" }}
-                title="Eliminar hipótesis"
-                aria-label="Eliminar hipótesis"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteTarget({ id: h.id, titulo: h.titulo });
+                  }}
+                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-40 hover:opacity-100 transition-opacity"
+                  style={{ color: "#EF4444" }}
+                  title="Eliminar hipótesis"
+                  aria-label="Eliminar hipótesis"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </Link>
           );
         })}
       </div>
 
       {/* Confirmación eliminar hipótesis */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar hipótesis</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget
-                ? `¿Seguro que quieres eliminar "${deleteTarget.titulo}"? Esta acción no se puede deshacer.`
-                : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white border-0"
-            >
-              <Trash2 className="w-4 h-4" /> Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!readOnly && (
+        <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Eliminar hipótesis</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? `¿Seguro que quieres eliminar "${deleteTarget.titulo}"? Esta acción no se puede deshacer.`
+                  : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-500 hover:bg-red-600 text-white border-0"
+              >
+                <Trash2 className="w-4 h-4" /> Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </SectionCard>
   );
 }
 
+interface EmpresaDetailViewProps {
+  /** Ruta base de la lista y de las sub-páginas (canvas, productos, hipótesis). */
+  basePath?: string;
+  /** Cuando es true, oculta toda acción de edición/creación/eliminación — solo consulta. */
+  readOnly?: boolean;
+  /** Texto del enlace "volver". */
+  backLabel?: string;
+}
+
 /* ─── Página principal ─── */
-export function EmpresaDetailView() {
+export function EmpresaDetailView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+  backLabel = "Mis Empresas",
+}: EmpresaDetailViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const { empresas, actualizarEmpresa } = useEmpresasStore();
   const empresa = empresas.find((e) => e.id === id);
@@ -258,8 +277,8 @@ export function EmpresaDetailView() {
   if (!empresa) {
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto">
-        <Link href="/emprendedor/empresas" className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
-          <ArrowLeft className="w-4 h-4" /> Mis Empresas
+        <Link href={basePath} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Link>
         <div className="flex flex-col items-center text-center py-20">
           <AlertCircle className="w-10 h-10 mb-4" style={{ color: "#4A4850" }} />
@@ -321,13 +340,13 @@ export function EmpresaDetailView() {
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Back */}
       <Link
-        href="/emprendedor/empresas"
+        href={basePath}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
         style={{ color: "#7E7C86" }}
         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
         onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
       >
-        <ArrowLeft className="w-4 h-4" /> Mis Empresas
+        <ArrowLeft className="w-4 h-4" /> {backLabel}
       </Link>
 
       {/* ── Información general ── */}
@@ -335,7 +354,7 @@ export function EmpresaDetailView() {
         className="rounded-2xl p-4 md:p-6"
         style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
       >
-        {editando ? (
+        {editando && !readOnly ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
               <div className="flex items-start gap-5">
@@ -490,15 +509,17 @@ export function EmpresaDetailView() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setEditando(true)}
-                    className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg shrink-0 transition-colors"
-                    style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
-                  >
-                    <Pencil className="w-3 h-3" /> Editar
-                  </button>
+                  {!readOnly && (
+                    <button
+                      onClick={() => setEditando(true)}
+                      className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg shrink-0 transition-colors"
+                      style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+                    >
+                      <Pencil className="w-3 h-3" /> Editar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -518,7 +539,7 @@ export function EmpresaDetailView() {
 
             <p className="text-xs mt-4" style={{ color: "#4A4850" }}>Creada el {empresa.creadaEn}</p>
 
-            {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
+            {!readOnly && empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
               <>
                 <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -552,9 +573,9 @@ export function EmpresaDetailView() {
         title="Productos"
         icon={Package}
         action={
-          (empresa.productosList?.length ?? 0) === 0 ? (
+          !readOnly && (empresa.productosList?.length ?? 0) === 0 ? (
             <Link
-              href={`/emprendedor/empresas/${id}/productos/nuevo`}
+              href={`${basePath}/${id}/productos/nuevo`}
               className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
               style={{ color: "#9A62FA", backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.2)" }}
             >
@@ -567,7 +588,7 @@ export function EmpresaDetailView() {
           const count = empresa.productosList?.length ?? 0;
           return count === 0 ? (
             <p className="text-sm" style={{ color: "#7E7C86" }}>
-              No tienes productos registrados aún.
+              {readOnly ? "Esta empresa no tiene productos registrados." : "No tienes productos registrados aún."}
             </p>
           ) : (
             <div className="flex items-center justify-between">
@@ -578,7 +599,7 @@ export function EmpresaDetailView() {
                 </span>
               </div>
               <Link
-                href={`/emprendedor/empresas/${id}/productos`}
+                href={`${basePath}/${id}/productos`}
                 className="inline-flex items-center gap-1 text-xs transition-colors"
                 style={{ color: "#9A62FA" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
@@ -597,13 +618,13 @@ export function EmpresaDetailView() {
         icon={LayoutTemplate}
         action={
           <Link
-            href={`/emprendedor/empresas/${id}/canvas`}
+            href={`${basePath}/${id}/canvas`}
             className="inline-flex items-center gap-1 text-xs transition-colors"
             style={{ color: "#9A62FA" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
           >
-            {(empresa.canvasBloques ?? 0) === 0 ? "Comenzar" : "Continuar"} <ChevronRight className="w-3.5 h-3.5" />
+            {readOnly ? "Ver canvas" : (empresa.canvasBloques ?? 0) === 0 ? "Comenzar" : "Continuar"} <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         }
       >
@@ -624,7 +645,7 @@ export function EmpresaDetailView() {
             style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "#9A62FA" }}
           />
         </div>
-        {(empresa.canvasBloques ?? 0) === 0 && (
+        {!readOnly && (empresa.canvasBloques ?? 0) === 0 && (
           <p className="text-xs mt-3" style={{ color: "#4A4850" }}>
             El Lean Canvas es un requisito para enviar tu empresa a evaluación.
           </p>
@@ -632,7 +653,7 @@ export function EmpresaDetailView() {
       </SectionCard>
 
       {/* ── Hipótesis ── */}
-      <HipotesisSection empresaId={id} hipotesisList={empresa.hipotesisList ?? []} />
+      <HipotesisSection empresaId={id} hipotesisList={empresa.hipotesisList ?? []} basePath={basePath} readOnly={readOnly} />
 
       {/* Lightbox del logo */}
       <Dialog open={logoLightboxOpen} onOpenChange={setLogoLightboxOpen}>

@@ -17,7 +17,15 @@ const TIPO_CONFIG: Record<TipoProducto, { label: string; color: string; bg: stri
   servicio: { label: "Servicio", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
 };
 
-export function ProductosListView() {
+interface ProductosListViewProps {
+  basePath?: string;
+  readOnly?: boolean;
+}
+
+export function ProductosListView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+}: ProductosListViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
@@ -40,7 +48,7 @@ export function ProductosListView() {
     <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6">
       {/* Back */}
       <Link
-        href={`/emprendedor/empresas/${id}`}
+        href={`${basePath}/${id}`}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
         style={{ color: "#7E7C86" }}
         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
@@ -60,16 +68,18 @@ export function ProductosListView() {
               : `${productos.length} ${productos.length === 1 ? "producto registrado" : "productos registrados"}`}
           </p>
         </div>
-        <Link
-          href={`/emprendedor/empresas/${id}/productos/nuevo`}
-          className="inline-flex items-center justify-center gap-1.5 text-sm px-4 h-9 rounded-lg font-medium shrink-0 w-full sm:w-auto"
-          style={{
-            background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-            color: "#FBFBFC",
-          }}
-        >
-          <Plus className="w-4 h-4" /> Agregar producto
-        </Link>
+        {!readOnly && (
+          <Link
+            href={`${basePath}/${id}/productos/nuevo`}
+            className="inline-flex items-center justify-center gap-1.5 text-sm px-4 h-9 rounded-lg font-medium shrink-0 w-full sm:w-auto"
+            style={{
+              background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
+              color: "#FBFBFC",
+            }}
+          >
+            <Plus className="w-4 h-4" /> Agregar producto
+          </Link>
+        )}
       </div>
 
       {/* Lista */}
@@ -86,15 +96,17 @@ export function ProductosListView() {
           </div>
           <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin productos aún</p>
           <p className="text-sm mb-6" style={{ color: "#7E7C86" }}>
-            Agrega los productos o servicios que ofrece {empresa.nombre}.
+            {readOnly ? `${empresa.nombre} no tiene productos registrados.` : `Agrega los productos o servicios que ofrece ${empresa.nombre}.`}
           </p>
-          <Link
-            href={`/emprendedor/empresas/${id}/productos/nuevo`}
-            className="inline-flex items-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
-            style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
-          >
-            <Plus className="w-3.5 h-3.5" /> Agregar primer producto
-          </Link>
+          {!readOnly && (
+            <Link
+              href={`${basePath}/${id}/productos/nuevo`}
+              className="inline-flex items-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
+              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+            >
+              <Plus className="w-3.5 h-3.5" /> Agregar primer producto
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -103,7 +115,7 @@ export function ProductosListView() {
             const caracteristicas = p.caracteristicas
               ? p.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
               : [];
-            const editHref = `/emprendedor/empresas/${id}/productos/${p.id}/editar`;
+            const editHref = `${basePath}/${id}/productos/${p.id}/editar`;
             return (
               <div
                 key={p.id}
@@ -182,38 +194,40 @@ export function ProductosListView() {
                   ) : (
                     <span className="text-[11px]" style={{ color: "#4A4850" }}>Sin precio</span>
                   )}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(editHref);
-                      }}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                      style={{ color: "#7E7C86" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#9A62FA"; e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.1)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
-                      title="Editar producto"
-                      aria-label="Editar producto"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget({ id: p.id, nombre: p.nombre });
-                      }}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                      style={{ color: "#7E7C86" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
-                      title="Eliminar producto"
-                      aria-label="Eliminar producto"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(editHref);
+                        }}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                        style={{ color: "#7E7C86" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "#9A62FA"; e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.1)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
+                        title="Editar producto"
+                        aria-label="Editar producto"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget({ id: p.id, nombre: p.nombre });
+                        }}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                        style={{ color: "#7E7C86" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
+                        title="Eliminar producto"
+                        aria-label="Eliminar producto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -222,27 +236,29 @@ export function ProductosListView() {
       )}
 
       {/* Confirmación de eliminado */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar producto</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget
-                ? `¿Seguro que quieres eliminar "${deleteTarget.nombre}"? Esta acción no se puede deshacer.`
-                : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white border-0"
-            >
-              <Trash2 className="w-4 h-4" /> Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!readOnly && (
+        <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Eliminar producto</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? `¿Seguro que quieres eliminar "${deleteTarget.nombre}"? Esta acción no se puede deshacer.`
+                  : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-500 hover:bg-red-600 text-white border-0"
+              >
+                <Trash2 className="w-4 h-4" /> Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

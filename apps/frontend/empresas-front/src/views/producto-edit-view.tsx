@@ -94,7 +94,15 @@ function toFormValues(producto: {
   };
 }
 
-export function ProductoEditView() {
+interface ProductoEditViewProps {
+  basePath?: string;
+  readOnly?: boolean;
+}
+
+export function ProductoEditView({
+  basePath = "/emprendedor/empresas",
+  readOnly = false,
+}: ProductoEditViewProps = {}) {
   const { id, pid } = useParams<{ id: string; pid: string }>();
   const actualizarProducto = useEmpresasStore((s) => s.actualizarProducto);
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
@@ -112,7 +120,7 @@ export function ProductoEditView() {
   if (!empresa || !producto) {
     return (
       <div className="p-4 md:p-8 max-w-2xl mx-auto">
-        <Link href={`/emprendedor/empresas/${id}/productos`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+        <Link href={`${basePath}/${id}/productos`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
           <ArrowLeft className="w-4 h-4" /> Productos
         </Link>
         <p className="text-sm" style={{ color: "#7E7C86" }}>Este producto no existe o fue eliminado.</p>
@@ -145,7 +153,7 @@ export function ProductoEditView() {
     setEditando(false);
   }
 
-  if (!editando) {
+  if (!editando || readOnly) {
     const tipo = TIPO_LABELS[producto.tipo] ?? producto.tipo;
     const caracteristicas = producto.caracteristicas
       ? producto.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
@@ -154,7 +162,7 @@ export function ProductoEditView() {
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
         <Link
-          href={`/emprendedor/empresas/${id}/productos`}
+          href={`${basePath}/${id}/productos`}
           className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
           style={{ color: "#7E7C86" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
@@ -186,16 +194,18 @@ export function ProductoEditView() {
                     {tipo}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={entrarEdicion}
-                  className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
-                  style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Editar
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={entrarEdicion}
+                    className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
+                    style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Editar
+                  </button>
+                )}
               </div>
             </div>
           </div>

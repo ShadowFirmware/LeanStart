@@ -4,6 +4,7 @@
 
 /* Scan microfrontend workspaces for Tailwind classes */
 @source "../../../commons/src/**/*.{ts,tsx}";
+@source "../../../administrador-front/src/**/*.{ts,tsx}";
 @source "../../../dashboard-front/src/**/*.{ts,tsx}";
 @source "../../../empresas-front/src/**/*.{ts,tsx}";
 @source "../../../notificaciones-front/src/**/*.{ts,tsx}";
