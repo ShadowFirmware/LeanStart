@@ -102,6 +102,8 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
   );
 }
 
+const TODOS_LOS_GIROS = "todos";
+
 interface EmpresasListViewProps {
   /** Ruta base para los enlaces (crear, detalle). */
   basePath?: string;
@@ -111,6 +113,12 @@ interface EmpresasListViewProps {
   title?: string;
   /** Cuando es true, permite asignar mentor/evaluador a proyectos pendientes (uso exclusivo del administrador). */
   permitirAsignaciones?: boolean;
+  /** Restringe la lista a las empresas con ese rol asignado (mentorId/evaluadorId presente). */
+  soloAsignados?: TipoAsignacion;
+  /** Restringe la lista (y las opciones del filtro de estado) a estos estados. */
+  estadosPermitidos?: EstadoEmpresa[];
+  /** Muestra un filtro adicional por giro. */
+  mostrarFiltroGiro?: boolean;
 }
 
 type TipoAsignacion = "mentor" | "evaluador";
@@ -120,8 +128,11 @@ export function EmpresasListView({
   readOnly = false,
   title = "Mis Empresas",
   permitirAsignaciones = false,
+  soloAsignados,
+  estadosPermitidos,
+  mostrarFiltroGiro = false,
 }: EmpresasListViewProps = {}) {
-  const empresas = useEmpresasStore((s) => s.empresas);
+  const todasLasEmpresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
   const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
@@ -129,9 +140,16 @@ export function EmpresasListView({
   const usuarios = useUsuariosStore((s) => s.usuarios);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState(TODOS_LOS_ESTADOS);
+  const [filtroGiro, setFiltroGiro] = useState(TODOS_LOS_GIROS);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nombre: string } | null>(null);
   const [asignarTarget, setAsignarTarget] = useState<{ empresa: Empresa; tipo: TipoAsignacion } | null>(null);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
+
+  const empresas = todasLasEmpresas.filter((e) => {
+    const coincideAsignacion = !soloAsignados || Boolean(e[soloAsignados === "mentor" ? "mentorId" : "evaluadorId"]);
+    const coincideEstadoPermitido = !estadosPermitidos || estadosPermitidos.includes(e.estado);
+    return coincideAsignacion && coincideEstadoPermitido;
+  });
 
   function confirmDelete() {
     if (!deleteTarget) return;
@@ -171,8 +189,11 @@ export function EmpresasListView({
         : filtroEstado === "pendiente_mentoria"
           ? ["pendiente_mentoria", "en_mentoria", "observaciones_pendientes", "observaciones_atendidas", "pendiente_evaluacion", "en_evaluacion"].includes(e.estado)
           : e.estado === filtroEstado);
-    return coincideBusqueda && coincideEstado;
+    const coincideGiro = filtroGiro === TODOS_LOS_GIROS || e.giro === filtroGiro;
+    return coincideBusqueda && coincideEstado && coincideGiro;
   });
+
+  const hayFiltrosActivos = Boolean(busqueda) || filtroEstado !== TODOS_LOS_ESTADOS || filtroGiro !== TODOS_LOS_GIROS;
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -238,9 +259,11 @@ export function EmpresasListView({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={TODOS_LOS_ESTADOS}>Todos los estados</SelectItem>
-              {(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][]).map(([value, cfg]) => (
-                <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
-              ))}
+              {(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][])
+                .filter(([value]) => !estadosPermitidos || estadosPermitidos.includes(value))
+                .map(([value, cfg]) => (
+                  <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
+                ))}
             </SelectContent>
           </Select>
         ) : (
@@ -266,6 +289,24 @@ export function EmpresasListView({
             })}
           </div>
         )}
+
+        {/* Filtro de giro */}
+        {mostrarFiltroGiro && (
+          <Select value={filtroGiro} onValueChange={(v) => setFiltroGiro(v ?? TODOS_LOS_GIROS)}>
+            <SelectTrigger
+              className="w-full sm:w-44 h-9 text-sm shrink-0"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+            >
+              <SelectValue placeholder="Filtrar por giro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_LOS_GIROS}>Todos los giros</SelectItem>
+              {(Object.entries(GIRO_LABELS) as [GiroEmpresa, string][]).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Grilla de tarjetas */}
@@ -276,16 +317,16 @@ export function EmpresasListView({
         >
           <Building2 className="w-9 h-9 mx-auto mb-3" style={{ color: "#4A4850" }} />
           <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>
-            {busqueda || filtroEstado !== TODOS_LOS_ESTADOS
+            {hayFiltrosActivos
               ? "Sin resultados"
               : readOnly ? "Aún no hay empresas registradas" : "Aún no tienes empresas"}
           </p>
           <p className="text-sm" style={{ color: "#7E7C86" }}>
-            {busqueda || filtroEstado !== TODOS_LOS_ESTADOS
+            {hayFiltrosActivos
               ? "Prueba con otros términos o filtros."
               : readOnly ? "Cuando se registren empresas aparecerán aquí." : "Crea tu primera empresa para comenzar."}
           </p>
-          {!readOnly && !busqueda && filtroEstado === TODOS_LOS_ESTADOS && (
+          {!readOnly && !hayFiltrosActivos && (
             <Button
               size="sm"
               nativeButton={false}
@@ -305,6 +346,12 @@ export function EmpresasListView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {empresasFiltradas.map((empresa) => {
             const estadoConfig = ESTADO_CONFIG[empresa.estado];
+            // El emprendedor solo puede eliminar mientras el proyecto está en captura o le toca atender observaciones.
+            const puedeEditar = !readOnly && (
+              empresa.estado === "borrador" ||
+              empresa.estado === "observaciones_pendientes" ||
+              empresa.estado === "devuelto"
+            );
             return (
               <Link
                 key={empresa.id}
@@ -405,28 +452,32 @@ export function EmpresasListView({
                       <span />
                     )}
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeleteTarget({ id: empresa.id, nombre: empresa.nombre });
-                      }}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                      style={{ color: "#7E7C86" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#EF4444";
-                        e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "#7E7C86";
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                      title="Eliminar empresa"
-                      aria-label="Eliminar empresa"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {puedeEditar ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDeleteTarget({ id: empresa.id, nombre: empresa.nombre });
+                        }}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                        style={{ color: "#7E7C86" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#EF4444";
+                          e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "#7E7C86";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                        title="Eliminar empresa"
+                        aria-label="Eliminar empresa"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
                   </div>
                 )}
 

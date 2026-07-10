@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Building2, ClipboardList, CheckCircle2, GraduationCap } from "lucide-react";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
@@ -115,13 +116,16 @@ export function MentorDashboardView() {
             {pendientesRevision.slice(0, 5).map((empresa) => {
               const estadoConfig = ESTADO_CONFIG[empresa.estado];
               return (
-                <div
+                <Link
                   key={empresa.id}
-                  className="flex items-start gap-4 rounded-xl px-5 py-4"
+                  href={`/mentor/empresas/${empresa.id}`}
+                  className="flex items-start gap-4 rounded-xl px-5 py-4 transition-[border-color]"
                   style={{
                     backgroundColor: "#131219",
                     border: "1px solid rgba(255,255,255,0.06)",
                   }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")}
                 >
                   <div
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5"
@@ -153,7 +157,7 @@ export function MentorDashboardView() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

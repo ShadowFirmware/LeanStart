@@ -17,7 +17,6 @@ export type EstadoEmpresa =
 // Estados de hipótesis
 export type EstadoHipotesis =
   | 'pendiente_validacion'
-  | 'requiere_mas_evidencia'
   | 'validada'
   | 'invalidada';
 

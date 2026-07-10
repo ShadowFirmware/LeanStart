@@ -20,6 +20,8 @@ import {
 import type { ControllerRenderProps } from "react-hook-form";
 import type { TipoProducto } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { puedeVerObservaciones } from "../store/observaciones";
+import { ObservacionesButton } from "../components/observaciones-button";
 
 const TIPOS: { value: TipoProducto; label: string }[] = [
   { value: "producto", label: "Producto" },
@@ -97,11 +99,16 @@ function toFormValues(producto: {
 interface ProductoEditViewProps {
   basePath?: string;
   readOnly?: boolean;
+  /** Cuando es true, permite dejar observaciones en este producto (uso exclusivo del mentor). */
+  permitirComentarios?: boolean;
+  autorNombre?: string;
 }
 
 export function ProductoEditView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
+  permitirComentarios = false,
+  autorNombre,
 }: ProductoEditViewProps = {}) {
   const { id, pid } = useParams<{ id: string; pid: string }>();
   const actualizarProducto = useEmpresasStore((s) => s.actualizarProducto);
@@ -128,6 +135,18 @@ export function ProductoEditView({
     );
   }
 
+  // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
+  const puedeEditar = !readOnly && (
+    empresa.estado === "borrador" ||
+    empresa.estado === "observaciones_pendientes" ||
+    empresa.estado === "devuelto"
+  );
+  // El mentor solo puede comentar mientras le toca revisar el proyecto.
+  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
+  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
+  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
+
   function entrarEdicion() {
     if (producto) form.reset(toFormValues(producto));
     setEditando(true);
@@ -153,7 +172,7 @@ export function ProductoEditView({
     setEditando(false);
   }
 
-  if (!editando || readOnly) {
+  if (!editando || !puedeEditar) {
     const tipo = TIPO_LABELS[producto.tipo] ?? producto.tipo;
     const caracteristicas = producto.caracteristicas
       ? producto.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
@@ -194,7 +213,17 @@ export function ProductoEditView({
                     {tipo}
                   </span>
                 </div>
-                {!readOnly && (
+                <ObservacionesButton
+                  empresaId={id}
+                  tipoElemento="producto"
+                  elementoId={pid}
+                  puedeComentar={mentorPuedeComentar}
+                  puedeMarcarEnRevision={!readOnly}
+                  puedeVer={puedeVerObs}
+                  ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                  autorNombre={autorNombre}
+                />
+                {puedeEditar && (
                   <button
                     type="button"
                     onClick={entrarEdicion}

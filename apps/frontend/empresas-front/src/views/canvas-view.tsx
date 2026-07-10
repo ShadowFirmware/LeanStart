@@ -8,6 +8,8 @@ import {
   BarChart2, Share2, TrendingDown, TrendingUp, Plus, X,
 } from "lucide-react";
 import { useEmpresasStore, type CanvasData, DEFAULT_CANVAS } from "../store/empresas";
+import { useObservacionesStore, puedeVerObservaciones } from "../store/observaciones";
+import { ObservacionesButton } from "../components/observaciones-button";
 
 /* ─── Colores por bloque ─── */
 const C = {
@@ -51,10 +53,11 @@ const BLOCK_META: Record<BlockKey, {
 
 /* ─── Bloque del canvas ─── */
 function Block({
-  icon: Icon, title, hint, color, style, children, onClick,
+  icon: Icon, title, hint, color, style, children, onClick, tieneComentarioPendiente,
 }: {
   icon: React.ElementType; title: string; hint: string; color: string;
   style?: React.CSSProperties; children?: React.ReactNode; onClick?: () => void;
+  tieneComentarioPendiente?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -63,6 +66,7 @@ function Block({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
+        position: "relative",
         backgroundColor: color,
         borderRadius: 14,
         padding: "20px 20px 18px",
@@ -75,6 +79,20 @@ function Block({
         transition: "border-color 0.15s",
       }}
     >
+      {tieneComentarioPendiente && (
+        <span
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            width: 10,
+            height: 10,
+            borderRadius: "50%",
+            backgroundColor: "#EF4444",
+            border: "2px solid rgba(0,0,0,0.2)",
+          }}
+        />
+      )}
       <Icon size={18} color="rgba(255,255,255,0.85)" strokeWidth={2} />
       <div>
         <p style={{ color: "white", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1.3 }}>
@@ -120,16 +138,22 @@ const GAP = 6;
 interface CanvasViewProps {
   basePath?: string;
   readOnly?: boolean;
+  /** Cuando es true, permite dejar observaciones por bloque (uso exclusivo del mentor). */
+  permitirComentarios?: boolean;
+  autorNombre?: string;
 }
 
 /* ─── Página ─── */
 export function CanvasView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
+  permitirComentarios = false,
+  autorNombre,
 }: CanvasViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const actualizarCanvas = useEmpresasStore((s) => s.actualizarCanvas);
+  const observaciones = useObservacionesStore((s) => s.observaciones);
 
   const [openBlock, setOpenBlock] = useState<BlockKey | null>(null);
   const [draft, setDraft] = useState<string | string[]>("");
@@ -139,6 +163,31 @@ export function CanvasView({
   const canvas = empresa.canvas ?? DEFAULT_CANVAS;
   const canvasBloques = empresa.canvasBloques ?? 0;
   const pct = Math.round((canvasBloques / 9) * 100);
+
+  // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
+  const puedeEditar = !readOnly && (
+    empresa.estado === "borrador" ||
+    empresa.estado === "observaciones_pendientes" ||
+    empresa.estado === "devuelto"
+  );
+  // El mentor solo puede comentar mientras le toca revisar el proyecto.
+  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
+  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
+  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
+
+  function tieneComentarioPendiente(key: BlockKey) {
+    if (!puedeVerObs) return false;
+    return observaciones.some((o) => {
+      if (o.empresaId !== id || o.tipoElemento !== "canvas" || o.elementoId !== key) return false;
+      // Mentor: solo le corresponde revisar lo que el emprendedor ya marcó como resuelto, y solo cuando es su turno.
+      if (permitirComentarios) return mentorPuedeComentar && o.estado === "en_revision";
+      // Emprendedor: solo le corresponde atender lo que el mentor dejó pendiente.
+      if (!readOnly) return o.estado === "pendiente";
+      // Otros roles de solo consulta (admin/evaluador): cualquier cosa aún sin cerrar.
+      return o.estado === "pendiente" || o.estado === "en_revision";
+    });
+  }
 
   function handleOpen(key: BlockKey) {
     const meta = BLOCK_META[key];
@@ -180,16 +229,20 @@ export function CanvasView({
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-xl font-bold" style={{ color: "#F2F0F7" }}>Lean Canvas</h1>
-            <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
-              {canvasBloques} de 9 bloques completados
-            </p>
+            {empresa.estado === "borrador" && (
+              <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
+                {canvasBloques} de 9 bloques completados
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
-              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#9A62FA" }} />
+          {empresa.estado === "borrador" && (
+            <div className="flex items-center gap-3">
+              <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#9A62FA" }} />
+              </div>
+              <span className="text-xs font-medium" style={{ color: "#7E7C86" }}>{pct}%</span>
             </div>
-            <span className="text-xs font-medium" style={{ color: "#7E7C86" }}>{pct}%</span>
-          </div>
+          )}
         </div>
       </div>
 
@@ -202,52 +255,52 @@ export function CanvasView({
 
             {/* Col 1: Problema (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={AlertCircle} title="Problema" hint={BLOCK_META.problema.hint} color={C.problema} style={{ flex: 1 }} onClick={() => handleOpen("problema")}>
+              <Block icon={AlertCircle} title="Problema" hint={BLOCK_META.problema.hint} color={C.problema} style={{ flex: 1 }} onClick={() => handleOpen("problema")} tieneComentarioPendiente={tieneComentarioPendiente("problema")}>
                 <BlockContent blockKey="problema" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 2 fila 1: Solución */}
-            <Block icon={Lightbulb} title="Solución" hint={BLOCK_META.solucion.hint} color={C.solucion} style={{ gridRow: 1 }} onClick={() => handleOpen("solucion")}>
+            <Block icon={Lightbulb} title="Solución" hint={BLOCK_META.solucion.hint} color={C.solucion} style={{ gridRow: 1 }} onClick={() => handleOpen("solucion")} tieneComentarioPendiente={tieneComentarioPendiente("solucion")}>
               <BlockContent blockKey="solucion" canvas={canvas} />
             </Block>
 
             {/* Col 3: PVP (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={Sparkles} title="Propuesta de valor única" hint={BLOCK_META.pvp.hint} color={C.pvp} style={{ flex: 1 }} onClick={() => handleOpen("pvp")}>
+              <Block icon={Sparkles} title="Propuesta de valor única" hint={BLOCK_META.pvp.hint} color={C.pvp} style={{ flex: 1 }} onClick={() => handleOpen("pvp")} tieneComentarioPendiente={tieneComentarioPendiente("pvp")}>
                 <BlockContent blockKey="pvp" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 4 fila 1: Ventaja injusta */}
-            <Block icon={Lock} title="Ventaja injusta" hint={BLOCK_META.ventajaInjusta.hint} color={C.ventajaInjusta} style={{ gridRow: 1 }} onClick={() => handleOpen("ventajaInjusta")}>
+            <Block icon={Lock} title="Ventaja injusta" hint={BLOCK_META.ventajaInjusta.hint} color={C.ventajaInjusta} style={{ gridRow: 1 }} onClick={() => handleOpen("ventajaInjusta")} tieneComentarioPendiente={tieneComentarioPendiente("ventajaInjusta")}>
               <BlockContent blockKey="ventajaInjusta" canvas={canvas} />
             </Block>
 
             {/* Col 5: Segmentos (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={Users} title="Segmentos de clientes" hint={BLOCK_META.segmentosClientes.hint} color={C.segmentosClientes} style={{ flex: 1 }} onClick={() => handleOpen("segmentosClientes")}>
+              <Block icon={Users} title="Segmentos de clientes" hint={BLOCK_META.segmentosClientes.hint} color={C.segmentosClientes} style={{ flex: 1 }} onClick={() => handleOpen("segmentosClientes")} tieneComentarioPendiente={tieneComentarioPendiente("segmentosClientes")}>
                 <BlockContent blockKey="segmentosClientes" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 2 fila 2: Métricas clave */}
-            <Block icon={BarChart2} title="Métricas clave" hint={BLOCK_META.metricasClave.hint} color={C.metricasClave} style={{ gridRow: 2 }} onClick={() => handleOpen("metricasClave")}>
+            <Block icon={BarChart2} title="Métricas clave" hint={BLOCK_META.metricasClave.hint} color={C.metricasClave} style={{ gridRow: 2 }} onClick={() => handleOpen("metricasClave")} tieneComentarioPendiente={tieneComentarioPendiente("metricasClave")}>
               <BlockContent blockKey="metricasClave" canvas={canvas} />
             </Block>
 
             {/* Col 4 fila 2: Canales */}
-            <Block icon={Share2} title="Canales" hint={BLOCK_META.canales.hint} color={C.canales} style={{ gridRow: 2 }} onClick={() => handleOpen("canales")}>
+            <Block icon={Share2} title="Canales" hint={BLOCK_META.canales.hint} color={C.canales} style={{ gridRow: 2 }} onClick={() => handleOpen("canales")} tieneComentarioPendiente={tieneComentarioPendiente("canales")}>
               <BlockContent blockKey="canales" canvas={canvas} />
             </Block>
           </div>
 
           {/* Fila 3: Costos + Ingresos */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: GAP, marginTop: GAP }}>
-            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} color={C.estructuraCostos} style={{ minHeight: 170 }} onClick={() => handleOpen("estructuraCostos")}>
+            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} color={C.estructuraCostos} style={{ minHeight: 170 }} onClick={() => handleOpen("estructuraCostos")} tieneComentarioPendiente={tieneComentarioPendiente("estructuraCostos")}>
               <BlockContent blockKey="estructuraCostos" canvas={canvas} />
             </Block>
-            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} color={C.fuentesIngresos} style={{ minHeight: 170 }} onClick={() => handleOpen("fuentesIngresos")}>
+            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} color={C.fuentesIngresos} style={{ minHeight: 170 }} onClick={() => handleOpen("fuentesIngresos")} tieneComentarioPendiente={tieneComentarioPendiente("fuentesIngresos")}>
               <BlockContent blockKey="fuentesIngresos" canvas={canvas} />
             </Block>
           </div>
@@ -274,18 +327,30 @@ export function CanvasView({
                   <p style={{ color: "#7E7C86", fontSize: 11, marginTop: 2 }}>{openMeta.hint}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setOpenBlock(null)}
-                style={{ color: "#4A4850", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F0F7")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#4A4850")}
-              >
-                <X size={18} />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ObservacionesButton
+                  empresaId={id}
+                  tipoElemento="canvas"
+                  elementoId={openBlock}
+                  puedeComentar={mentorPuedeComentar}
+                  puedeMarcarEnRevision={!readOnly}
+                  puedeVer={puedeVerObs}
+                  ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                  autorNombre={autorNombre}
+                />
+                <button
+                  onClick={() => setOpenBlock(null)}
+                  style={{ color: "#4A4850", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F0F7")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#4A4850")}
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Modal body */}
-            {readOnly ? (
+            {!puedeEditar ? (
               openMeta.type === "single" ? (
                 (draft as string).trim() ? (
                   <p style={{ color: "#C4C2CC", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
@@ -366,7 +431,7 @@ export function CanvasView({
 
             {/* Modal footer */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              {readOnly ? (
+              {!puedeEditar ? (
                 <button
                   onClick={() => setOpenBlock(null)}
                   style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}

@@ -11,6 +11,7 @@ import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
   Plus, AlertCircle, ChevronRight, Trash2, Send, UserCog,
+  CheckCircle2, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
@@ -29,9 +30,11 @@ import {
   useUsuariosStore,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
-import type { GiroEmpresa } from "@leanstart/commons";
+import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
 import { fileToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { useObservacionesStore, puedeVerObservaciones } from "../store/observaciones";
+import { ObservacionesButton } from "../components/observaciones-button";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
   { value: "tecnologia", label: "Tecnología" },
@@ -58,7 +61,6 @@ const ESTADO_CONFIG = {
 
 const ESTADO_HIPOTESIS_CONFIG = {
   pendiente_validacion: { label: "Pendiente", color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
-  requiere_mas_evidencia: { label: "Más evidencia", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
@@ -84,11 +86,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 /* ─── Tarjeta de sección ─── */
-function SectionCard({ title, icon: Icon, action, children }: {
+function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
   title: string;
   icon: React.ElementType;
   action?: React.ReactNode;
   children: React.ReactNode;
+  tienePendiente?: boolean;
 }) {
   return (
     <div
@@ -101,10 +104,16 @@ function SectionCard({ title, icon: Icon, action, children }: {
       >
         <div className="flex items-center gap-2.5">
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            className="relative w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
           >
             <Icon className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
+            {tienePendiente && (
+              <span
+                className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: "#EF4444", border: "2px solid #131219" }}
+              />
+            )}
           </div>
           <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>{title}</span>
         </div>
@@ -122,15 +131,21 @@ const FASE_CONFIG = {
 } as const;
 
 /* ─── Sección Hipótesis ─── */
-function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
+function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permitirComentarios, ocultarCorreccionesPendientes, autorNombre, estadoEmpresa, puedeEditar }: {
   empresaId: string;
   hipotesisList: import("../store/empresas").Hipotesis[];
   basePath: string;
   readOnly: boolean;
+  permitirComentarios?: boolean;
+  ocultarCorreccionesPendientes?: boolean;
+  autorNombre?: string;
+  estadoEmpresa: EstadoEmpresa;
+  puedeEditar: boolean;
 }) {
   const eliminarHipotesis = useEmpresasStore((s) => s.eliminarHipotesis);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; titulo: string } | null>(null);
   const limite = hipotesisList.length >= 3;
+  const puedeVerObs = puedeVerObservaciones(estadoEmpresa, readOnly, Boolean(permitirComentarios));
 
   function confirmDelete() {
     if (!deleteTarget) return;
@@ -144,7 +159,7 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
       title="Hipótesis"
       icon={Lightbulb}
       action={
-        readOnly ? undefined : !limite ? (
+        !puedeEditar ? undefined : !limite ? (
           <Link
             href={`${basePath}/${empresaId}/hipotesis/nueva`}
             className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
@@ -160,7 +175,7 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
       <div className="flex flex-col gap-3">
         {hipotesisList.length === 0 && (
           <p className="text-sm" style={{ color: "#7E7C86" }}>
-            {readOnly ? "Esta empresa no tiene hipótesis registradas." : "No tienes hipótesis registradas. Las hipótesis te ayudan a validar las suposiciones de tu modelo de negocio."}
+            {puedeEditar ? "No tienes hipótesis registradas. Las hipótesis te ayudan a validar las suposiciones de tu modelo de negocio." : "Esta empresa no tiene hipótesis registradas."}
           </p>
         )}
 
@@ -169,6 +184,7 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
           const fase = (h.fase ?? 1) as 1 | 2 | 3;
           const faseCfg = FASE_CONFIG[fase];
           const editHref = `${basePath}/${empresaId}/hipotesis/${h.id}/editar`;
+          const bloqueadaPorMentor = h.estado === "validada" || h.estado === "invalidada";
           return (
             <Link
               key={h.id}
@@ -185,9 +201,11 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
                 <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>{h.titulo}</p>
                 <p className="text-xs mt-0.5 leading-relaxed line-clamp-2 break-words" style={{ color: "#7E7C86", overflowWrap: "anywhere" }}>{h.descripcion}</p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
-                    Fase {fase}: {faseCfg.label}
-                  </span>
+                  {estadoEmpresa === "borrador" && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
+                      Fase {fase}: {faseCfg.label}
+                    </span>
+                  )}
                   {fase === 3 && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: estadoCfg.color, backgroundColor: estadoCfg.bg }}>
                       {estadoCfg.label}
@@ -195,29 +213,41 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly }: {
                   )}
                 </div>
               </div>
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDeleteTarget({ id: h.id, titulo: h.titulo });
-                  }}
-                  className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-40 hover:opacity-100 transition-opacity"
-                  style={{ color: "#EF4444" }}
-                  title="Eliminar hipótesis"
-                  aria-label="Eliminar hipótesis"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <ObservacionesButton
+                  empresaId={empresaId}
+                  tipoElemento="hipotesis"
+                  elementoId={h.id}
+                  puedeComentar={permitirComentarios}
+                  puedeMarcarEnRevision={!readOnly}
+                  puedeVer={puedeVerObs}
+                  ocultarCorreccionesPendientes={Boolean(ocultarCorreccionesPendientes)}
+                  autorNombre={autorNombre}
+                />
+                {puedeEditar && !bloqueadaPorMentor && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteTarget({ id: h.id, titulo: h.titulo });
+                    }}
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-40 hover:opacity-100 transition-opacity"
+                    style={{ color: "#EF4444" }}
+                    title="Eliminar hipótesis"
+                    aria-label="Eliminar hipótesis"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </Link>
           );
         })}
       </div>
 
       {/* Confirmación eliminar hipótesis */}
-      {!readOnly && (
+      {puedeEditar && (
         <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -253,6 +283,9 @@ interface EmpresaDetailViewProps {
   backLabel?: string;
   /** Cuando es true, permite asignar mentor/evaluador a proyectos pendientes (uso exclusivo del administrador). */
   permitirAsignaciones?: boolean;
+  /** Cuando es true, permite dejar observaciones en hipótesis (uso exclusivo del mentor). */
+  permitirComentarios?: boolean;
+  autorNombre?: string;
 }
 
 type TipoAsignacion = "mentor" | "evaluador";
@@ -263,12 +296,16 @@ export function EmpresaDetailView({
   readOnly = false,
   backLabel = "Mis Empresas",
   permitirAsignaciones = false,
+  permitirComentarios = false,
+  autorNombre,
 }: EmpresaDetailViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const { empresas, actualizarEmpresa } = useEmpresasStore();
   const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
   const asignarEvaluador = useEmpresasStore((s) => s.asignarEvaluador);
   const usuarios = useUsuariosStore((s) => s.usuarios);
+  const observaciones = useObservacionesStore((s) => s.observaciones);
+  const cerrarObservacionesDeEmpresa = useObservacionesStore((s) => s.cerrarObservacionesDeEmpresa);
   const empresa = empresas.find((e) => e.id === id);
 
   const [editando, setEditando] = useState(false);
@@ -304,6 +341,54 @@ export function EmpresaDetailView({
   const logoActual = logoPreview ?? empresa.logoUrl;
   const nombreActual = form.watch("nombre") || empresa.nombre;
   const canvasPct = Math.round(((empresa.canvasBloques ?? 0) / CANVAS_TOTAL) * 100);
+
+  // Progreso de la revisión del mentor: ¿ya se pronunció sobre todas las hipótesis y no dejó nada pendiente?
+  const hipotesisList = empresa.hipotesisList ?? [];
+  const todasHipotesisRevisadas = hipotesisList.length > 0 && hipotesisList.every((h) => h.estado === "validada" || h.estado === "invalidada");
+  const observacionesEmpresa = observaciones.filter((o) => o.empresaId === id);
+  const hayObservacionesPendientes = observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "en_revision");
+  const listoParaEvaluacion = todasHipotesisRevisadas && !hayObservacionesPendientes;
+
+  // El emprendedor solo puede editar/agregar/eliminar mientras el proyecto está en captura
+  // o mientras le toca atender observaciones (el mentor o el evaluador se lo devolvieron).
+  const puedeEditarProyecto = !readOnly && (
+    empresa.estado === "borrador" ||
+    empresa.estado === "observaciones_pendientes" ||
+    empresa.estado === "devuelto"
+  );
+  // El mentor solo puede dejar/confirmar comentarios mientras le toca revisar el proyecto.
+  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
+  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
+  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+
+  function esPendienteParaMiRol(o: { estado: (typeof observacionesEmpresa)[number]["estado"] }) {
+    // Mentor: solo le corresponde revisar lo que el emprendedor ya marcó como resuelto, y solo cuando es su turno.
+    if (permitirComentarios) return mentorPuedeComentar && o.estado === "en_revision";
+    // Emprendedor: solo le corresponde atender lo que el mentor dejó pendiente.
+    if (!readOnly) return o.estado === "pendiente";
+    // Otros roles de solo consulta (admin/evaluador): cualquier cosa aún sin cerrar.
+    return o.estado === "pendiente" || o.estado === "en_revision";
+  }
+  const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
+  const productosTienenPendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "producto" && esPendienteParaMiRol(o));
+  const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
+  const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente");
+
+  function enviarAEvaluacion() {
+    actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
+    cerrarObservacionesDeEmpresa(id);
+    toast.success(`"${empresa?.nombre}" fue enviada a evaluación.`);
+  }
+
+  function enviarComentariosEmprendedor() {
+    actualizarEmpresa(id, { estado: "observaciones_pendientes" });
+    toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
+  }
+
+  function enviarNuevamenteAlMentor() {
+    actualizarEmpresa(id, { estado: "observaciones_atendidas" });
+    toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
+  }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -386,7 +471,7 @@ export function EmpresaDetailView({
         className="rounded-2xl p-4 md:p-6"
         style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
       >
-        {editando && !readOnly ? (
+        {editando && puedeEditarProyecto ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
               <div className="flex items-start gap-5">
@@ -541,7 +626,7 @@ export function EmpresaDetailView({
                       </span>
                     </div>
                   </div>
-                  {!readOnly && (
+                  {puedeEditarProyecto && (
                     <button
                       onClick={() => setEditando(true)}
                       className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg shrink-0 transition-colors"
@@ -597,6 +682,29 @@ export function EmpresaDetailView({
               </>
             )}
 
+            {!readOnly && empresa.estado === "observaciones_pendientes" && todosComentariosResueltos && (
+              <>
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>Cambios listos</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                      Atendiste todos los comentarios del mentor. Envía tu proyecto para que los revise de nuevo.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={enviarNuevamenteAlMentor}
+                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Enviar cambios
+                  </button>
+                </div>
+              </>
+            )}
+
             {permitirAsignaciones && (empresa.estado === "pendiente_mentoria" || empresa.estado === "pendiente_evaluacion") && (
               <>
                 <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
@@ -623,6 +731,45 @@ export function EmpresaDetailView({
                 </div>
               </>
             )}
+
+            {permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas") && (listoParaEvaluacion || !todosComentariosResueltos) && (
+              <>
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>
+                      {listoParaEvaluacion ? "Revisión completa" : "Envía la retroalimentación al emprendedor"}
+                    </p>
+                    {listoParaEvaluacion && (
+                      <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                        Validaste todas las hipótesis y no quedan observaciones pendientes.
+                      </p>
+                    )}
+                  </div>
+                  {listoParaEvaluacion ? (
+                    <button
+                      type="button"
+                      onClick={enviarAEvaluacion}
+                      className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                      style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "#FBFBFC" }}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Enviar a evaluación
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={enviarComentariosEmprendedor}
+                      className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                      style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Enviar comentarios
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -631,8 +778,9 @@ export function EmpresaDetailView({
       <SectionCard
         title="Productos"
         icon={Package}
+        tienePendiente={productosTienenPendiente}
         action={
-          !readOnly && (empresa.productosList?.length ?? 0) === 0 ? (
+          puedeEditarProyecto && (empresa.productosList?.length ?? 0) === 0 ? (
             <Link
               href={`${basePath}/${id}/productos/nuevo`}
               className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
@@ -647,7 +795,7 @@ export function EmpresaDetailView({
           const count = empresa.productosList?.length ?? 0;
           return count === 0 ? (
             <p className="text-sm" style={{ color: "#7E7C86" }}>
-              {readOnly ? "Esta empresa no tiene productos registrados." : "No tienes productos registrados aún."}
+              {puedeEditarProyecto ? "No tienes productos registrados aún." : "Esta empresa no tiene productos registrados."}
             </p>
           ) : (
             <div className="flex items-center justify-between">
@@ -675,6 +823,7 @@ export function EmpresaDetailView({
       <SectionCard
         title="Lean Canvas"
         icon={LayoutTemplate}
+        tienePendiente={canvasTienePendiente}
         action={
           <Link
             href={`${basePath}/${id}/canvas`}
@@ -683,36 +832,50 @@ export function EmpresaDetailView({
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
           >
-            {readOnly ? "Ver canvas" : (empresa.canvasBloques ?? 0) === 0 ? "Comenzar" : "Continuar"} <ChevronRight className="w-3.5 h-3.5" />
+            {!puedeEditarProyecto ? "Ver canvas" : (empresa.canvasBloques ?? 0) === 0 ? "Comenzar" : "Continuar"} <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         }
       >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm" style={{ color: "#7E7C86" }}>
-            {empresa.canvasBloques ?? 0} de {CANVAS_TOTAL} bloques completados
-          </span>
-          <span
-            className="text-xs font-semibold"
-            style={{ color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "#9A62FA" : "#4A4850" }}
-          >
-            {canvasPct}%
-          </span>
-        </div>
-        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "#9A62FA" }}
-          />
-        </div>
-        {!readOnly && (empresa.canvasBloques ?? 0) === 0 && (
-          <p className="text-xs mt-3" style={{ color: "#4A4850" }}>
-            El Lean Canvas es un requisito para enviar tu empresa a evaluación.
-          </p>
+        {empresa.estado === "borrador" && (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm" style={{ color: "#7E7C86" }}>
+                {empresa.canvasBloques ?? 0} de {CANVAS_TOTAL} bloques completados
+              </span>
+              <span
+                className="text-xs font-semibold"
+                style={{ color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "#9A62FA" : "#4A4850" }}
+              >
+                {canvasPct}%
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "#9A62FA" }}
+              />
+            </div>
+            {puedeEditarProyecto && (empresa.canvasBloques ?? 0) === 0 && (
+              <p className="text-xs mt-3" style={{ color: "#4A4850" }}>
+                El Lean Canvas es un requisito para enviar tu empresa a evaluación.
+              </p>
+            )}
+          </>
         )}
       </SectionCard>
 
       {/* ── Hipótesis ── */}
-      <HipotesisSection empresaId={id} hipotesisList={empresa.hipotesisList ?? []} basePath={basePath} readOnly={readOnly} />
+      <HipotesisSection
+        empresaId={id}
+        hipotesisList={empresa.hipotesisList ?? []}
+        basePath={basePath}
+        readOnly={readOnly}
+        permitirComentarios={mentorPuedeComentar}
+        ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+        autorNombre={autorNombre}
+        estadoEmpresa={empresa.estado}
+        puedeEditar={puedeEditarProyecto}
+      />
 
       {/* Lightbox del logo */}
       <Dialog open={logoLightboxOpen} onOpenChange={setLogoLightboxOpen}>

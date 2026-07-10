@@ -3,11 +3,16 @@
 import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3 } from "lucide-react";
+import {
+  ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
+  CheckCircle2, XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { fileToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
-import type { TipoExperimento } from "@leanstart/commons";
+import { puedeVerObservaciones } from "../store/observaciones";
+import { ObservacionesButton } from "../components/observaciones-button";
+import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
 const TIPOS_EXPERIMENTO: { value: TipoExperimento; label: string; descripcion: string }[] = [
@@ -25,7 +30,6 @@ const TIPO_EXPERIMENTO_LABELS: Record<TipoExperimento, string> = Object.fromEntr
 
 const ESTADO_HIPOTESIS_CONFIG = {
   pendiente_validacion: { label: "Pendiente", color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
-  requiere_mas_evidencia: { label: "Más evidencia", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
@@ -94,11 +98,16 @@ function ReadField({ label, value }: { label: string; value?: string }) {
 interface HipotesisEditViewProps {
   basePath?: string;
   readOnly?: boolean;
+  /** Cuando es true, permite dejar observaciones en esta hipótesis (uso exclusivo del mentor). */
+  permitirComentarios?: boolean;
+  autorNombre?: string;
 }
 
 export function HipotesisEditView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
+  permitirComentarios = false,
+  autorNombre,
 }: HipotesisEditViewProps = {}) {
   const { id, hid } = useParams<{ id: string; hid: string }>();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
@@ -201,6 +210,16 @@ export function HipotesisEditView({
     );
   }
 
+  function cambiarEstadoHipotesis(estado: EstadoHipotesis) {
+    actualizarHipotesis(id, hid, { estado });
+    const LABELS: Record<EstadoHipotesis, string> = {
+      pendiente_validacion: "marcada como pendiente",
+      validada: "validada",
+      invalidada: "invalidada",
+    };
+    toast.success(`Hipótesis ${LABELS[estado]}.`);
+  }
+
   function guardar() {
     if (!titulo.trim() || titulo.trim().length < 5) {
       toast.error("El título es requerido (mín. 5 caracteres).");
@@ -248,8 +267,21 @@ export function HipotesisEditView({
   const estadoCfg = ESTADO_HIPOTESIS_CONFIG[hipotesis.estado] ?? ESTADO_HIPOTESIS_CONFIG.pendiente_validacion;
   const fase = (hipotesis.fase ?? 1) as 1 | 2 | 3;
   const faseCfg = FASE_CONFIG[fase];
+  // Una vez que el mentor se pronuncia, el emprendedor ya no puede editar esta hipótesis.
+  const bloqueadaPorMentor = hipotesis.estado === "validada" || hipotesis.estado === "invalidada";
+  // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
+  const puedeEditarProyecto = !readOnly && (
+    empresa.estado === "borrador" ||
+    empresa.estado === "observaciones_pendientes" ||
+    empresa.estado === "devuelto"
+  );
+  // El mentor solo puede comentar/validar mientras le toca revisar el proyecto.
+  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
+  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
+  const ocultarCorreccionesPendientes = Boolean(permitirComentarios) && !mentorPuedeComentar;
+  const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, Boolean(permitirComentarios));
 
-  if (!editando || readOnly) {
+  if (!editando || !puedeEditarProyecto || bloqueadaPorMentor) {
     return (
       <div className="p-4 md:p-8 max-w-3xl mx-auto">
         <Link
@@ -267,9 +299,11 @@ export function HipotesisEditView({
           <div className="min-w-0">
             <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>{hipotesis.titulo}</h1>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
-                Fase {fase}: {faseCfg.label}
-              </span>
+              {empresa.estado === "borrador" && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
+                  Fase {fase}: {faseCfg.label}
+                </span>
+              )}
               {fase === 3 && (
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: estadoCfg.color, backgroundColor: estadoCfg.bg }}>
                   {estadoCfg.label}
@@ -277,7 +311,17 @@ export function HipotesisEditView({
               )}
             </div>
           </div>
-          {!readOnly && (
+          <ObservacionesButton
+            empresaId={id}
+            tipoElemento="hipotesis"
+            elementoId={hid}
+            puedeComentar={mentorPuedeComentar}
+            puedeMarcarEnRevision={!readOnly}
+            puedeVer={puedeVerObs}
+            ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+            autorNombre={autorNombre}
+          />
+          {puedeEditarProyecto && !bloqueadaPorMentor && (
             <button
               type="button"
               onClick={entrarEdicion}
@@ -378,6 +422,41 @@ export function HipotesisEditView({
               <p className="text-sm" style={{ color: "#7E7C86" }}>Aún no hay resultados registrados.</p>
             )}
           </SectionCard>
+
+          {/* Validación del mentor */}
+          {readOnly && mentorPuedeComentar && fase === 3 && (
+            <div
+              className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <div>
+                <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>Validación de la hipótesis</p>
+                <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                  Evalúa la evidencia presentada y define el estado de esta hipótesis.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  disabled={hipotesis.estado === "invalidada"}
+                  onClick={() => cambiarEstadoHipotesis("invalidada")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-8 rounded-lg transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50"
+                  style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.25)" }}
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Invalidar
+                </button>
+                <button
+                  type="button"
+                  disabled={hipotesis.estado === "validada"}
+                  onClick={() => cambiarEstadoHipotesis("validada")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-8 rounded-lg transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50 border-0"
+                  style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "#FBFBFC" }}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Validar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

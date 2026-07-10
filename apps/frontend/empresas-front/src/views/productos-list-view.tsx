@@ -10,6 +10,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { puedeVerObservaciones } from "../store/observaciones";
+import { ObservacionesButton } from "../components/observaciones-button";
 import type { TipoProducto } from "@leanstart/commons";
 
 const TIPO_CONFIG: Record<TipoProducto, { label: string; color: string; bg: string }> = {
@@ -20,11 +22,16 @@ const TIPO_CONFIG: Record<TipoProducto, { label: string; color: string; bg: stri
 interface ProductosListViewProps {
   basePath?: string;
   readOnly?: boolean;
+  /** Cuando es true, permite dejar observaciones por producto (uso exclusivo del mentor). */
+  permitirComentarios?: boolean;
+  autorNombre?: string;
 }
 
 export function ProductosListView({
   basePath = "/emprendedor/empresas",
   readOnly = false,
+  permitirComentarios = false,
+  autorNombre,
 }: ProductosListViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -36,6 +43,18 @@ export function ProductosListView({
   if (!empresa) return null;
 
   const productos = empresa.productosList ?? [];
+
+  // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
+  const puedeEditar = !readOnly && (
+    empresa.estado === "borrador" ||
+    empresa.estado === "observaciones_pendientes" ||
+    empresa.estado === "devuelto"
+  );
+  // El mentor solo puede comentar mientras le toca revisar el proyecto.
+  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
+  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
+  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
 
   function confirmDelete() {
     if (!deleteTarget) return;
@@ -68,7 +87,7 @@ export function ProductosListView({
               : `${productos.length} ${productos.length === 1 ? "producto registrado" : "productos registrados"}`}
           </p>
         </div>
-        {!readOnly && (
+        {puedeEditar && (
           <Link
             href={`${basePath}/${id}/productos/nuevo`}
             className="inline-flex items-center justify-center gap-1.5 text-sm px-4 h-9 rounded-lg font-medium shrink-0 w-full sm:w-auto"
@@ -96,9 +115,9 @@ export function ProductosListView({
           </div>
           <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin productos aún</p>
           <p className="text-sm mb-6" style={{ color: "#7E7C86" }}>
-            {readOnly ? `${empresa.nombre} no tiene productos registrados.` : `Agrega los productos o servicios que ofrece ${empresa.nombre}.`}
+            {puedeEditar ? `Agrega los productos o servicios que ofrece ${empresa.nombre}.` : `${empresa.nombre} no tiene productos registrados.`}
           </p>
-          {!readOnly && (
+          {puedeEditar && (
             <Link
               href={`${basePath}/${id}/productos/nuevo`}
               className="inline-flex items-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
@@ -121,7 +140,7 @@ export function ProductosListView({
                 key={p.id}
                 onClick={() => router.push(editHref)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
                     e.preventDefault();
                     router.push(editHref);
                   }
@@ -141,12 +160,24 @@ export function ProductosListView({
                   >
                     <Package className="w-4 h-4" style={{ color: tipo.color }} />
                   </div>
-                  <span
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
-                    style={{ color: tipo.color, backgroundColor: tipo.bg }}
-                  >
-                    {tipo.label}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      style={{ color: tipo.color, backgroundColor: tipo.bg }}
+                    >
+                      {tipo.label}
+                    </span>
+                    <ObservacionesButton
+                      empresaId={id}
+                      tipoElemento="producto"
+                      elementoId={p.id}
+                      puedeComentar={mentorPuedeComentar}
+                      puedeMarcarEnRevision={!readOnly}
+                      puedeVer={puedeVerObs}
+                      ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                      autorNombre={autorNombre}
+                    />
+                  </div>
                 </div>
 
                 {/* Nombre */}
@@ -194,7 +225,7 @@ export function ProductosListView({
                   ) : (
                     <span className="text-[11px]" style={{ color: "#4A4850" }}>Sin precio</span>
                   )}
-                  {!readOnly && (
+                  {puedeEditar && (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -236,7 +267,7 @@ export function ProductosListView({
       )}
 
       {/* Confirmación de eliminado */}
-      {!readOnly && (
+      {puedeEditar && (
         <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
