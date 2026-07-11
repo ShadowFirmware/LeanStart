@@ -9,6 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   fileToDataUrl,
+  compressImageToDataUrl,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import type { TipoExperimento } from "@leanstart/commons";
@@ -137,7 +138,9 @@ export function HipotesisNewView() {
       return;
     }
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = file.type.startsWith("image/")
+        ? await compressImageToDataUrl(file)
+        : await fileToDataUrl(file);
       setEvidenciaDataUrl(dataUrl);
       setEvidenciaNombre(file.name);
       toast.success(`Archivo "${file.name}" cargado.`);
@@ -630,7 +633,7 @@ export function HipotesisNewView() {
                         <img
                           src={evidenciaDataUrl}
                           alt={evidenciaNombre || "Evidencia"}
-                          className="w-20 h-20 rounded-lg object-cover shrink-0"
+                          className="w-auto h-auto max-w-[160px] max-h-[160px] rounded-lg object-contain shrink-0"
                           style={{ border: "1px solid rgba(255,255,255,0.08)" }}
                         />
                       ) : (

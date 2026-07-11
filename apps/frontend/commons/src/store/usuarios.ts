@@ -63,6 +63,6 @@ export const useUsuariosStore = create<UsuariosStore>()(
         });
       },
     }),
-    { name: "leanstart-usuarios" }
+    { name: "leanstart-usuarios", skipHydration: true }
   )
 );

@@ -64,7 +64,7 @@ export function AdministradorSidebar({ userName, userEmail }: AdministradorSideb
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto no-scrollbar">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (

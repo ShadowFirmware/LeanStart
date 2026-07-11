@@ -29,7 +29,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa } from "@leanstart/commons";
-import { fileToDataUrl } from "@leanstart/commons";
+import { compressImageToDataUrl, useCurrentUser } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
@@ -63,6 +63,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function EmpresaNewView() {
   const router = useRouter();
+  const currentUser = useCurrentUser();
   const agregarEmpresa = useEmpresasStore((s) => s.agregarEmpresa);
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function EmpresaNewView() {
 
     setLogoFile(file);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImageToDataUrl(file, { maxDimension: 512, mimeType: "image/png" });
       setLogoPreview(dataUrl);
       toast.success(`Imagen "${file.name}" lista.`);
     } catch {
@@ -132,6 +133,7 @@ export function EmpresaNewView() {
         descripcion: values.descripcion,
         mercadoObjetivo: values.mercadoObjetivo,
         logoUrl: logoPreview ?? undefined,
+        ownerId: currentUser?.id,
       });
       toast.success(`"${values.nombre}" fue registrada correctamente.`);
       router.push(`/emprendedor/empresas/${id}`);

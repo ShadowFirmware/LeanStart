@@ -3,9 +3,10 @@
 import Link from "next/link";
 import {
   MessageSquare, ClipboardList, CheckCircle2,
-  LayoutTemplate, Package, Lightbulb,
+  LayoutTemplate, Package, Lightbulb, Building2,
 } from "lucide-react";
 import { useEmpresasStore, useObservacionesStore, type CanvasData, type Observacion } from "@leanstart/empresas-front";
+import { useHasHydrated } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
 
 const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: string; bg: string }> = {
@@ -19,6 +20,7 @@ const MODULO_CONFIG: Record<Observacion["tipoElemento"], { label: string; icon: 
   canvas: { label: "Lean Canvas", icon: LayoutTemplate },
   producto: { label: "Producto", icon: Package },
   hipotesis: { label: "Hipótesis", icon: Lightbulb },
+  general: { label: "Comentario general", icon: Building2 },
 };
 
 const CANVAS_BLOCK_LABELS: Record<keyof CanvasData, string> = {
@@ -38,8 +40,11 @@ interface MentorHistorialViewProps {
 }
 
 export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHistorialViewProps = {}) {
-  const empresas = useEmpresasStore((s) => s.empresas);
-  const observaciones = useObservacionesStore((s) => s.observaciones);
+  const hydrated = useHasHydrated();
+  const empresasRaw = useEmpresasStore((s) => s.empresas);
+  const observacionesRaw = useObservacionesStore((s) => s.observaciones);
+  const empresas = hydrated ? empresasRaw : [];
+  const observaciones = hydrated ? observacionesRaw : [];
 
   const registros = observaciones
     .filter((o) => o.autorNombre === autorNombre)
@@ -49,6 +54,8 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
       let elemento: string;
       if (o.tipoElemento === "canvas") {
         elemento = CANVAS_BLOCK_LABELS[o.elementoId as keyof CanvasData] ?? o.elementoId;
+      } else if (o.tipoElemento === "general") {
+        elemento = "Información principal";
       } else if (o.tipoElemento === "producto") {
         elemento = empresa?.productosList?.find((p) => p.id === o.elementoId)?.nombre ?? "Producto eliminado";
       } else {

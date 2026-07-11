@@ -31,9 +31,9 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
-import { fileToDataUrl } from "@leanstart/commons";
+import { compressImageToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
-import { useObservacionesStore, puedeVerObservaciones } from "../store/observaciones";
+import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
@@ -99,10 +99,10 @@ function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
       style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
     >
       <div
-        className="flex items-center justify-between gap-3 px-4 md:px-6 py-4"
+        className="flex items-center justify-between gap-3 flex-wrap gap-y-2 px-4 md:px-6 py-4"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
             className="relative w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
@@ -351,15 +351,11 @@ export function EmpresaDetailView({
 
   // El emprendedor solo puede editar/agregar/eliminar mientras el proyecto está en captura
   // o mientras le toca atender observaciones (el mentor o el evaluador se lo devolvieron).
-  const puedeEditarProyecto = !readOnly && (
-    empresa.estado === "borrador" ||
-    empresa.estado === "observaciones_pendientes" ||
-    empresa.estado === "devuelto"
-  );
-  // El mentor solo puede dejar/confirmar comentarios mientras le toca revisar el proyecto.
-  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
-  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
-  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeEditarProyecto = !readOnly && emprendedorPuedeEditar(empresa.estado);
+  // El mentor puede comentar durante toda la mentoría (colaboración en vivo).
+  const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
+  // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
+  const ocultarCorreccionesPendientes = false;
 
   function esPendienteParaMiRol(o: { estado: (typeof observacionesEmpresa)[number]["estado"] }) {
     // Mentor: solo le corresponde revisar lo que el emprendedor ya marcó como resuelto, y solo cuando es su turno.
@@ -373,6 +369,7 @@ export function EmpresaDetailView({
   const productosTienenPendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "producto" && esPendienteParaMiRol(o));
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
   const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente");
+  const hayComentarioGeneral = observacionesEmpresa.some((o) => o.tipoElemento === "general");
 
   function enviarAEvaluacion() {
     actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
@@ -411,7 +408,7 @@ export function EmpresaDetailView({
     }
 
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImageToDataUrl(file, { maxDimension: 512, mimeType: "image/png" });
       setLogoPreview(dataUrl);
       toast.success(`Imagen "${file.name}" lista. No olvides guardar los cambios.`);
     } catch {
@@ -656,6 +653,41 @@ export function EmpresaDetailView({
 
             <p className="text-xs mt-4" style={{ color: "#4A4850" }}>Creada el {empresa.creadaEn}</p>
 
+            {/* Comentario general del mentor sobre la información principal del proyecto */}
+            {(mentorPuedeComentar || (puedeVerObs && hayComentarioGeneral)) && (
+              <div
+                className="mt-4 flex items-center gap-3 rounded-xl px-3.5 py-3"
+                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.18)" }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "rgba(154,98,250,0.14)" }}
+                >
+                  <MessageSquare className="w-4 h-4" style={{ color: "#9A62FA" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold" style={{ color: "#F2F0F7" }}>Comentario general del mentor</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "#7E7C86" }}>
+                    {mentorPuedeComentar
+                      ? "Deja una observación global sobre el nombre, la foto, la descripción y el mercado objetivo."
+                      : "Observación del mentor sobre el nombre, la foto, la descripción y el mercado objetivo."}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <ObservacionesButton
+                    empresaId={id}
+                    tipoElemento="general"
+                    elementoId={id}
+                    puedeComentar={mentorPuedeComentar}
+                    puedeMarcarEnRevision={!readOnly}
+                    puedeVer={puedeVerObs}
+                    ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                    autorNombre={autorNombre}
+                  />
+                </div>
+              </div>
+            )}
+
             {!readOnly && empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
               <>
                 <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
@@ -774,20 +806,33 @@ export function EmpresaDetailView({
         )}
       </div>
 
-      {/* ── Productos ── */}
+      {/* ── Productos y servicios ── */}
       <SectionCard
-        title="Productos"
+        title="Productos y servicios"
         icon={Package}
         tienePendiente={productosTienenPendiente}
         action={
-          puedeEditarProyecto && (empresa.productosList?.length ?? 0) === 0 ? (
-            <Link
-              href={`${basePath}/${id}/productos/nuevo`}
-              className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
-              style={{ color: "#9A62FA", backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.2)" }}
-            >
-              <Plus className="w-3 h-3" /> Agregar producto
-            </Link>
+          puedeEditarProyecto ? (
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href={`${basePath}/${id}/productos/nuevo`}
+                className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
+                style={{ color: "#F2F0F7", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(59,130,246,0.22)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(59,130,246,0.14)")}
+              >
+                <Plus className="w-3 h-3" /> Producto
+              </Link>
+              <Link
+                href={`${basePath}/${id}/productos/nuevo-servicio`}
+                className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
+                style={{ color: "#F2F0F7", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(16,185,129,0.22)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(16,185,129,0.14)")}
+              >
+                <Plus className="w-3 h-3" /> Servicio
+              </Link>
+            </div>
           ) : undefined
         }
       >
@@ -795,19 +840,19 @@ export function EmpresaDetailView({
           const count = empresa.productosList?.length ?? 0;
           return count === 0 ? (
             <p className="text-sm" style={{ color: "#7E7C86" }}>
-              {puedeEditarProyecto ? "No tienes productos registrados aún." : "Esta empresa no tiene productos registrados."}
+              {puedeEditarProyecto ? "No tienes productos ni servicios registrados aún." : "Esta empresa no tiene productos ni servicios registrados."}
             </p>
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-3xl font-bold" style={{ color: "#F2F0F7" }}>{count}</span>
                 <span className="text-sm" style={{ color: "#7E7C86" }}>
-                  {count === 1 ? "producto registrado" : "productos registrados"}
+                  {count === 1 ? "producto o servicio" : "productos y servicios"}
                 </span>
               </div>
               <Link
                 href={`${basePath}/${id}/productos`}
-                className="inline-flex items-center gap-1 text-xs transition-colors"
+                className="inline-flex items-center gap-1 text-xs transition-colors shrink-0"
                 style={{ color: "#9A62FA" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
@@ -885,16 +930,13 @@ export function EmpresaDetailView({
           <DialogTitle className="sr-only">Logo de {empresa.nombre}</DialogTitle>
           <DialogDescription className="sr-only">Vista ampliada del logo de la empresa.</DialogDescription>
           {logoActual && (
-            <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
-              <Image
-                src={logoActual}
-                alt={empresa.nombre}
-                fill
-                className="object-contain rounded-2xl"
-                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                unoptimized
-              />
-            </div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoActual}
+              alt={empresa.nombre}
+              className="block mx-auto w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl"
+              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            />
           )}
         </DialogContent>
       </Dialog>

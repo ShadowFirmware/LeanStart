@@ -16,6 +16,7 @@
     "lint": "npm run lint --workspace=@leanstart/web-shell"
   },
   "devDependencies": {
+    "playwright": "^1.61.1",
     "typescript": "^5.4.0"
   }
 }

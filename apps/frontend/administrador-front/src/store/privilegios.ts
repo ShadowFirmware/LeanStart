@@ -18,6 +18,10 @@ interface PrivilegiosStore {
   tienePrivilegio: (rolId: string, modulo: Modulo, accion: Accion) => boolean;
   toggleAccion: (rolId: string, modulo: Modulo, accion: Accion) => void;
   toggleModuloCompleto: (rolId: string, modulo: Modulo) => void;
+  /** Activa/desactiva una acción en TODOS los módulos a la vez (toggle por columna). */
+  toggleAccionColumna: (rolId: string, accion: Accion) => void;
+  /** Otorga o revoca TODOS los permisos del rol de una sola vez. */
+  setTodos: (rolId: string, activar: boolean) => void;
   inicializarRol: (rolId: string) => void;
   eliminarRol: (rolId: string) => void;
 }
@@ -105,6 +109,34 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         });
       },
 
+      toggleAccionColumna(rolId, accion) {
+        set((state) => {
+          const rolMatriz = state.privilegios[rolId] ?? matriz({});
+          const todosLaTienen = MODULOS.every((m) => (rolMatriz[m] ?? []).includes(accion));
+          const nuevaMatriz = {} as MatrizRol;
+          for (const m of MODULOS) {
+            const actual = rolMatriz[m] ?? [];
+            nuevaMatriz[m] = todosLaTienen
+              ? actual.filter((a) => a !== accion)
+              : actual.includes(accion) ? actual : [...actual, accion];
+          }
+          return { privilegios: { ...state.privilegios, [rolId]: nuevaMatriz } };
+        });
+      },
+
+      setTodos(rolId, activar) {
+        set((state) => ({
+          privilegios: {
+            ...state.privilegios,
+            [rolId]: matriz(
+              activar
+                ? MODULOS.reduce((acc, m) => ({ ...acc, [m]: [...ACCIONES] }), {})
+                : {}
+            ),
+          },
+        }));
+      },
+
       inicializarRol(rolId) {
         if (get().privilegios[rolId]) return;
         set((state) => ({ privilegios: { ...state.privilegios, [rolId]: matriz({}) } }));
@@ -117,6 +149,6 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         });
       },
     }),
-    { name: "leanstart-privilegios" }
+    { name: "leanstart-privilegios", skipHydration: true }
   )
 );

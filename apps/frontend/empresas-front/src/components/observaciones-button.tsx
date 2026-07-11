@@ -5,7 +5,9 @@ import { MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverTrigger, PopoverContent, Textarea, Button } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
+import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useObservacionesStore, type TipoElementoObservacion } from "../store/observaciones";
+import { useEmpresasStore } from "../store/empresas";
 
 const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: string; bg: string }> = {
   pendiente: { label: "Pendiente", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
@@ -48,6 +50,8 @@ export function ObservacionesButton({
   const observaciones = useObservacionesStore((s) => s.observaciones);
   const agregarObservacion = useObservacionesStore((s) => s.agregarObservacion);
   const actualizarEstadoObservacion = useObservacionesStore((s) => s.actualizarEstadoObservacion);
+  const empresaNombre = useEmpresasStore((s) => s.empresas.find((e) => e.id === empresaId)?.nombre ?? "tu proyecto");
+  const agregarNotificacion = useNotificacionesStore((s) => s.agregarNotificacion);
   const [draft, setDraft] = useState("");
 
   const hilo = observaciones.filter(
@@ -60,6 +64,15 @@ export function ObservacionesButton({
   function enviar() {
     if (!draft.trim()) return;
     agregarObservacion({ empresaId, tipoElemento, elementoId, autorNombre, comentario: draft.trim() });
+    // Notifica al emprendedor en vivo (la sincronización entre pestañas la refleja al instante).
+    agregarNotificacion({
+      tipo: "comentario_mentor",
+      destinatario: "emprendedor",
+      titulo: "Nuevo comentario de tu mentor",
+      mensaje: `${autorNombre} dejó un comentario en "${empresaNombre}".`,
+      empresaNombre,
+      creadaEn: "Justo ahora",
+    });
     setDraft("");
     toast.success("Observación agregada.");
   }
@@ -131,6 +144,15 @@ export function ObservacionesButton({
                         type="button"
                         onClick={() => {
                           actualizarEstadoObservacion(o.id, "en_revision");
+                          // Notifica al mentor en vivo que el emprendedor atendió un comentario.
+                          agregarNotificacion({
+                            tipo: "cambio_emprendedor",
+                            destinatario: "mentor",
+                            titulo: "El emprendedor atendió un comentario",
+                            mensaje: `Hay cambios pendientes de revisar en "${empresaNombre}".`,
+                            empresaNombre,
+                            creadaEn: "Justo ahora",
+                          });
                           toast.success("Comentario marcado como listo.");
                         }}
                         className="flex items-center gap-1.5 shrink-0"

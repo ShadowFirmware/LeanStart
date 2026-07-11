@@ -26,6 +26,12 @@ export * from "./components/ui/tooltip";
 // Hooks
 export { useIsMobile } from "./hooks/use-mobile";
 export { usePrivilegios } from "./hooks/use-privilegios";
+export { useCurrentUser } from "./hooks/use-current-user";
+export { useHasHydrated } from "./hooks/use-has-hydrated";
+
+// Modo demo / identidad
+export { DEMO_MODE, DEMO_USERS } from "./lib/demo";
+export type { DemoUser } from "./lib/demo";
 
 // Store
 export { useUsuariosStore } from "./store/usuarios";
@@ -34,6 +40,9 @@ export type { Usuario, EstadoUsuario } from "./store/usuarios";
 // Utils
 export { cn } from "./lib/utils";
 export { fileToDataUrl } from "./lib/file-to-data-url";
+export { compressImageToDataUrl } from "./lib/compress-image";
+export type { CompressImageOptions } from "./lib/compress-image";
+export { createSafeLocalStorage } from "./lib/safe-storage";
 
 // Shared domain types
 export type * from "./types";

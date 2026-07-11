@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Tag, Package, AlignLeft, ListChecks, DollarSign } from "lucide-react";
+import { ArrowLeft, Pencil, Tag, Package, Wrench, AlignLeft, ListChecks, DollarSign, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
 import {
@@ -15,22 +15,23 @@ import {
 import { Input } from "@leanstart/commons";
 import { Textarea } from "@leanstart/commons";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { TipoProducto } from "@leanstart/commons";
-import { useEmpresasStore } from "../store/empresas";
-import { puedeVerObservaciones } from "../store/observaciones";
+import { useEmpresasStore, type Producto } from "../store/empresas";
+import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
+import { ProductoImagenesField } from "../components/producto-imagenes-field";
+import {
+  ServicioPrecioField, validarServicioPrecio, servicioPrecioToStore, storeToServicioPrecio,
+  type ServicioPrecioValue,
+} from "../components/servicio-precio-field";
+import { resumenPrecio, MODALIDAD_PRECIO_LABEL } from "../lib/producto-precio";
 
-const TIPOS: { value: TipoProducto; label: string }[] = [
-  { value: "producto", label: "Producto" },
-  { value: "servicio", label: "Servicio" },
-];
-
-const TIPO_LABELS: Record<TipoProducto, string> = {
-  producto: "Producto",
-  servicio: "Servicio",
+const TIPO_CONFIG: Record<TipoProducto, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+  producto: { label: "Producto", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", icon: Package },
+  servicio: { label: "Servicio", color: "#10B981", bg: "rgba(16,185,129,0.12)", icon: Wrench },
 };
 
 const MAX_NOMBRE = 80;
@@ -40,7 +41,6 @@ const MAX_PRECIO = 9_999_999.99;
 
 const schema = z.object({
   nombre: z.string().min(2, "Mínimo 2 caracteres").max(MAX_NOMBRE, `Máximo ${MAX_NOMBRE} caracteres`),
-  tipo: z.enum(["producto", "servicio"], { error: "Selecciona un tipo" }),
   descripcion: z.string().min(10, "Mínimo 10 caracteres").max(MAX_DESCRIPCION, `Máximo ${MAX_DESCRIPCION} caracteres`),
   caracteristicas: z.string().max(MAX_CARACTERISTICAS, `Máximo ${MAX_CARACTERISTICAS} caracteres`).optional(),
   precio: z.string().optional().refine(
@@ -84,15 +84,12 @@ function SectionCard({ title, icon: Icon, children }: {
   );
 }
 
-function toFormValues(producto: {
-  nombre: string; tipo: TipoProducto; descripcion: string; caracteristicas?: string; precio?: number;
-}): FormValues {
+function toFormValues(p: Producto): FormValues {
   return {
-    nombre: producto.nombre,
-    tipo: producto.tipo,
-    descripcion: producto.descripcion,
-    caracteristicas: producto.caracteristicas ?? "",
-    precio: producto.precio != null ? String(producto.precio) : "",
+    nombre: p.nombre,
+    descripcion: p.descripcion,
+    caracteristicas: p.caracteristicas ?? "",
+    precio: p.precio != null ? String(p.precio) : "",
   };
 }
 
@@ -116,12 +113,20 @@ export function ProductoEditView({
   const producto = empresa?.productosList?.find((p) => p.id === pid);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [imagenes, setImagenes] = useState<string[]>(producto?.imagenes ?? []);
+  const [precioServicio, setPrecioServicio] = useState<ServicioPrecioValue>(() =>
+    storeToServicioPrecio(producto ?? {})
+  );
+  const [precioError, setPrecioError] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  const esServicio = producto?.tipo === "servicio";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     values: producto
       ? toFormValues(producto)
-      : { nombre: "", tipo: "" as TipoProducto, descripcion: "", caracteristicas: "", precio: "" },
+      : { nombre: "", descripcion: "", caracteristicas: "", precio: "" },
   });
 
   if (!empresa || !producto) {
@@ -136,19 +141,19 @@ export function ProductoEditView({
   }
 
   // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
-  const puedeEditar = !readOnly && (
-    empresa.estado === "borrador" ||
-    empresa.estado === "observaciones_pendientes" ||
-    empresa.estado === "devuelto"
-  );
-  // El mentor solo puede comentar mientras le toca revisar el proyecto.
-  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
-  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
-  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeEditar = !readOnly && emprendedorPuedeEditar(empresa.estado);
+  const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
+  const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
 
+  const tipoCfg = TIPO_CONFIG[producto.tipo] ?? TIPO_CONFIG.producto;
+
   function entrarEdicion() {
-    if (producto) form.reset(toFormValues(producto));
+    if (!producto) return;
+    form.reset(toFormValues(producto));
+    setImagenes(producto.imagenes ?? []);
+    setPrecioServicio(storeToServicioPrecio(producto));
+    setPrecioError(null);
     setEditando(true);
   }
 
@@ -158,25 +163,41 @@ export function ProductoEditView({
   }
 
   function onSubmit(values: FormValues) {
+    if (esServicio) {
+      const err = validarServicioPrecio(precioServicio);
+      setPrecioError(err);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
     setLoading(true);
-    const precio = values.precio ? parseFloat(values.precio) : undefined;
-    actualizarProducto(id, pid, {
+    const base = {
       nombre: values.nombre,
-      tipo: values.tipo,
       descripcion: values.descripcion,
       caracteristicas: values.caracteristicas || undefined,
-      precio: isNaN(precio!) ? undefined : precio,
-    });
+    };
+    if (esServicio) {
+      actualizarProducto(id, pid, { ...base, ...servicioPrecioToStore(precioServicio) });
+    } else {
+      const precio = values.precio ? parseFloat(values.precio) : undefined;
+      actualizarProducto(id, pid, {
+        ...base,
+        precio: precio != null && !isNaN(precio) ? precio : undefined,
+        imagenes: imagenes.length > 0 ? imagenes : undefined,
+      });
+    }
     setLoading(false);
     toast.success(`"${values.nombre}" se actualizó correctamente.`);
     setEditando(false);
   }
 
+  // ─────────────────────────── MODO LECTURA ───────────────────────────
   if (!editando || !puedeEditar) {
-    const tipo = TIPO_LABELS[producto.tipo] ?? producto.tipo;
     const caracteristicas = producto.caracteristicas
       ? producto.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
       : [];
+    const imgs = producto.imagenes ?? [];
 
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -198,9 +219,9 @@ export function ProductoEditView({
           <div className="flex items-start gap-4">
             <div
               className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.2)" }}
+              style={{ backgroundColor: tipoCfg.bg, border: `1px solid ${tipoCfg.color}33` }}
             >
-              <Package className="w-6 h-6" style={{ color: "#9A62FA" }} />
+              <tipoCfg.icon className="w-6 h-6" style={{ color: tipoCfg.color }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -208,33 +229,35 @@ export function ProductoEditView({
                   <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>{producto.nombre}</h1>
                   <span
                     className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full mt-2"
-                    style={{ color: "#9A62FA", backgroundColor: "rgba(154,98,250,0.12)" }}
+                    style={{ color: tipoCfg.color, backgroundColor: tipoCfg.bg }}
                   >
-                    {tipo}
+                    {tipoCfg.label}
                   </span>
                 </div>
-                <ObservacionesButton
-                  empresaId={id}
-                  tipoElemento="producto"
-                  elementoId={pid}
-                  puedeComentar={mentorPuedeComentar}
-                  puedeMarcarEnRevision={!readOnly}
-                  puedeVer={puedeVerObs}
-                  ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
-                  autorNombre={autorNombre}
-                />
-                {puedeEditar && (
-                  <button
-                    type="button"
-                    onClick={entrarEdicion}
-                    className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
-                    style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Editar
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  <ObservacionesButton
+                    empresaId={id}
+                    tipoElemento="producto"
+                    elementoId={pid}
+                    puedeComentar={mentorPuedeComentar}
+                    puedeMarcarEnRevision={!readOnly}
+                    puedeVer={puedeVerObs}
+                    ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                    autorNombre={autorNombre}
+                  />
+                  {puedeEditar && (
+                    <button
+                      type="button"
+                      onClick={entrarEdicion}
+                      className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg transition-colors"
+                      style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Editar
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -243,6 +266,31 @@ export function ProductoEditView({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
           {/* Columna principal */}
           <div className="sm:col-span-2 flex flex-col gap-5">
+            {/* Galería (solo productos) */}
+            {!esServicio && (
+              <SectionCard title="Imágenes" icon={ImageIcon}>
+                {imgs.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                    {imgs.map((src, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setLightboxSrc(src)}
+                        className="relative aspect-square rounded-xl overflow-hidden transition-transform hover:-translate-y-0.5"
+                        style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                        title="Ver imagen completa"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt={`${producto.nombre} ${i + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "#4A4850" }}>Sin imágenes registradas.</p>
+                )}
+              </SectionCard>
+            )}
+
             <SectionCard title="Descripción" icon={AlignLeft}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}>
                 {producto.descripcion}
@@ -278,12 +326,11 @@ export function ProductoEditView({
                 <DollarSign className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
                 <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#9A62FA" }}>Precio</span>
               </div>
-              {producto.precio != null ? (
-                <p className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
-                  ${producto.precio.toLocaleString("es-MX")}
+              <p className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>{resumenPrecio(producto)}</p>
+              {esServicio && producto.modalidadPrecio && (
+                <p className="text-[11px] mt-1.5" style={{ color: "#7E7C86" }}>
+                  {MODALIDAD_PRECIO_LABEL[producto.modalidadPrecio]}
                 </p>
-              ) : (
-                <p className="text-sm" style={{ color: "#7E7C86" }}>Sin precio definido</p>
               )}
             </div>
 
@@ -295,14 +342,32 @@ export function ProductoEditView({
                 <Tag className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
                 <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Tipo</span>
               </div>
-              <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{tipo}</p>
+              <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{tipoCfg.label}</p>
             </div>
           </div>
         </div>
+
+        {/* Lightbox de imágenes */}
+        <Dialog open={lightboxSrc !== null} onOpenChange={(open) => { if (!open) setLightboxSrc(null); }}>
+          <DialogContent className="bg-transparent border-0 shadow-none p-0 max-w-[95vw] sm:max-w-[720px] ring-0">
+            <DialogTitle className="sr-only">Imagen de {producto.nombre}</DialogTitle>
+            <DialogDescription className="sr-only">Vista ampliada de la imagen del producto.</DialogDescription>
+            {lightboxSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={lightboxSrc}
+                alt={producto.nombre}
+                className="block mx-auto w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl"
+                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
+  // ─────────────────────────── MODO EDICIÓN ───────────────────────────
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       <button
@@ -326,9 +391,9 @@ export function ProductoEditView({
             <div className="flex items-start gap-4">
               <div
                 className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.2)" }}
+                style={{ backgroundColor: tipoCfg.bg, border: `1px solid ${tipoCfg.color}33` }}
               >
-                <Package className="w-6 h-6" style={{ color: "#9A62FA" }} />
+                <tipoCfg.icon className="w-6 h-6" style={{ color: tipoCfg.color }} />
               </div>
               <div className="flex-1 min-w-0">
                 <FormField
@@ -338,7 +403,7 @@ export function ProductoEditView({
                     <FormItem className="gap-1.5">
                       <div className="flex items-center justify-between">
                         <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
-                          Nombre del producto
+                          Nombre del {tipoCfg.label.toLowerCase()}
                         </FormLabel>
                         <span className="text-xs" style={{ color: "#4A4850" }}>
                           {field.value?.length ?? 0} / {MAX_NOMBRE}
@@ -364,6 +429,13 @@ export function ProductoEditView({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
             {/* Columna principal */}
             <div className="sm:col-span-2 flex flex-col gap-5">
+              {/* Imágenes (solo productos) */}
+              {!esServicio && (
+                <SectionCard title="Imágenes" icon={ImageIcon}>
+                  <ProductoImagenesField value={imagenes} onChange={setImagenes} />
+                </SectionCard>
+              )}
+
               <SectionCard title="Descripción" icon={AlignLeft}>
                 <FormField
                   control={form.control}
@@ -377,7 +449,7 @@ export function ProductoEditView({
                       </div>
                       <FormControl>
                         <Textarea
-                          placeholder="Describe el producto: qué es, cómo funciona, qué problema resuelve."
+                          placeholder="Describe qué es, cómo funciona y qué problema resuelve."
                           className="min-h-28 resize-none text-sm focus-visible:ring-0"
                           style={inputStyle}
                           maxLength={MAX_DESCRIPCION}
@@ -389,6 +461,17 @@ export function ProductoEditView({
                   )}
                 />
               </SectionCard>
+
+              {/* Modalidad de precio (solo servicios) */}
+              {esServicio && (
+                <SectionCard title="Modalidad de precio" icon={DollarSign}>
+                  <ServicioPrecioField
+                    value={precioServicio}
+                    onChange={(v) => { setPrecioServicio(v); if (precioError) setPrecioError(validarServicioPrecio(v)); }}
+                    error={precioError ?? undefined}
+                  />
+                </SectionCard>
+              )}
 
               <SectionCard title="Características" icon={ListChecks}>
                 <FormField
@@ -419,49 +502,52 @@ export function ProductoEditView({
 
             {/* Columna lateral */}
             <div className="flex flex-col gap-5">
-              <div
-                className="rounded-2xl p-5"
-                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
-              >
-                <FormField
-                  control={form.control}
-                  name="precio"
-                  render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
-                    <FormItem className="gap-1.5">
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
-                        <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#9A62FA" }}>
-                          Precio
-                        </FormLabel>
-                      </div>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#4A4850" }}>$</span>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            min="0"
-                            max={MAX_PRECIO}
-                            step="0.01"
-                            placeholder="0.00"
-                            className="h-9 pl-6 text-sm focus-visible:ring-0"
-                            style={inputStyle}
-                            {...field}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v === "" || (parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO && v.length <= 12)) {
-                                field.onChange(v);
-                              }
-                            }}
-                          />
+              {/* Precio simple (solo productos) */}
+              {!esServicio && (
+                <div
+                  className="rounded-2xl p-5"
+                  style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
+                >
+                  <FormField
+                    control={form.control}
+                    name="precio"
+                    render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
+                      <FormItem className="gap-1.5">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
+                          <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#9A62FA" }}>
+                            Precio
+                          </FormLabel>
                         </div>
-                      </FormControl>
-                      <span className="text-xs" style={{ color: "#7E7C86" }}>Opcional</span>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#4A4850" }}>$</span>
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              max={MAX_PRECIO}
+                              step="0.01"
+                              placeholder="0.00"
+                              className="h-9 pl-6 text-sm focus-visible:ring-0"
+                              style={inputStyle}
+                              {...field}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "" || (parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO && v.length <= 12)) {
+                                  field.onChange(v);
+                                }
+                              }}
+                            />
+                          </div>
+                        </FormControl>
+                        <span className="text-xs" style={{ color: "#7E7C86" }}>Opcional</span>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <div
                 className="rounded-2xl p-5"
@@ -471,25 +557,8 @@ export function ProductoEditView({
                   <Tag className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
                   <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Tipo</span>
                 </div>
-                <Controller
-                  control={form.control}
-                  name="tipo"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={inputStyle}>
-                        <SelectValue placeholder="Selecciona el tipo" />
-                      </SelectTrigger>
-                      <SelectContent side="bottom" sideOffset={4}>
-                        {TIPOS.map(({ value, label }) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {form.formState.errors.tipo && (
-                  <p className="text-xs text-destructive mt-1.5">{form.formState.errors.tipo.message}</p>
-                )}
+                <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{tipoCfg.label}</p>
+                <p className="text-[11px] mt-1" style={{ color: "#4A4850" }}>El tipo no se puede cambiar.</p>
               </div>
             </div>
           </div>

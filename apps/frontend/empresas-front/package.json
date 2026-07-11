@@ -12,6 +12,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "@leanstart/commons": "*",
+    "@leanstart/notificaciones-front": "*",
     "lucide-react": "^1.17.0",
     "react-hook-form": "^7.78.0",
     "sonner": "^2.0.7",

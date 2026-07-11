@@ -4,6 +4,7 @@ import "./globals.css";
 import { TooltipProvider } from "@leanstart/commons";
 import { Toaster } from "@leanstart/commons";
 import { Providers } from "@/components/providers";
+import { LiveSync } from "@/components/live-sync";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -28,6 +29,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <LiveSync />
           <TooltipProvider>
             {children}
             <Toaster />

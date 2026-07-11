@@ -1,6 +1,11 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { EstadoEmpresa, GiroEmpresa, EstadoHipotesis, TipoProducto, TipoExperimento } from "@leanstart/commons";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "sonner";
+import { createSafeLocalStorage } from "@leanstart/commons";
+import type {
+  EstadoEmpresa, GiroEmpresa, EstadoHipotesis, TipoProducto, TipoExperimento,
+  ModalidadPrecioServicio, UnidadTiempoServicio,
+} from "@leanstart/commons";
 
 export interface Progreso {
   tieneProducto: boolean;
@@ -65,7 +70,21 @@ export interface Producto {
   tipo: TipoProducto;
   descripcion: string;
   caracteristicas?: string;
+  /** Precio simple (solo aplica a tipo "producto"). */
   precio?: number;
+  /** Imágenes del producto en data URL base64 (solo aplica a tipo "producto"). */
+  imagenes?: string[];
+  // ─── Campos exclusivos de servicios ───
+  /** Modalidad de cobro cuando tipo === "servicio". */
+  modalidadPrecio?: ModalidadPrecioServicio;
+  /** Modalidad "rango": límites inferior y superior. */
+  precioMin?: number;
+  precioMax?: number;
+  /** Modalidad "periodo": precio y unidad de tiempo. */
+  precioPeriodo?: number;
+  unidadTiempo?: UnidadTiempoServicio;
+  /** Modalidad "personalizado": descripción libre del esquema de cobro. */
+  precioPersonalizado?: string;
   creadoEn: string;
 }
 
@@ -84,6 +103,8 @@ export interface Empresa {
   creadaEn: string;
   updatedAt: string;
   progreso: Progreso;
+  /** Id del emprendedor dueño. Se usa para aislar los datos entre usuarios. */
+  ownerId?: string;
   mentorId?: string;
   evaluadorId?: string;
 }
@@ -96,6 +117,7 @@ interface EmpresasStore {
     descripcion: string;
     mercadoObjetivo: string;
     logoUrl?: string;
+    ownerId?: string;
   }) => string;
   actualizarEmpresa: (id: string, data: Partial<Empresa>) => void;
   eliminarEmpresa: (id: string) => void;
@@ -129,6 +151,7 @@ export const useEmpresasStore = create<EmpresasStore>()(
           descripcion: data.descripcion,
           mercadoObjetivo: data.mercadoObjetivo,
           logoUrl: data.logoUrl,
+          ownerId: data.ownerId,
           estado: "borrador",
           productosList: [],
           canvasBloques: 0,
@@ -295,6 +318,20 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
     }),
-    { name: "leanstart-empresas" }
+    // skipHydration: la rehidratación inicial la dispara <LiveSync/> tras montar,
+    // para que servidor y primer render de cliente coincidan (sin mismatch).
+    // storage segura: si se llena la cuota de localStorage no se tumba la app,
+    // solo se avisa (las imágenes ya van comprimidas, así que es un último seguro).
+    {
+      name: "leanstart-empresas",
+      skipHydration: true,
+      storage: createJSONStorage(() =>
+        createSafeLocalStorage(() =>
+          toast.error(
+            "Se alcanzó el límite de almacenamiento local. Elimina algún producto, imagen o empresa para poder guardar más."
+          )
+        )
+      ),
+    }
   )
 );

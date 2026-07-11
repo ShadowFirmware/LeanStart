@@ -8,7 +8,7 @@ import {
   BarChart2, Share2, TrendingDown, TrendingUp, Plus, X,
 } from "lucide-react";
 import { useEmpresasStore, type CanvasData, DEFAULT_CANVAS } from "../store/empresas";
-import { useObservacionesStore, puedeVerObservaciones } from "../store/observaciones";
+import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 
 /* ─── Colores por bloque ─── */
@@ -165,15 +165,11 @@ export function CanvasView({
   const pct = Math.round((canvasBloques / 9) * 100);
 
   // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
-  const puedeEditar = !readOnly && (
-    empresa.estado === "borrador" ||
-    empresa.estado === "observaciones_pendientes" ||
-    empresa.estado === "devuelto"
-  );
-  // El mentor solo puede comentar mientras le toca revisar el proyecto.
-  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
-  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
-  const ocultarCorreccionesPendientes = permitirComentarios && !mentorPuedeComentar;
+  const puedeEditar = !readOnly && emprendedorPuedeEditar(empresa.estado);
+  // El mentor puede comentar durante toda la mentoría (colaboración en vivo).
+  const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
+  // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
+  const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
 
   function tieneComentarioPendiente(key: BlockKey) {

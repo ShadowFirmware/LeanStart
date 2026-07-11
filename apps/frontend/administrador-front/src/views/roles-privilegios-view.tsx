@@ -57,6 +57,9 @@ const SECCIONES: { value: Seccion; label: string }[] = [
   { value: "privilegios", label: "Privilegios" },
 ];
 
+/** Columnas de la matriz de privilegios: módulo (fijo) + una por acción. */
+const GRID_COLS = "minmax(150px, 1.6fr) repeat(6, minmax(64px, 1fr))";
+
 export function RolesPrivilegiosView() {
   const [seccion, setSeccion] = useState<Seccion>("roles");
   const descripciones = useRolesStore((s) => s.descripciones);
@@ -84,6 +87,8 @@ export function RolesPrivilegiosView() {
   const privilegios = usePrivilegiosStore((s) => s.privilegios);
   const toggleAccion = usePrivilegiosStore((s) => s.toggleAccion);
   const toggleModuloCompleto = usePrivilegiosStore((s) => s.toggleModuloCompleto);
+  const toggleAccionColumna = usePrivilegiosStore((s) => s.toggleAccionColumna);
+  const setTodos = usePrivilegiosStore((s) => s.setTodos);
 
   function abrirEditarSistema(rol: Role) {
     setEditSistemaTarget(rol);
@@ -276,23 +281,34 @@ export function RolesPrivilegiosView() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Selector de rol */}
-          <div className="flex items-center gap-1 overflow-x-auto">
+          {/* Selector de rol con ícono + conteo de usuarios */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {ROLES_ORDEN.map((rol) => {
               const cfg = ROLES_CONFIG[rol];
+              const RolIcon = cfg.icon;
               const isActive = rolPrivilegios === rol;
+              const count = usuarios.filter((u) => u.rol === rol).length;
               return (
                 <button
                   key={rol}
                   onClick={() => setRolPrivilegios(rol)}
-                  className="inline-flex items-center gap-1.5 px-3.5 h-8 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0"
                   style={{
-                    backgroundColor: isActive ? "rgba(154,98,250,0.16)" : "rgba(255,255,255,0.04)",
-                    color: isActive ? "#C9A8FE" : "#7E7C86",
-                    border: `1px solid ${isActive ? "rgba(154,98,250,0.3)" : "rgba(255,255,255,0.06)"}`,
+                    backgroundColor: isActive ? `${cfg.color}1F` : "rgba(255,255,255,0.03)",
+                    color: isActive ? "#F2F0F7" : "#7E7C86",
+                    border: `1px solid ${isActive ? `${cfg.color}66` : "rgba(255,255,255,0.06)"}`,
                   }}
                 >
+                  <span
+                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${cfg.color}22` }}
+                  >
+                    <RolIcon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+                  </span>
                   {cfg.label}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#9B9A9F" }}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -302,69 +318,173 @@ export function RolesPrivilegiosView() {
                 <button
                   key={rol.id}
                   onClick={() => setRolPrivilegios(rol.id)}
-                  className="inline-flex items-center gap-1.5 px-3.5 h-8 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0"
                   style={{
-                    backgroundColor: isActive ? "rgba(154,98,250,0.16)" : "rgba(255,255,255,0.04)",
-                    color: isActive ? "#C9A8FE" : "#7E7C86",
-                    border: `1px solid ${isActive ? "rgba(154,98,250,0.3)" : "rgba(255,255,255,0.06)"}`,
+                    backgroundColor: isActive ? `${rol.color}1F` : "rgba(255,255,255,0.03)",
+                    color: isActive ? "#F2F0F7" : "#7E7C86",
+                    border: `1px solid ${isActive ? `${rol.color}66` : "rgba(255,255,255,0.06)"}`,
                   }}
                 >
+                  <span
+                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${rol.color}22` }}
+                  >
+                    <UserCog className="w-3.5 h-3.5" style={{ color: rol.color }} />
+                  </span>
                   {rol.nombre}
                 </button>
               );
             })}
           </div>
 
-          {/* Matriz módulo × acción para el rol seleccionado */}
-          <div className="flex flex-col gap-2">
-            {MODULOS.map((modulo) => {
-              const modCfg = MODULO_CONFIG[modulo];
-              const ModIcon = modCfg.icon;
-              const activas = privilegios[rolPrivilegios]?.[modulo] ?? [];
-              const todoActivo = activas.length === ACCIONES.length;
-              return (
-                <div
-                  key={modulo}
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl px-4 py-3"
-                  style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
-                >
-                  <button
-                    onClick={() => toggleModuloCompleto(rolPrivilegios, modulo)}
-                    className="flex items-center gap-2.5 min-w-[150px] shrink-0 text-left"
-                    title={todoActivo ? "Quitar todos los permisos" : "Otorgar todos los permisos"}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
-                    >
-                      <ModIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
+          {/* Resumen de permisos + acciones rápidas */}
+          {(() => {
+            const rolMatriz = privilegios[rolPrivilegios] ?? {};
+            const total = MODULOS.length * ACCIONES.length;
+            const otorgados = MODULOS.reduce((acc, m) => acc + (rolMatriz[m as Modulo]?.length ?? 0), 0);
+            const pct = Math.round((otorgados / total) * 100);
+            return (
+              <div
+                className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between"
+                style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="flex items-baseline gap-1.5 shrink-0">
+                    <span className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>{otorgados}</span>
+                    <span className="text-sm" style={{ color: "#7E7C86" }}>/ {total}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs" style={{ color: "#7E7C86" }}>Permisos otorgados</span>
+                      <span className="text-xs font-medium" style={{ color: pct === 100 ? "#10B981" : "#9A62FA" }}>{pct}%</span>
                     </div>
-                    <span className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{modCfg.label}</span>
-                  </button>
-
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {ACCIONES.map((accion) => {
-                      const activa = activas.includes(accion);
-                      return (
-                        <button
-                          key={accion}
-                          onClick={() => toggleAccion(rolPrivilegios, modulo, accion)}
-                          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[11px] font-medium transition-colors"
-                          style={{
-                            backgroundColor: activa ? "rgba(154,98,250,0.16)" : "rgba(255,255,255,0.04)",
-                            color: activa ? "#C9A8FE" : "#7E7C86",
-                            border: `1px solid ${activa ? "rgba(154,98,250,0.3)" : "rgba(255,255,255,0.06)"}`,
-                          }}
-                        >
-                          {activa && <Check className="w-3 h-3" />}
-                          {ACCION_LABELS[accion]}
-                        </button>
-                      );
-                    })}
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? "#10B981" : "linear-gradient(90deg,#9A62FA,#AE6CFD)" }} />
+                    </div>
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setTodos(rolPrivilegios, true)}
+                    className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
+                    style={{ color: "#C9A8FE", backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.25)" }}
+                  >
+                    Otorgar todo
+                  </button>
+                  <button
+                    onClick={() => setTodos(rolPrivilegios, false)}
+                    className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
+                    style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  >
+                    Quitar todo
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Matriz interactiva módulo × acción */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="overflow-x-auto">
+              <div className="min-w-[660px]">
+                {/* Encabezado: acciones (clic = alternar columna completa) */}
+                <div
+                  className="grid items-stretch"
+                  style={{ gridTemplateColumns: GRID_COLS, borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <div
+                    className="sticky left-0 z-10 flex items-center px-4 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style={{ color: "#7E7C86", backgroundColor: "#131219" }}
+                  >
+                    Módulo
+                  </div>
+                  {ACCIONES.map((accion) => {
+                    const enTodos = MODULOS.every((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion));
+                    const enAlgunos = MODULOS.some((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion));
+                    return (
+                      <button
+                        key={accion}
+                        onClick={() => toggleAccionColumna(rolPrivilegios, accion)}
+                        className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors"
+                        title={enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
+                        style={{ color: enAlgunos ? "#C9A8FE" : "#7E7C86", backgroundColor: enTodos ? "rgba(154,98,250,0.08)" : "transparent" }}
+                      >
+                        <span className="text-[11px] font-semibold">{ACCION_LABELS[accion]}</span>
+                        <span
+                          className="text-[9px] px-1 rounded-full"
+                          style={{ color: "#6B6975", backgroundColor: "rgba(255,255,255,0.05)" }}
+                        >
+                          {MODULOS.filter((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion)).length}/{MODULOS.length}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Filas de módulos */}
+                {MODULOS.map((modulo, i) => {
+                  const modCfg = MODULO_CONFIG[modulo];
+                  const ModIcon = modCfg.icon;
+                  const activas = privilegios[rolPrivilegios]?.[modulo] ?? [];
+                  const todoActivo = activas.length === ACCIONES.length;
+                  return (
+                    <div
+                      key={modulo}
+                      className="grid items-stretch"
+                      style={{ gridTemplateColumns: GRID_COLS, borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <button
+                        onClick={() => toggleModuloCompleto(rolPrivilegios, modulo)}
+                        className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
+                        style={{ backgroundColor: "#131219" }}
+                        title={todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: todoActivo ? "rgba(154,98,250,0.18)" : "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.16)" }}
+                        >
+                          <ModIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{modCfg.label}</p>
+                          <p className="text-[10px]" style={{ color: activas.length === 0 ? "#6B6975" : "#9A62FA" }}>
+                            {activas.length}/{ACCIONES.length}
+                          </p>
+                        </div>
+                      </button>
+
+                      {ACCIONES.map((accion) => {
+                        const activa = activas.includes(accion);
+                        return (
+                          <button
+                            key={accion}
+                            onClick={() => toggleAccion(rolPrivilegios, modulo, accion)}
+                            className="flex items-center justify-center py-3 group"
+                            aria-pressed={activa}
+                            aria-label={`${activa ? "Quitar" : "Otorgar"} ${ACCION_LABELS[accion]} en ${modCfg.label}`}
+                          >
+                            <span
+                              className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                              style={{
+                                background: activa ? "linear-gradient(135deg,#9A62FA,#AE6CFD)" : "rgba(255,255,255,0.03)",
+                                border: `1px solid ${activa ? "transparent" : "rgba(255,255,255,0.10)"}`,
+                                boxShadow: activa ? "0 2px 8px rgba(154,98,250,0.4)" : "none",
+                              }}
+                            >
+                              {activa ? (
+                                <Check className="w-4 h-4" style={{ color: "#FBFBFC" }} />
+                              ) : (
+                                <span className="w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "#9A62FA" }} />
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}

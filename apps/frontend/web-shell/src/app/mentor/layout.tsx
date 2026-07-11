@@ -11,7 +11,7 @@ export default async function MentorLayout({
 }) {
   const session = await auth();
 
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
     if (!session?.user || session.user.rol !== "mentor") {
       redirect("/login");
     }

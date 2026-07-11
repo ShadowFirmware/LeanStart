@@ -10,7 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  useUsuariosStore,
+  useUsuariosStore, useCurrentUser, useHasHydrated,
 } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
@@ -115,6 +115,10 @@ interface EmpresasListViewProps {
   permitirAsignaciones?: boolean;
   /** Restringe la lista a las empresas con ese rol asignado (mentorId/evaluadorId presente). */
   soloAsignados?: TipoAsignacion;
+  /** Cuando es true, muestra únicamente las empresas cuyo `ownerId` es el del usuario actual. */
+  filtrarPorDueno?: boolean;
+  /** Junto con `soloAsignados`, restringe a las empresas asignadas a este id concreto (mi id). */
+  scopeAsignadoId?: string;
   /** Restringe la lista (y las opciones del filtro de estado) a estos estados. */
   estadosPermitidos?: EstadoEmpresa[];
   /** Muestra un filtro adicional por giro. */
@@ -129,9 +133,13 @@ export function EmpresasListView({
   title = "Mis Empresas",
   permitirAsignaciones = false,
   soloAsignados,
+  filtrarPorDueno = false,
+  scopeAsignadoId,
   estadosPermitidos,
   mostrarFiltroGiro = false,
 }: EmpresasListViewProps = {}) {
+  const hydrated = useHasHydrated();
+  const currentUser = useCurrentUser();
   const todasLasEmpresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
@@ -146,9 +154,14 @@ export function EmpresasListView({
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
 
   const empresas = todasLasEmpresas.filter((e) => {
-    const coincideAsignacion = !soloAsignados || Boolean(e[soloAsignados === "mentor" ? "mentorId" : "evaluadorId"]);
+    const asignadoKey = soloAsignados === "mentor" ? "mentorId" : "evaluadorId";
+    // Aislamiento por dueño: el emprendedor sólo ve sus propias empresas.
+    const coincideDueno = !filtrarPorDueno || e.ownerId === currentUser?.id;
+    const coincideAsignacion = !soloAsignados || Boolean(e[asignadoKey]);
+    // Aislamiento por asignación: el mentor/evaluador sólo ve las asignadas a su id.
+    const coincideAsignadoMio = !scopeAsignadoId || e[asignadoKey] === scopeAsignadoId;
     const coincideEstadoPermitido = !estadosPermitidos || estadosPermitidos.includes(e.estado);
-    return coincideAsignacion && coincideEstadoPermitido;
+    return coincideDueno && coincideAsignacion && coincideAsignadoMio && coincideEstadoPermitido;
   });
 
   function confirmDelete() {
@@ -194,6 +207,28 @@ export function EmpresasListView({
   });
 
   const hayFiltrosActivos = Boolean(busqueda) || filtroEstado !== TODOS_LOS_ESTADOS || filtroGiro !== TODOS_LOS_GIROS;
+
+  // Hasta que el store persistido rehidrate, servidor y primer render de cliente
+  // muestran el mismo esqueleto neutro para evitar mismatches de hidratación.
+  if (!hydrated) {
+    return (
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
+        <div className="mb-8">
+          <div className="h-7 w-40 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+          <div className="h-4 w-28 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-40 rounded-xl animate-pulse"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -532,13 +567,13 @@ export function EmpresasListView({
       {/* Dialog: asignar mentor/evaluador */}
       {permitirAsignaciones && (
         <Dialog open={asignarTarget !== null} onOpenChange={(open) => { if (!open) setAsignarTarget(null); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{asignarTarget?.tipo === "mentor" ? "Asignar mentor" : "Asignar evaluador"}</DialogTitle>
-              <DialogDescription>
-                {asignarTarget
-                  ? `Elige un ${asignarTarget.tipo} activo para "${asignarTarget.empresa.nombre}".`
-                  : ""}
+          <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
+            <DialogHeader className="min-w-0">
+              <DialogTitle className="break-words">{asignarTarget?.tipo === "mentor" ? "Asignar mentor" : "Asignar evaluador"}</DialogTitle>
+              <DialogDescription className="break-words" style={{ overflowWrap: "anywhere" }}>
+                {asignarTarget ? (
+                  <>Elige un {asignarTarget.tipo} activo para <span className="font-medium text-foreground">{asignarTarget.empresa.nombre}</span>.</>
+                ) : ""}
               </DialogDescription>
             </DialogHeader>
             <Select value={usuarioSeleccionado} onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}>

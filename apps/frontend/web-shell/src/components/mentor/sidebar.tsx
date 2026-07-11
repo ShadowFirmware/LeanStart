@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Building2, History, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Building2, History, Bell, LogOut, Menu, X } from "lucide-react";
+import { useNotificacionesStore } from "@leanstart/notificaciones-front";
+import { useHasHydrated } from "@leanstart/commons";
 
 interface MentorSidebarProps {
   userName: string;
@@ -16,11 +18,16 @@ const NAV_ITEMS = [
   { href: "/mentor/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/mentor/empresas", label: "Empresas", icon: Building2 },
   { href: "/mentor/historial", label: "Historial", icon: History },
+  { href: "/mentor/notificaciones", label: "Notificaciones", icon: Bell },
 ];
 
 export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
   const pathname = usePathname();
+  const hydrated = useHasHydrated();
   const [open, setOpen] = useState(false);
+  const noLeidasStore = useNotificacionesStore((s) => s.notificaciones.filter((n) => n.destinatario === "mentor" && !n.leida).length);
+  // Neutro (0) hasta hidratar, para no romper el render del servidor.
+  const noLeidas = hydrated ? noLeidasStore : 0;
 
   // Cierra el drawer al cambiar de ruta
   useEffect(() => {
@@ -57,7 +64,7 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto no-scrollbar">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -72,6 +79,14 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
             >
               <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "#9A62FA" : "currentColor" }} />
               <span className="flex-1 truncate">{label}</span>
+              {href === "/mentor/notificaciones" && noLeidas > 0 && (
+                <span
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
+                  style={{ backgroundColor: "#9A62FA", color: "#FBFBFC" }}
+                >
+                  {noLeidas}
+                </span>
+              )}
             </Link>
           );
         })}

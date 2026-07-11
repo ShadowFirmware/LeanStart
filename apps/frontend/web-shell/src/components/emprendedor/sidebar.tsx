@@ -7,6 +7,7 @@ import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Building2, Bell, LogOut, Menu, X } from "lucide-react";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
+import { useHasHydrated } from "@leanstart/commons";
 
 interface EmprendedorSidebarProps {
   userName: string;
@@ -15,7 +16,10 @@ interface EmprendedorSidebarProps {
 
 export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarProps) {
   const pathname = usePathname();
-  const noLeidas = useNotificacionesStore((s) => s.notificaciones.filter((n) => !n.leida).length);
+  const hydrated = useHasHydrated();
+  const noLeidasStore = useNotificacionesStore((s) => s.notificaciones.filter((n) => (n.destinatario ?? "emprendedor") === "emprendedor" && !n.leida).length);
+  // Neutro (0) hasta hidratar, para no romper el render del servidor.
+  const noLeidas = hydrated ? noLeidasStore : 0;
   const [open, setOpen] = useState(false);
 
   // Cierra el drawer al cambiar de ruta
@@ -59,7 +63,7 @@ export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarPr
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto no-scrollbar">
         {navItems.map(({ href, label, icon: Icon, badge }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (

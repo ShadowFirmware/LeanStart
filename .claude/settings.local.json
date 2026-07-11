@@ -39,7 +39,8 @@
       "Bash(npm install *)",
       "Bash(tee /tmp/npm-install.log)",
       "PowerShell(Get-Process *)",
-      "PowerShell(Stop-Process *)"
+      "PowerShell(Stop-Process *)",
+      "Bash(npm run *)"
     ]
   }
 }

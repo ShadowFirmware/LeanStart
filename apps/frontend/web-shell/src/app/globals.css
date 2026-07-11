@@ -125,6 +125,69 @@
   }
 }
 
+@layer utilities {
+  /* Oculta por completo la barra de scroll (se mantiene el scroll funcional) */
+  .no-scrollbar {
+    -ms-overflow-style: none;   /* IE / Edge legacy */
+    scrollbar-width: none;      /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;              /* Chrome / Safari / Edge */
+  }
+}
+
+/* ─── Scrollbars finos y temáticos en toda la app ───
+   Reemplaza la barra gruesa por defecto del SO (fea en Windows) por una
+   delgada, translúcida y en el morado de la marca. La utilidad .no-scrollbar
+   la sigue ocultando donde no la queremos (p. ej. la navegación lateral). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 98, 250, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(154, 98, 250, 0.3);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(154, 98, 250, 0.5);
+}
+
+/* ─── Impresión de reportes ───
+   Al imprimir (o "Guardar como PDF"), solo se muestra el documento marcado con
+   .print-area; el resto de la interfaz se oculta. */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+  .print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
+
 /* ─── Next.js dev tools indicator: escalar para que se lea mejor ───
    Solo aplica en desarrollo (el elemento <nextjs-portal> solo existe en dev).
    Si Next.js cambia este nombre en una version futura, este selector deja de aplicar

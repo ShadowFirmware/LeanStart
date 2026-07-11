@@ -1,21 +1,54 @@
 "use client";
 
-import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2 } from "lucide-react";
-import { useNotificacionesStore, type TipoNotificacion } from "../store/notificaciones";
+import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine } from "lucide-react";
+import { useHasHydrated } from "@leanstart/commons";
+import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotificacion } from "../store/notificaciones";
 
 const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: string; bg: string; label: string }> = {
   comentario_mentor:   { icon: MessageSquare,  color: "#3B82F6", bg: "rgba(59,130,246,0.12)",   label: "Comentario de mentor" },
+  cambio_emprendedor:  { icon: PencilLine,     color: "#9A62FA", bg: "rgba(154,98,250,0.12)",   label: "Cambio del emprendedor" },
   enviado_evaluacion:  { icon: ClipboardCheck, color: "#F59E0B", bg: "rgba(245,158,11,0.12)",   label: "Enviado a evaluación" },
   proyecto_publicado:  { icon: CheckCircle2,   color: "#10B981", bg: "rgba(16,185,129,0.12)",   label: "Publicado" },
   proyecto_devuelto:   { icon: RotateCcw,      color: "#EF4444", bg: "rgba(239,68,68,0.12)",    label: "Devuelto" },
 };
 
-export function NotificacionesView() {
-  const notificaciones = useNotificacionesStore((s) => s.notificaciones);
-  const marcarLeida = useNotificacionesStore((s) => s.marcarLeida);
-  const marcarTodasLeidas = useNotificacionesStore((s) => s.marcarTodasLeidas);
+interface NotificacionesViewProps {
+  /** Rol cuyas notificaciones se muestran. */
+  destinatario?: DestinatarioNotificacion;
+}
 
+export function NotificacionesView({ destinatario = "emprendedor" }: NotificacionesViewProps = {}) {
+  const hydrated = useHasHydrated();
+  const todas = useNotificacionesStore((s) => s.notificaciones);
+  const marcarLeida = useNotificacionesStore((s) => s.marcarLeida);
+
+  const notificaciones = todas.filter((n) => (n.destinatario ?? "emprendedor") === destinatario);
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
+
+  function marcarTodasLeidas() {
+    notificaciones.filter((n) => !n.leida).forEach((n) => marcarLeida(n.id));
+  }
+
+  // Esqueleto neutro hasta rehidratar el store persistido (evita mismatch de hidratación).
+  if (!hydrated) {
+    return (
+      <div className="p-4 md:p-8 max-w-2xl mx-auto">
+        <div className="mb-8">
+          <div className="h-7 w-48 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+          <div className="h-4 w-24 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+        </div>
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-20 rounded-xl animate-pulse"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">

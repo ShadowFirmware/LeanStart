@@ -6,3 +6,7 @@ export { RolesPrivilegiosView } from "./views/roles-privilegios-view";
 export { CriteriosEvaluacionView } from "./views/criterios-evaluacion-view";
 export { ViabilidadView } from "./views/viabilidad-view";
 export { ReportesView } from "./views/reportes-view";
+
+// Stores (para rehidratación centralizada en web-shell)
+export { useEvaluacionesStore } from "./store/evaluaciones";
+export { usePrivilegiosStore } from "./store/privilegios";

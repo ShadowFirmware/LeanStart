@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { ArrowLeft, Package, ImageIcon } from "lucide-react";
+import { ArrowLeft, Wrench, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
 import {
@@ -16,21 +16,19 @@ import { Input } from "@leanstart/commons";
 import { Textarea } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useEmpresasStore } from "../store/empresas";
-import { ProductoImagenesField } from "../components/producto-imagenes-field";
+import {
+  ServicioPrecioField, SERVICIO_PRECIO_VACIO, validarServicioPrecio, servicioPrecioToStore,
+  type ServicioPrecioValue,
+} from "../components/servicio-precio-field";
 
 const MAX_NOMBRE = 80;
 const MAX_DESCRIPCION = 500;
 const MAX_CARACTERISTICAS = 500;
-const MAX_PRECIO = 9_999_999.99;
 
 const schema = z.object({
   nombre: z.string().min(2, "Mínimo 2 caracteres").max(MAX_NOMBRE, `Máximo ${MAX_NOMBRE} caracteres`),
   descripcion: z.string().min(10, "Mínimo 10 caracteres").max(MAX_DESCRIPCION, `Máximo ${MAX_DESCRIPCION} caracteres`),
   caracteristicas: z.string().max(MAX_CARACTERISTICAS, `Máximo ${MAX_CARACTERISTICAS} caracteres`).optional(),
-  precio: z.string().optional().refine(
-    (v) => !v || (!isNaN(parseFloat(v)) && parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO),
-    `El precio debe estar entre 0 y ${MAX_PRECIO.toLocaleString("es-MX")}`
-  ),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -43,31 +41,36 @@ const inputStyle = {
 
 const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
 
-export function ProductoNewView() {
+export function ServicioNewView() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const agregarProducto = useEmpresasStore((s) => s.agregarProducto);
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const [loading, setLoading] = useState(false);
-  const [imagenes, setImagenes] = useState<string[]>([]);
+  const [precio, setPrecio] = useState<ServicioPrecioValue>(SERVICIO_PRECIO_VACIO);
+  const [precioError, setPrecioError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nombre: "", descripcion: "", caracteristicas: "", precio: "" },
+    defaultValues: { nombre: "", descripcion: "", caracteristicas: "" },
   });
 
   if (!empresa) return null;
 
   function onSubmit(values: FormValues) {
+    const err = validarServicioPrecio(precio);
+    setPrecioError(err);
+    if (err) {
+      toast.error(err);
+      return;
+    }
     setLoading(true);
-    const precio = values.precio ? parseFloat(values.precio) : undefined;
     agregarProducto(id, {
       nombre: values.nombre,
-      tipo: "producto",
+      tipo: "servicio",
       descripcion: values.descripcion,
       caracteristicas: values.caracteristicas || undefined,
-      precio: precio != null && !isNaN(precio) ? precio : undefined,
-      imagenes: imagenes.length > 0 ? imagenes : undefined,
+      ...servicioPrecioToStore(precio),
     });
     toast.success(`"${values.nombre}" fue agregado correctamente.`);
     router.push(`/emprendedor/empresas/${id}/productos`);
@@ -91,14 +94,14 @@ export function ProductoNewView() {
       <div className="flex items-center gap-3 mb-8">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-          style={{ backgroundColor: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.2)" }}
+          style={{ backgroundColor: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.2)" }}
         >
-          <Package className="w-5 h-5" style={{ color: "#3B82F6" }} />
+          <Wrench className="w-5 h-5" style={{ color: "#10B981" }} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Nuevo producto</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Nuevo servicio</h1>
           <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
-            Un bien tangible de <span style={{ color: "#F2F0F7" }}>{empresa.nombre}</span>.
+            Un servicio que ofrece <span style={{ color: "#F2F0F7" }}>{empresa.nombre}</span>.
           </p>
         </div>
       </div>
@@ -115,7 +118,7 @@ export function ProductoNewView() {
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
                     <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
-                      Nombre del producto
+                      Nombre del servicio
                     </FormLabel>
                     <span className="text-xs" style={{ color: "#4A4850" }}>
                       {field.value?.length ?? 0} / {MAX_NOMBRE}
@@ -123,7 +126,7 @@ export function ProductoNewView() {
                   </div>
                   <FormControl>
                     <Input
-                      placeholder="Ej. Botella inteligente 500ml"
+                      placeholder="Ej. Consultoría de marca personalizada"
                       className="h-9 text-sm focus-visible:ring-0"
                       style={inputStyle}
                       maxLength={MAX_NOMBRE}
@@ -134,17 +137,6 @@ export function ProductoNewView() {
                 </FormItem>
               )}
             />
-          </div>
-
-          {/* Imágenes */}
-          <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-3" style={cardStyle}>
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
-              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
-                Imágenes del producto
-              </span>
-            </div>
-            <ProductoImagenesField value={imagenes} onChange={setImagenes} />
           </div>
 
           {/* Descripción */}
@@ -164,7 +156,7 @@ export function ProductoNewView() {
                   </div>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe el producto: qué es, cómo funciona, qué problema resuelve."
+                      placeholder="Describe el servicio: qué incluye, cómo se entrega, qué problema resuelve."
                       className="min-h-28 resize-none text-sm focus-visible:ring-0"
                       style={inputStyle}
                       maxLength={MAX_DESCRIPCION}
@@ -174,6 +166,21 @@ export function ProductoNewView() {
                   <FormMessage className="text-xs" />
                 </FormItem>
               )}
+            />
+          </div>
+
+          {/* Modalidad de precio */}
+          <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-4" style={cardStyle}>
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" style={{ color: "#9A62FA" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                Modalidad de precio
+              </span>
+            </div>
+            <ServicioPrecioField
+              value={precio}
+              onChange={(v) => { setPrecio(v); if (precioError) setPrecioError(validarServicioPrecio(v)); }}
+              error={precioError ?? undefined}
             />
           </div>
 
@@ -194,53 +201,12 @@ export function ProductoNewView() {
                   </div>
                   <FormControl>
                     <Textarea
-                      placeholder={"Ej.\nMaterial resistente al agua\nCarga rápida\nCompatible con iOS y Android"}
+                      placeholder={"Ej.\nAtención personalizada\nEntrega en 48h\nRevisiones incluidas"}
                       className="min-h-28 resize-none text-sm focus-visible:ring-0"
                       style={inputStyle}
                       maxLength={MAX_CARACTERISTICAS}
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Precio (opcional) */}
-          <div className="rounded-2xl p-4 md:p-6" style={cardStyle}>
-            <FormField
-              control={form.control}
-              name="precio"
-              render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
-                <FormItem className="gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
-                      Precio
-                    </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>Opcional</span>
-                  </div>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#4A4850" }}>$</span>
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        max={MAX_PRECIO}
-                        step="0.01"
-                        placeholder="0.00"
-                        className="h-9 pl-6 text-sm focus-visible:ring-0"
-                        style={inputStyle}
-                        {...field}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO && v.length <= 12)) {
-                            field.onChange(v);
-                          }
-                        }}
-                      />
-                    </div>
                   </FormControl>
                   <FormMessage className="text-xs" />
                 </FormItem>
@@ -265,7 +231,7 @@ export function ProductoNewView() {
               className="h-9 px-6 text-sm font-semibold border-0"
               style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
             >
-              {loading ? "Guardando..." : "Guardar producto"}
+              {loading ? "Guardando..." : "Guardar servicio"}
             </Button>
           </div>
 

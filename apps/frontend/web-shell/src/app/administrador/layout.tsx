@@ -11,7 +11,7 @@ export default async function AdministradorLayout({
 }) {
   const session = await auth();
 
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
     if (!session?.user || session.user.rol !== "administrador") {
       redirect("/login");
     }

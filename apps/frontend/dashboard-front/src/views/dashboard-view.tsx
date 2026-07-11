@@ -3,7 +3,7 @@
 import { Building2, ClipboardCheck, TrendingUp, Plus, CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@leanstart/commons";
+import { Button, useCurrentUser, useHasHydrated } from "@leanstart/commons";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 
@@ -93,7 +93,13 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
 }
 
 export function DashboardView() {
-  const empresas = useEmpresasStore((s) => s.empresas);
+  const hydrated = useHasHydrated();
+  const currentUser = useCurrentUser();
+  const todasLasEmpresas = useEmpresasStore((s) => s.empresas);
+  // Sólo las empresas del emprendedor actual, y neutro hasta rehidratar.
+  const empresas = hydrated
+    ? todasLasEmpresas.filter((e) => e.ownerId === currentUser?.id)
+    : [];
   const recientes = empresas.slice(0, 3);
 
   return (

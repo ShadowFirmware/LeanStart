@@ -40,6 +40,12 @@ export type GiroEmpresa =
 // Tipos de producto
 export type TipoProducto = 'producto' | 'servicio';
 
+// Modalidad de precio para servicios
+export type ModalidadPrecioServicio = 'rango' | 'periodo' | 'personalizado';
+
+// Unidad de tiempo para servicios cobrados por periodo
+export type UnidadTiempoServicio = 'dia' | 'semana' | 'mes' | 'anio';
+
 // Tipos de experimento
 export type TipoExperimento =
   | 'encuesta'

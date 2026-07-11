@@ -7,6 +7,7 @@ export { HipotesisNewView } from "./views/hipotesis-new-view";
 export { HipotesisEditView } from "./views/hipotesis-edit-view";
 export { ProductosListView } from "./views/productos-list-view";
 export { ProductoNewView } from "./views/producto-new-view";
+export { ServicioNewView } from "./views/servicio-new-view";
 export { ProductoEditView } from "./views/producto-edit-view";
 
 // Store

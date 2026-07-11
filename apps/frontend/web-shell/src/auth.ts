@@ -3,12 +3,25 @@ import Credentials from "next-auth/providers/credentials";
 import type { Role } from "@leanstart/commons";
 import type { Privilegio } from "@/types/next-auth";
 
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+// El secreto NUNCA se hornea en el bundle. En modo demo (explícitamente inseguro)
+// se permite un secreto efímero; fuera de demo es obligatorio definir AUTH_SECRET,
+// de lo contrario cualquiera podría firmar un JWT con rol "administrador".
+const authSecret =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  (isDemoMode ? "demo-mode-insecure-secret-not-for-production" : undefined);
+
+if (!authSecret) {
+  throw new Error(
+    "AUTH_SECRET no está definido. Define AUTH_SECRET (o NEXTAUTH_SECRET) en el entorno, " +
+      "o activa NEXT_PUBLIC_DEMO_MODE=true para el modo demo."
+  );
+}
+
 export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
-  secret:
-    process.env.AUTH_SECRET ??
-    process.env.NEXTAUTH_SECRET ??
-    // Fallback SOLO para desarrollo. En producción AUTH_SECRET DEBE estar definido.
-    "dev-only-leanstart-secret-change-me",
+  secret: authSecret,
   providers: [
     Credentials({
       credentials: {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Building2, ClipboardList, CheckCircle2, GraduationCap } from "lucide-react";
 import { useEmpresasStore } from "@leanstart/empresas-front";
+import { useHasHydrated } from "@leanstart/commons";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 
 const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
@@ -34,7 +35,9 @@ const ESTADOS_EN_MENTORIA: EstadoEmpresa[] = ["en_mentoria", "observaciones_pend
 const ESTADOS_REQUIEREN_ACCION: EstadoEmpresa[] = ["en_mentoria", "observaciones_atendidas"];
 
 export function MentorDashboardView() {
-  const empresas = useEmpresasStore((s) => s.empresas);
+  const hydrated = useHasHydrated();
+  const empresasRaw = useEmpresasStore((s) => s.empresas);
+  const empresas = hydrated ? empresasRaw : [];
 
   const asignados = empresas.filter((e) => e.mentorId);
   const enMentoria = asignados.filter((e) => ESTADOS_EN_MENTORIA.includes(e.estado));

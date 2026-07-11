@@ -8,9 +8,9 @@ import {
   CheckCircle2, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fileToDataUrl } from "@leanstart/commons";
+import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
-import { puedeVerObservaciones } from "../store/observaciones";
+import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
@@ -184,7 +184,9 @@ export function HipotesisEditView({
       return;
     }
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = file.type.startsWith("image/")
+        ? await compressImageToDataUrl(file)
+        : await fileToDataUrl(file);
       setEvidenciaDataUrl(dataUrl);
       setEvidenciaNombre(file.name);
       toast.success(`Archivo "${file.name}" cargado.`);
@@ -270,15 +272,11 @@ export function HipotesisEditView({
   // Una vez que el mentor se pronuncia, el emprendedor ya no puede editar esta hipótesis.
   const bloqueadaPorMentor = hipotesis.estado === "validada" || hipotesis.estado === "invalidada";
   // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
-  const puedeEditarProyecto = !readOnly && (
-    empresa.estado === "borrador" ||
-    empresa.estado === "observaciones_pendientes" ||
-    empresa.estado === "devuelto"
-  );
-  // El mentor solo puede comentar/validar mientras le toca revisar el proyecto.
-  const mentorPuedeComentar = permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas");
-  // El mentor no debe ver las correcciones del emprendedor (en_revision) hasta que este envíe el proyecto de nuevo.
-  const ocultarCorreccionesPendientes = Boolean(permitirComentarios) && !mentorPuedeComentar;
+  const puedeEditarProyecto = !readOnly && emprendedorPuedeEditar(empresa.estado);
+  // El mentor puede comentar/validar durante toda la mentoría (colaboración en vivo).
+  const mentorPuedeComentar = Boolean(permitirComentarios) && mentorPuedeComentarEnEstado(empresa.estado);
+  // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
+  const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, Boolean(permitirComentarios));
 
   if (!editando || !puedeEditarProyecto || bloqueadaPorMentor) {
@@ -387,7 +385,7 @@ export function HipotesisEditView({
                           <img
                             src={hipotesis.resultados.evidencia}
                             alt={hipotesis.resultados.evidenciaNombre || "Evidencia"}
-                            className="w-20 h-20 rounded-lg object-cover shrink-0"
+                            className="w-auto h-auto max-w-[160px] max-h-[160px] rounded-lg object-contain shrink-0"
                             style={{ border: "1px solid rgba(255,255,255,0.08)" }}
                           />
                         ) : (

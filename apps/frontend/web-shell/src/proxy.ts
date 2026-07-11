@@ -18,8 +18,9 @@ const ROLE_PREFIXES: Record<Role, string> = {
 };
 
 export default auth((req) => {
-  // Bypass de autenticación en desarrollo — remover cuando el backend esté listo
-  if (process.env.NODE_ENV === "development") {
+  // Bypass de autenticación SOLO en modo demo explícito (NEXT_PUBLIC_DEMO_MODE=true).
+  // Nunca depende de NODE_ENV: un despliegue sin el flag exige sesión real.
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
     return NextResponse.next();
   }
 
