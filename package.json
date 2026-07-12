@@ -8,7 +8,8 @@
     "apps/frontend/empresas-front",
     "apps/frontend/notificaciones-front",
     "apps/frontend/administrador-front",
-    "apps/frontend/mentor-front"
+    "apps/frontend/mentor-front",
+    "apps/frontend/evaluador-front"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@leanstart/web-shell",

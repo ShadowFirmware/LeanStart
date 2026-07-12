@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useUsuariosStore } from "@leanstart/commons";
-import { useEvaluacionesStore, usePrivilegiosStore } from "@leanstart/administrador-front";
+import { useEvaluacionesStore, usePrivilegiosStore, useReportesGeneradosStore } from "@leanstart/administrador-front";
 
 /**
  * Sincronización en vivo entre pestañas/ventanas del mismo navegador + rehidratación inicial.
@@ -27,6 +27,7 @@ const STORES = [
   { key: "leanstart-usuarios", store: useUsuariosStore },
   { key: "leanstart-evaluaciones", store: useEvaluacionesStore },
   { key: "leanstart-privilegios", store: usePrivilegiosStore },
+  { key: "leanstart-reportes-generados", store: useReportesGeneradosStore },
 ] as const;
 
 export function LiveSync() {

@@ -7,18 +7,18 @@ import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Building2, History, LogOut, Menu, X } from "lucide-react";
 
-interface MentorSidebarProps {
+interface EvaluadorSidebarProps {
   userName: string;
   userEmail: string;
 }
 
 const NAV_ITEMS = [
-  { href: "/mentor/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mentor/empresas", label: "Empresas", icon: Building2 },
-  { href: "/mentor/historial", label: "Historial", icon: History },
+  { href: "/evaluador/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/evaluador/empresas", label: "Empresas", icon: Building2 },
+  { href: "/evaluador/historial", label: "Historial", icon: History },
 ];
 
-export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
+export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -42,7 +42,7 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
         className="h-16 flex items-center justify-between px-5 border-b shrink-0"
         style={{ borderColor: "rgba(255,255,255,0.06)" }}
       >
-        <Link href="/mentor/dashboard" onClick={() => setOpen(false)}>
+        <Link href="/evaluador/dashboard" onClick={() => setOpen(false)}>
           <Image src="/logo.png" alt="LeanStart" width={110} height={110} style={{ height: "auto" }} unoptimized />
         </Link>
         <button
@@ -131,7 +131,7 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
         >
           <Menu className="w-4 h-4" />
         </button>
-        <Link href="/mentor/dashboard" className="flex items-center">
+        <Link href="/evaluador/dashboard" className="flex items-center">
           <Image src="/logo.png" alt="LeanStart" width={90} height={90} style={{ height: "auto" }} unoptimized />
         </Link>
         <div className="w-9 h-9" />

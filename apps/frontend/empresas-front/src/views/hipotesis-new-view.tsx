@@ -26,7 +26,7 @@ const TIPOS_EXPERIMENTO: { value: TipoExperimento; label: string; descripcion: s
 ];
 
 const MAX_TITULO = 120;
-const MAX_TEXTAREA = 600;
+const MAX_TEXTAREA = 400;
 
 /* ─── Indicador de pasos ─── */
 const PASOS = [

@@ -66,7 +66,7 @@ function MoneyInput({
           const s = sanitizePrecio(e.target.value);
           if (s !== null) onChange(s);
         }}
-        className="w-full h-9 pl-6 pr-3 rounded-md text-sm outline-none"
+        className="w-full h-9 pl-6 pr-3 rounded-md text-sm outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         style={inputStyle}
       />
     </div>

@@ -1,34 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, FileText, LayoutTemplate, Sparkles, MessageSquare, ChevronRight, RefreshCw } from "lucide-react";
-import { Textarea } from "@leanstart/commons";
+import {
+  BarChart3, FileText, LayoutTemplate, Sparkles, Search, Plus,
+  ChevronRight, ChevronLeft, History as HistoryIcon,
+} from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@leanstart/commons";
 import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
-import type { EstadoEmpresa } from "@leanstart/commons";
 import { useCriteriosStore } from "../store/criterios";
 import { useViabilidadStore } from "../store/viabilidad";
 import { useEvaluacionesStore } from "../store/evaluaciones";
+import { useReportesGeneradosStore, type TipoReporte } from "../store/reportes-generados";
 import { calcularReporte, GIRO_LABELS } from "../lib/reporte";
 import { ReporteDocumento } from "../components/reporte-documento";
 
 const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
-const MAX_COMENTARIO = 600;
+const TODOS_LOS_TIPOS = "todos";
 
-const ESTADO_LABEL: Record<EstadoEmpresa, { label: string; color: string }> = {
-  borrador: { label: "Borrador", color: "#9A62FA" },
-  pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B" },
-  en_mentoria: { label: "En mentoría", color: "#3B82F6" },
-  observaciones_pendientes: { label: "Observaciones pendientes", color: "#EF4444" },
-  observaciones_atendidas: { label: "Obs. atendidas", color: "#10B981" },
-  pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#F59E0B" },
-  en_evaluacion: { label: "En evaluación", color: "#3B82F6" },
-  evaluado: { label: "Evaluado", color: "#10B981" },
-  publicado: { label: "Publicado", color: "#10B981" },
-  devuelto: { label: "Devuelto", color: "#EF4444" },
+const TIPO_CONFIG: Record<TipoReporte, { label: string; hint: string; icon: React.ElementType }> = {
+  boleta: { label: "Boleta de evaluación", hint: "Criterios, calificación y viabilidad", icon: FileText },
+  canvas: { label: "Reporte Lean Canvas", hint: "Bloques del canvas y comentarios del evaluador", icon: LayoutTemplate },
 };
 
 /** Logo de la empresa (o inicial) con tamaño configurable. */
-function EmpresaLogo({ empresa, size = 44 }: { empresa: Empresa; size?: number }) {
+function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }) {
   if (empresa.logoUrl) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
@@ -55,244 +53,282 @@ export function ReportesView() {
   const criterios = useCriteriosStore((s) => s.criterios);
   const niveles = useViabilidadStore((s) => s.niveles);
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
-
   const evaluaciones = useEvaluacionesStore((s) => s.evaluaciones);
-  const setPuntaje = useEvaluacionesStore((s) => s.setPuntaje);
-  const setComentario = useEvaluacionesStore((s) => s.setComentario);
+
+  const historial = useReportesGeneradosStore((s) => s.reportes);
+  const registrarReporte = useReportesGeneradosStore((s) => s.registrarReporte);
 
   const empresasOrdenadas = useMemo(
     () => [...empresas].sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })),
     [empresas]
   );
 
-  const [empresaId, setEmpresaId] = useState<string>("");
-  const [reporteActivo, setReporteActivo] = useState<"boleta" | "canvas" | null>(null);
+  // Filtros del historial
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<string>(TODOS_LOS_TIPOS);
 
-  const empresa = empresas.find((e) => e.id === empresaId);
-  const evaluacion = empresaId ? evaluaciones[empresaId] : undefined;
-  const comentario = evaluacion?.comentarioEvaluador ?? "";
+  // Diálogo "Generar reporte"
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [paso, setPaso] = useState<"tipo" | "empresa">("tipo");
+  const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoReporte | null>(null);
+  const [busquedaEmpresa, setBusquedaEmpresa] = useState("");
 
-  const calculo = useMemo(
-    () => (empresa ? calcularReporte(empresa, evaluacion, criterios, niveles, pesoEvaluacion) : null),
-    [empresa, evaluacion, criterios, niveles, pesoEvaluacion]
+  // Documento activo (recién generado o reabierto desde el historial)
+  const [reporteActivo, setReporteActivo] = useState<{ tipo: TipoReporte; empresaId: string } | null>(null);
+
+  const empresaActiva = reporteActivo ? empresas.find((e) => e.id === reporteActivo.empresaId) : undefined;
+  const evaluacionActiva = reporteActivo ? evaluaciones[reporteActivo.empresaId] : undefined;
+  const calculoActivo = useMemo(
+    () => (empresaActiva ? calcularReporte(empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion) : null),
+    [empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion]
   );
 
+  function abrirDialogo() {
+    setPaso("tipo");
+    setTipoSeleccionado(null);
+    setBusquedaEmpresa("");
+    setDialogOpen(true);
+  }
+
+  function elegirTipo(tipo: TipoReporte) {
+    setTipoSeleccionado(tipo);
+    setPaso("empresa");
+  }
+
+  function elegirEmpresa(empresa: Empresa) {
+    if (!tipoSeleccionado) return;
+    registrarReporte({ empresaId: empresa.id, empresaNombre: empresa.nombre, tipo: tipoSeleccionado });
+    setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id });
+    setDialogOpen(false);
+  }
+
+  const empresasFiltradasDialogo = empresasOrdenadas.filter((e) =>
+    e.nombre.toLowerCase().includes(busquedaEmpresa.toLowerCase())
+  );
+
+  const historialFiltrado = historial.filter((r) => {
+    const coincideTipo = filtroTipo === TODOS_LOS_TIPOS || r.tipo === filtroTipo;
+    const coincideBusqueda = r.empresaNombre.toLowerCase().includes(busqueda.toLowerCase());
+    return coincideTipo && coincideBusqueda;
+  });
+
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.2)" }}>
-          <BarChart3 className="w-5 h-5" style={{ color: "#9A62FA" }} />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.2)" }}>
+            <BarChart3 className="w-5 h-5" style={{ color: "#9A62FA" }} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Reportes</h1>
+            <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
+              Consulta el historial de reportes generados o crea uno nuevo para una empresa.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Reportes</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
-            Evalúa una empresa y genera su boleta de evaluación o el reporte de Lean Canvas.
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={abrirDialogo}
+          className="inline-flex items-center justify-center gap-2 text-sm font-medium px-4 h-10 rounded-xl border-0 shrink-0 transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+        >
+          <Plus className="w-4 h-4" /> Generar reporte
+        </button>
       </div>
 
-      {!empresa || !calculo ? (
-        /* Selección de empresa como tarjetas */
-        empresasOrdenadas.length === 0 ? (
-          <div className="rounded-2xl p-10 flex flex-col items-center text-center" style={cardStyle}>
-            <Sparkles className="w-9 h-9 mb-3" style={{ color: "#4A4850" }} />
-            <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>No hay empresas registradas</p>
-            <p className="text-sm" style={{ color: "#7E7C86" }}>Cuando existan empresas, aparecerán aquí para evaluarlas.</p>
+      {/* Filtros del historial */}
+      {historial.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+            <input
+              type="text"
+              placeholder="Buscar por empresa..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+            />
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm" style={{ color: "#7E7C86" }}>Elige una empresa para capturar su evaluación y generar reportes.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {empresasOrdenadas.map((e) => {
-                const est = ESTADO_LABEL[e.estado];
-                return (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onClick={() => setEmpresaId(e.id)}
-                    className="rounded-2xl p-4 flex items-center gap-3 text-left transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9A62FA]"
-                    style={cardStyle}
-                    onMouseEnter={(ev) => (ev.currentTarget.style.borderColor = "rgba(154,98,250,0.35)")}
-                    onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
-                  >
-                    <EmpresaLogo empresa={e} size={48} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>{e.nombre}</p>
-                      <p className="text-xs mt-0.5 truncate" style={{ color: "#7E7C86" }}>{GIRO_LABELS[e.giro]}</p>
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[10px] font-medium mt-1.5 px-2 py-0.5 rounded-full"
-                        style={{ color: est.color, backgroundColor: `${est.color}1F` }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: est.color }} />
-                        {est.label}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "#4A4850" }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )
-      ) : (
-        <>
-        {/* Empresa seleccionada */}
-        <div className="rounded-2xl p-4 flex items-center gap-3" style={cardStyle}>
-          <EmpresaLogo empresa={empresa} size={44} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>{empresa.nombre}</p>
-            <p className="text-xs mt-0.5 truncate" style={{ color: "#7E7C86" }}>{GIRO_LABELS[empresa.giro]} · {ESTADO_LABEL[empresa.estado].label}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setEmpresaId("")}
-            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg shrink-0 transition-colors"
-            style={{ color: "#C9A8FE", backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.25)" }}
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> Cambiar empresa
-          </button>
+          <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v ?? TODOS_LOS_TIPOS)}>
+            <SelectTrigger
+              className="w-full sm:w-56 h-9 text-sm shrink-0"
+              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+            >
+              <SelectValue placeholder="Filtrar por tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_LOS_TIPOS}>Todos los tipos</SelectItem>
+              {(Object.entries(TIPO_CONFIG) as [TipoReporte, typeof TIPO_CONFIG[TipoReporte]][]).map(([tipo, cfg]) => (
+                <SelectItem key={tipo} value={tipo}>{cfg.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-          {/* Panel de evaluación */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
-            {/* Criterios */}
-            <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-4" style={cardStyle}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Criterios de evaluación</span>
-                <span className="text-xs" style={{ color: "#7E7C86" }}>Calificación 0–100</span>
-              </div>
-              {criterios.length === 0 ? (
-                <p className="text-sm" style={{ color: "#7E7C86" }}>No hay criterios configurados. Créalos en “Criterios de evaluación”.</p>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {criterios.map((c) => {
-                    const valor = Math.round(evaluacion?.criterios?.[c.id] ?? 0);
-                    return (
-                      <div key={c.id} className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{c.nombre}</p>
-                            <p className="text-[11px]" style={{ color: "#7E7C86" }}>Peso {c.peso}%</p>
-                          </div>
-                          <span className="text-sm font-bold shrink-0 w-12 text-right" style={{ color: "#C9A8FE" }}>{valor}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={valor}
-                          onChange={(e) => setPuntaje(empresaId, c.id, Number(e.target.value))}
-                          className="w-full cursor-pointer"
-                          style={{ accentColor: "#9A62FA" }}
-                          aria-label={`Calificación de ${c.nombre}`}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Comentario del evaluador */}
-            <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-2.5" style={cardStyle}>
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" style={{ color: "#9A62FA" }} />
-                <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Comentarios del evaluador</span>
-              </div>
-              <p className="text-[11px]" style={{ color: "#7E7C86" }}>Se incluyen en el reporte del Lean Canvas.</p>
-              <Textarea
-                value={comentario}
-                maxLength={MAX_COMENTARIO}
-                onChange={(e) => setComentario(empresaId, e.target.value)}
-                placeholder="Observaciones generales sobre el proyecto, fortalezas, riesgos y recomendaciones."
-                className="min-h-28 resize-none text-sm focus-visible:ring-0"
-                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
-              />
-              <span className="text-xs text-right" style={{ color: "#4A4850" }}>{comentario.length} / {MAX_COMENTARIO}</span>
-            </div>
-          </div>
-
-          {/* Resumen + generar */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-            <div className="rounded-2xl p-5 flex flex-col gap-4" style={cardStyle}>
-              <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Resultado</span>
-
-              <ScoreRow label="Evaluación" value={calculo.scoreEvaluacion} />
-              <ScoreRow label="Hipótesis" value={calculo.scoreHipotesis} sub={`${calculo.hipotesis.validadas}/${calculo.hipotesis.total} validadas`} />
-
-              <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.22)" }}>
-                <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "#9A62FA" }}>Calificación final</p>
-                <p className="text-3xl font-bold mt-1" style={{ color: "#F2F0F7" }}>{calculo.scoreFinal}%</p>
-                <p className="text-[11px] mt-1" style={{ color: "#7E7C86" }}>{calculo.pesoEvaluacion}% evaluación · {100 - calculo.pesoEvaluacion}% hipótesis</p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm" style={{ color: "#7E7C86" }}>Viabilidad</span>
-                {calculo.nivel ? (
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: calculo.nivel.color }}>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: calculo.nivel.color }} />
-                    {calculo.nivel.nombre}
-                  </span>
-                ) : <span className="text-sm" style={{ color: "#7E7C86" }}>—</span>}
-              </div>
-            </div>
-
-            {/* Botones de reporte */}
-            <div className="rounded-2xl p-5 flex flex-col gap-2.5" style={cardStyle}>
-              <span className="text-sm font-semibold mb-0.5" style={{ color: "#F2F0F7" }}>Generar reporte</span>
-              <button
-                type="button"
-                onClick={() => setReporteActivo("boleta")}
-                className="inline-flex items-center gap-2.5 w-full px-4 h-11 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 border-0"
-                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
-              >
-                <FileText className="w-4 h-4" />
-                <span className="flex-1 text-left">Boleta de evaluación</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setReporteActivo("canvas")}
-                className="inline-flex items-center gap-2.5 w-full px-4 h-11 rounded-xl text-sm font-medium transition-colors"
-                style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)")}
-              >
-                <LayoutTemplate className="w-4 h-4" style={{ color: "#9A62FA" }} />
-                <span className="flex-1 text-left">Reporte Lean Canvas</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        </>
       )}
 
+      {/* Historial de reportes generados */}
+      {historialFiltrado.length === 0 ? (
+        <div className="rounded-2xl p-10 flex flex-col items-center text-center" style={cardStyle}>
+          {historial.length === 0 ? (
+            <>
+              <HistoryIcon className="w-9 h-9 mb-3" style={{ color: "#4A4850" }} />
+              <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Aún no se han generado reportes</p>
+              <p className="text-sm" style={{ color: "#7E7C86" }}>Usa “Generar reporte” para crear la boleta de evaluación o el reporte de Lean Canvas de una empresa.</p>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-9 h-9 mb-3" style={{ color: "#4A4850" }} />
+              <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin resultados</p>
+              <p className="text-sm" style={{ color: "#7E7C86" }}>Prueba con otros términos o filtros.</p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {historialFiltrado.map((r) => {
+            const empresa = empresas.find((e) => e.id === r.empresaId);
+            const cfg = TIPO_CONFIG[r.tipo];
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setReporteActivo({ tipo: r.tipo, empresaId: r.empresaId })}
+                disabled={!empresa}
+                className="flex items-center gap-4 rounded-xl px-5 py-4 text-left transition-[border-color] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={cardStyle}
+                onMouseEnter={(e) => { if (empresa) e.currentTarget.style.borderColor = "rgba(154,98,250,0.25)"; }}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+              >
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
+                >
+                  <cfg.icon className="w-4.5 h-4.5" style={{ color: "#9A62FA" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>
+                      {empresa ? r.empresaNombre : `${r.empresaNombre} (eliminada)`}
+                    </p>
+                    <span className="text-[11px] whitespace-nowrap" style={{ color: "#4A4850" }}>{r.generadoEn}</span>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                    {cfg.label}{empresa ? ` · ${GIRO_LABELS[empresa.giro]}` : ""}
+                  </p>
+                </div>
+                {empresa && <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "#4A4850" }} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Diálogo: generar reporte */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
+          {paso === "tipo" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Generar reporte</DialogTitle>
+                <DialogDescription>Elige el tipo de reporte que quieres generar.</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2.5">
+                {(Object.entries(TIPO_CONFIG) as [TipoReporte, typeof TIPO_CONFIG[TipoReporte]][]).map(([tipo, cfg]) => (
+                  <button
+                    key={tipo}
+                    type="button"
+                    onClick={() => elegirTipo(tipo)}
+                    className="flex items-center gap-3 rounded-xl p-3.5 text-left transition-colors"
+                    style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                  >
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(154,98,250,0.10)" }}>
+                      <cfg.icon className="w-4.5 h-4.5" style={{ color: "#9A62FA" }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{cfg.label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>{cfg.hint}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 shrink-0 ml-auto" style={{ color: "#4A4850" }} />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <button
+                  type="button"
+                  onClick={() => setPaso("tipo")}
+                  className="inline-flex items-center gap-1 text-xs mb-1 w-fit transition-colors"
+                  style={{ color: "#7E7C86" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F0F7")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#7E7C86")}
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Cambiar tipo de reporte
+                </button>
+                <DialogTitle>Selecciona la empresa</DialogTitle>
+                <DialogDescription>{tipoSeleccionado && TIPO_CONFIG[tipoSeleccionado].label}</DialogDescription>
+              </DialogHeader>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+                <input
+                  type="text"
+                  placeholder="Buscar empresa..."
+                  value={busquedaEmpresa}
+                  onChange={(e) => setBusquedaEmpresa(e.target.value)}
+                  className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+                  style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                />
+              </div>
+
+              <div className="max-h-80 overflow-y-auto flex flex-col gap-2 pr-1">
+                {empresasFiltradasDialogo.length === 0 ? (
+                  <p className="text-sm text-center py-6" style={{ color: "#7E7C86" }}>No se encontraron empresas.</p>
+                ) : (
+                  empresasFiltradasDialogo.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => elegirEmpresa(e)}
+                      className="flex items-center gap-3 rounded-xl p-3 text-left transition-colors"
+                      style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                      onMouseEnter={(ev) => (ev.currentTarget.style.borderColor = "rgba(154,98,250,0.35)")}
+                      onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+                    >
+                      <EmpresaLogo empresa={e} size={36} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{e.nombre}</p>
+                        <p className="text-xs truncate" style={{ color: "#7E7C86" }}>{GIRO_LABELS[e.giro]}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "#4A4850" }} />
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Documento imprimible */}
-      {reporteActivo && empresa && calculo && (
+      {reporteActivo && empresaActiva && calculoActivo && (
         <ReporteDocumento
-          tipo={reporteActivo}
-          empresa={empresa}
-          calculo={calculo}
-          comentarioEvaluador={comentario}
+          tipo={reporteActivo.tipo}
+          empresa={empresaActiva}
+          calculo={calculoActivo}
+          comentarioEvaluador={evaluacionActiva?.comentarioEvaluador ?? ""}
           onClose={() => setReporteActivo(null)}
         />
       )}
-    </div>
-  );
-}
-
-function ScoreRow({ label, value, sub }: { label: string; value: number; sub?: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm" style={{ color: "#C4C2CC" }}>{label}</span>
-        <span className="text-sm font-bold" style={{ color: "#F2F0F7" }}>{value}%</span>
-      </div>
-      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
-        <div className="h-full rounded-full" style={{ width: `${value}%`, background: "linear-gradient(90deg,#9A62FA,#AE6CFD)" }} />
-      </div>
-      {sub && <span className="text-[11px]" style={{ color: "#7E7C86" }}>{sub}</span>}
     </div>
   );
 }

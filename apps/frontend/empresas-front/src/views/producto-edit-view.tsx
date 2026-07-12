@@ -529,7 +529,7 @@ export function ProductoEditView({
                               max={MAX_PRECIO}
                               step="0.01"
                               placeholder="0.00"
-                              className="h-9 pl-6 text-sm focus-visible:ring-0"
+                              className="h-9 pl-6 text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               style={inputStyle}
                               {...field}
                               onChange={(e) => {

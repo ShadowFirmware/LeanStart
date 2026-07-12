@@ -286,6 +286,8 @@ interface EmpresaDetailViewProps {
   /** Cuando es true, permite dejar observaciones en hipótesis (uso exclusivo del mentor). */
   permitirComentarios?: boolean;
   autorNombre?: string;
+  /** Contenido adicional al final de la página (p. ej. el formulario de evaluación del evaluador). */
+  contenidoAdicional?: React.ReactNode;
 }
 
 type TipoAsignacion = "mentor" | "evaluador";
@@ -298,6 +300,7 @@ export function EmpresaDetailView({
   permitirAsignaciones = false,
   permitirComentarios = false,
   autorNombre,
+  contenidoAdicional,
 }: EmpresaDetailViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const { empresas, actualizarEmpresa } = useEmpresasStore();
@@ -369,7 +372,6 @@ export function EmpresaDetailView({
   const productosTienenPendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "producto" && esPendienteParaMiRol(o));
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
   const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente");
-  const hayComentarioGeneral = observacionesEmpresa.some((o) => o.tipoElemento === "general");
 
   function enviarAEvaluacion() {
     actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
@@ -623,17 +625,29 @@ export function EmpresaDetailView({
                       </span>
                     </div>
                   </div>
-                  {puedeEditarProyecto && (
-                    <button
-                      onClick={() => setEditando(true)}
-                      className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg shrink-0 transition-colors"
-                      style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
-                    >
-                      <Pencil className="w-3 h-3" /> Editar
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <ObservacionesButton
+                      empresaId={id}
+                      tipoElemento="general"
+                      elementoId={id}
+                      puedeComentar={mentorPuedeComentar}
+                      puedeMarcarEnRevision={!readOnly}
+                      puedeVer={puedeVerObs}
+                      ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
+                      autorNombre={autorNombre}
+                    />
+                    {puedeEditarProyecto && (
+                      <button
+                        onClick={() => setEditando(true)}
+                        className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
+                        style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+                      >
+                        <Pencil className="w-3 h-3" /> Editar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -652,41 +666,6 @@ export function EmpresaDetailView({
             </div>
 
             <p className="text-xs mt-4" style={{ color: "#4A4850" }}>Creada el {empresa.creadaEn}</p>
-
-            {/* Comentario general del mentor sobre la información principal del proyecto */}
-            {(mentorPuedeComentar || (puedeVerObs && hayComentarioGeneral)) && (
-              <div
-                className="mt-4 flex items-center gap-3 rounded-xl px-3.5 py-3"
-                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.18)" }}
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "rgba(154,98,250,0.14)" }}
-                >
-                  <MessageSquare className="w-4 h-4" style={{ color: "#9A62FA" }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold" style={{ color: "#F2F0F7" }}>Comentario general del mentor</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: "#7E7C86" }}>
-                    {mentorPuedeComentar
-                      ? "Deja una observación global sobre el nombre, la foto, la descripción y el mercado objetivo."
-                      : "Observación del mentor sobre el nombre, la foto, la descripción y el mercado objetivo."}
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  <ObservacionesButton
-                    empresaId={id}
-                    tipoElemento="general"
-                    elementoId={id}
-                    puedeComentar={mentorPuedeComentar}
-                    puedeMarcarEnRevision={!readOnly}
-                    puedeVer={puedeVerObs}
-                    ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
-                    autorNombre={autorNombre}
-                  />
-                </div>
-              </div>
-            )}
 
             {!readOnly && empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
               <>
@@ -811,37 +790,26 @@ export function EmpresaDetailView({
         title="Productos y servicios"
         icon={Package}
         tienePendiente={productosTienenPendiente}
-        action={
-          puedeEditarProyecto ? (
-            <div className="flex items-center gap-2 shrink-0">
-              <Link
-                href={`${basePath}/${id}/productos/nuevo`}
-                className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
-                style={{ color: "#F2F0F7", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(59,130,246,0.22)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(59,130,246,0.14)")}
-              >
-                <Plus className="w-3 h-3" /> Producto
-              </Link>
-              <Link
-                href={`${basePath}/${id}/productos/nuevo-servicio`}
-                className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
-                style={{ color: "#F2F0F7", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(16,185,129,0.22)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(16,185,129,0.14)")}
-              >
-                <Plus className="w-3 h-3" /> Servicio
-              </Link>
-            </div>
-          ) : undefined
-        }
       >
         {(() => {
           const count = empresa.productosList?.length ?? 0;
           return count === 0 ? (
-            <p className="text-sm" style={{ color: "#7E7C86" }}>
-              {puedeEditarProyecto ? "No tienes productos ni servicios registrados aún." : "Esta empresa no tiene productos ni servicios registrados."}
-            </p>
+            puedeEditarProyecto ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm" style={{ color: "#7E7C86" }}>No tienes productos ni servicios registrados aún.</p>
+                <Link
+                  href={`${basePath}/${id}/productos`}
+                  className="inline-flex items-center gap-1 text-xs transition-colors shrink-0"
+                  style={{ color: "#9A62FA" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
+                >
+                  Agregar <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: "#7E7C86" }}>Esta empresa no tiene productos ni servicios registrados.</p>
+            )
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -921,6 +889,8 @@ export function EmpresaDetailView({
         estadoEmpresa={empresa.estado}
         puedeEditar={puedeEditarProyecto}
       />
+
+      {contenidoAdicional}
 
       {/* Lightbox del logo */}
       <Dialog open={logoLightboxOpen} onOpenChange={setLogoLightboxOpen}>

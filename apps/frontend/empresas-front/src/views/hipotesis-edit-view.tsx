@@ -41,7 +41,7 @@ const FASE_CONFIG = {
 } as const;
 
 const MAX_TITULO = 120;
-const MAX_TEXTAREA = 600;
+const MAX_TEXTAREA = 400;
 
 const inputStyle: React.CSSProperties = {
   backgroundColor: "rgba(255,255,255,0.04)",
@@ -510,7 +510,7 @@ export function HipotesisEditView({
               value={descripcion}
               maxLength={MAX_TEXTAREA}
               onChange={(e) => setDescripcion(e.target.value)}
-              rows={6}
+              rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
@@ -553,7 +553,7 @@ export function HipotesisEditView({
               value={descExp}
               maxLength={MAX_TEXTAREA}
               onChange={(e) => setDescExp(e.target.value)}
-              rows={6}
+              rows={4}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
@@ -607,7 +607,7 @@ export function HipotesisEditView({
               value={resultado}
               maxLength={MAX_TEXTAREA}
               onChange={(e) => setResultado(e.target.value)}
-              rows={6}
+              rows={4}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
@@ -766,7 +766,7 @@ export function HipotesisEditView({
               value={conclusion}
               maxLength={MAX_TEXTAREA}
               onChange={(e) => setConclusion(e.target.value)}
-              rows={6}
+              rows={4}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}

@@ -17,8 +17,13 @@ export const GIRO_LABELS: Record<GiroEmpresa, string> = {
 export interface CriterioCalculado {
   id: string;
   nombre: string;
+  descripcion: string;
   peso: number;
+  /** Puntaje 0-100 (porcentaje del criterio). */
   puntaje: number;
+  /** Puntaje convertido a puntos sobre el peso del criterio (p. ej. 28/30). */
+  puntos: number;
+  comentario: string;
 }
 
 export interface ReporteCalculo {
@@ -42,12 +47,18 @@ export function calcularReporte(
   niveles: NivelViabilidad[],
   pesoEvaluacion: number
 ): ReporteCalculo {
-  const criteriosCalc: CriterioCalculado[] = criterios.map((c) => ({
-    id: c.id,
-    nombre: c.nombre,
-    peso: c.peso,
-    puntaje: Math.round(evaluacion?.criterios?.[c.id] ?? 0),
-  }));
+  const criteriosCalc: CriterioCalculado[] = criterios.map((c) => {
+    const puntaje = Math.round(evaluacion?.criterios?.[c.id] ?? 0);
+    return {
+      id: c.id,
+      nombre: c.nombre,
+      descripcion: c.descripcion,
+      peso: c.peso,
+      puntaje,
+      puntos: Math.round((puntaje / 100) * c.peso),
+      comentario: evaluacion?.comentariosCriterios?.[c.id] ?? "",
+    };
+  });
 
   const sumaPesos = criteriosCalc.reduce((a, c) => a + c.peso, 0);
   const scoreEvaluacion = sumaPesos > 0
@@ -74,4 +85,11 @@ export function calcularReporte(
     hipotesis: { validadas, total },
     pesoEvaluacion: Math.round(pesoEvaluacion),
   };
+}
+
+/** Rango numérico (p. ej. "75–100") que ocupa un nivel de viabilidad dentro de la escala 0-100. */
+export function rangoNivel(niveles: NivelViabilidad[], nivel: NivelViabilidad): string {
+  const i = niveles.findIndex((n) => n.id === nivel.id);
+  const desde = i <= 0 ? 0 : niveles[i - 1].hasta + 1;
+  return `${desde}–${nivel.hasta}`;
 }
