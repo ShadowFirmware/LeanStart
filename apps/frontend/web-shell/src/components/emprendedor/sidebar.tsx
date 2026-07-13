@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react";
 import { LayoutDashboard, Building2, Bell, LogOut, Menu, X } from "lucide-react";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useHasHydrated } from "@leanstart/commons";
+import { SidebarUser } from "@/components/perfil/sidebar-user";
 
 interface EmprendedorSidebarProps {
   userName: string;
@@ -96,21 +97,7 @@ export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarPr
         className="px-3 pb-4 border-t pt-3 shrink-0"
         style={{ borderColor: "rgba(255,255,255,0.06)" }}
       >
-        <div
-          className="flex items-center gap-3 px-2 py-2 rounded-lg mb-1"
-          style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-        >
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ backgroundColor: "rgba(154,98,250,0.2)", color: "#9A62FA" }}
-          >
-            {userName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{userName}</p>
-            <p className="text-xs truncate" style={{ color: "#7E7C86" }}>{userEmail}</p>
-          </div>
-        </div>
+        <SidebarUser rol="emprendedor" userName={userName} userEmail={userEmail} onNavigate={() => setOpen(false)} />
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}

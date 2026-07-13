@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
-import { useUsuariosStore } from "@leanstart/commons";
+import { useUsuariosStore, usePerfilStore } from "@leanstart/commons";
 import { useEvaluacionesStore, usePrivilegiosStore, useReportesGeneradosStore } from "@leanstart/administrador-front";
 
 /**
@@ -25,6 +25,7 @@ const STORES = [
   { key: "leanstart-observaciones", store: useObservacionesStore },
   { key: "leanstart-notificaciones", store: useNotificacionesStore },
   { key: "leanstart-usuarios", store: useUsuariosStore },
+  { key: "leanstart-perfil", store: usePerfilStore },
   { key: "leanstart-evaluaciones", store: useEvaluacionesStore },
   { key: "leanstart-privilegios", store: usePrivilegiosStore },
   { key: "leanstart-reportes-generados", store: useReportesGeneradosStore },

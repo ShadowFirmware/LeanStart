@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, AlertTriangle, FileText, ExternalLink, X as XIcon } from "lucide-react";
+import { ArrowLeft, Check, AlertTriangle, FileText, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -12,6 +12,7 @@ import {
   compressImageToDataUrl,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { EvidenciaViewerButton } from "../components/evidencia-viewer";
 import type { TipoExperimento } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -652,15 +653,11 @@ export function HipotesisNewView() {
                           {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
                         </p>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          <a
-                            href={evidenciaDataUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
-                            style={{ color: "#C687F5", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid rgba(154,98,250,0.2)" }}
-                          >
-                            <ExternalLink className="w-3 h-3" /> Abrir
-                          </a>
+                          <EvidenciaViewerButton
+                            evidencia={evidenciaDataUrl}
+                            tipoEvidencia={tipoEvidencia as TipoEvidencia}
+                            evidenciaNombre={evidenciaNombre}
+                          />
                           <label
                             className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
                             style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}

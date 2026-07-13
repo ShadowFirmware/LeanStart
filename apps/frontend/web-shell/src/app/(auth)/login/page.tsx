@@ -191,8 +191,8 @@ export default function LoginPage() {
                     >
                       Contraseña
                     </FormLabel>
-                    <button
-                      type="button"
+                    <Link
+                      href="/recuperar"
                       className="text-xs transition-colors"
                       style={{ color: "#9A62FA" }}
                       onMouseEnter={(e) =>
@@ -205,7 +205,7 @@ export default function LoginPage() {
                       }
                     >
                       ¿Olvidaste tu contraseña?
-                    </button>
+                    </Link>
                   </div>
                   <FormControl>
                     <div className="relative">

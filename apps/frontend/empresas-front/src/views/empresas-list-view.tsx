@@ -553,7 +553,11 @@ export function EmpresasListView({
                 ) : ""}
               </DialogDescription>
             </DialogHeader>
-            <Select value={usuarioSeleccionado} onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}>
+            <Select
+              value={usuarioSeleccionado}
+              onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}
+              items={usuarios.map((u) => ({ value: u.id, label: u.nombre }))}
+            >
               <SelectTrigger className="w-full" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
                 <SelectValue placeholder={`Selecciona un ${asignarTarget?.tipo ?? ""}`} />
               </SelectTrigger>

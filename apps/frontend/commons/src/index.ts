@@ -36,6 +36,8 @@ export type { DemoUser } from "./lib/demo";
 // Store
 export { useUsuariosStore } from "./store/usuarios";
 export type { Usuario, EstadoUsuario } from "./store/usuarios";
+export { usePerfilStore } from "./store/perfil";
+export type { PerfilData } from "./store/perfil";
 
 // Utils
 export { cn } from "./lib/utils";

@@ -12,6 +12,7 @@ import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
+import { EvidenciaViewerButton } from "../components/evidencia-viewer";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -400,15 +401,13 @@ export function HipotesisEditView({
                           <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>
                             {hipotesis.resultados.evidenciaNombre || "Archivo cargado"}
                           </p>
-                          <a
-                            href={hipotesis.resultados.evidencia}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 mt-2 rounded-md transition-colors"
-                            style={{ color: "#C687F5", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid rgba(154,98,250,0.2)" }}
-                          >
-                            <ExternalLink className="w-3 h-3" /> Abrir
-                          </a>
+                          <div className="mt-2">
+                            <EvidenciaViewerButton
+                              evidencia={hipotesis.resultados.evidencia}
+                              tipoEvidencia={hipotesis.resultados.tipoEvidencia!}
+                              evidenciaNombre={hipotesis.resultados.evidenciaNombre}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -715,15 +714,11 @@ export function HipotesisEditView({
                     {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <a
-                      href={evidenciaDataUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
-                      style={{ color: "#C687F5", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid rgba(154,98,250,0.2)" }}
-                    >
-                      <ExternalLink className="w-3 h-3" /> Abrir
-                    </a>
+                    <EvidenciaViewerButton
+                      evidencia={evidenciaDataUrl}
+                      tipoEvidencia={tipoEvidencia as TipoEvidencia}
+                      evidenciaNombre={evidenciaNombre}
+                    />
                     <label
                       className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
                       style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
