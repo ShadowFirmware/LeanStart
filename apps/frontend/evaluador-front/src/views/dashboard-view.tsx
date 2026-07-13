@@ -14,7 +14,6 @@ const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: s
   observaciones_atendidas: { label: "Obs. atendidas", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_evaluacion: { label: "En evaluación", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  evaluado: { label: "Evaluado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 };
@@ -32,7 +31,7 @@ const GIRO_LABELS: Record<GiroEmpresa, string> = {
 /** Estado en el que un proyecto espera la evaluación formal del evaluador. */
 const ESTADO_PENDIENTE: EstadoEmpresa = "en_evaluacion";
 /** Estados en los que el proyecto ya recibió una resolución del evaluador. */
-const ESTADOS_REALIZADOS: EstadoEmpresa[] = ["evaluado", "publicado", "devuelto"];
+const ESTADOS_REALIZADOS: EstadoEmpresa[] = ["publicado", "devuelto"];
 
 export function EvaluadorDashboardView() {
   const hydrated = useHasHydrated();

@@ -325,6 +325,19 @@ export const useEmpresasStore = create<EmpresasStore>()(
     {
       name: "leanstart-empresas",
       skipHydration: true,
+      // v1: el estado "evaluado" se eliminó — el evaluador ahora resuelve directo a
+      // "publicado" o "devuelto" según el umbral de viabilidad. Los proyectos que ya
+      // estaban en "evaluado" pasan a "publicado" una sola vez, al rehidratar.
+      version: 1,
+      migrate: (persistedState) => {
+        const state = persistedState as { empresas?: Array<Record<string, unknown>> } | undefined;
+        if (state?.empresas) {
+          state.empresas = state.empresas.map((e) =>
+            e.estado === "evaluado" ? { ...e, estado: "publicado" } : e
+          );
+        }
+        return state;
+      },
       storage: createJSONStorage(() =>
         createSafeLocalStorage(() =>
           toast.error(

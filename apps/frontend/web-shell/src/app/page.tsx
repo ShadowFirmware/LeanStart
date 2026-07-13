@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@leanstart/commons";
 import { ArrowRight, LayoutTemplate, Users, TrendingUp } from "lucide-react";
+import { PublicGallery } from "@/components/landing/public-gallery";
 
 const features = [
   {
@@ -205,6 +206,9 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* ── Vitrina pública de proyectos publicados ── */}
+      <PublicGallery />
 
       {/* ── Footer ── */}
       <footer

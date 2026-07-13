@@ -15,9 +15,12 @@ interface ViabilidadStore {
   /** Peso (%) que aporta la evaluación al score final. El resto lo aporta la validación de hipótesis. */
   pesoEvaluacion: number;
   niveles: NivelViabilidad[];
+  /** Calificación final mínima (0-100) para publicar un proyecto; por debajo, se devuelve al emprendedor. */
+  umbralPublicacion: number;
   actualizarPesoEvaluacion: (peso: number) => void;
   actualizarHastaNivel: (id: string, hasta: number) => void;
   editarNivel: (id: string, data: { nombre: string; color: string }) => void;
+  actualizarUmbralPublicacion: (umbral: number) => void;
   agregarNivel: () => boolean;
   eliminarNivel: (id: string) => void;
   reordenarNivel: (desde: number, hasta: number) => void;
@@ -34,9 +37,14 @@ export const useViabilidadStore = create<ViabilidadStore>()(
     (set, get) => ({
       pesoEvaluacion: 80,
       niveles: NIVELES_DEFAULT,
+      umbralPublicacion: 70,
 
       actualizarPesoEvaluacion(peso) {
         set({ pesoEvaluacion: Math.max(0, Math.min(100, Math.round(peso))) });
+      },
+
+      actualizarUmbralPublicacion(umbral) {
+        set({ umbralPublicacion: Math.max(0, Math.min(100, Math.round(umbral))) });
       },
 
       actualizarHastaNivel(id, hasta) {

@@ -11,10 +11,9 @@ import {
   calcularReporte, REPORTE_GIRO_LABELS,
 } from "@leanstart/administrador-front";
 
-const ESTADOS_HISTORIAL: EstadoEmpresa[] = ["evaluado", "publicado", "devuelto"];
+const ESTADOS_HISTORIAL: EstadoEmpresa[] = ["publicado", "devuelto"];
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  evaluado: { label: "Evaluado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 };
@@ -27,8 +26,15 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
       <img
         src={empresa.logoUrl}
         alt={empresa.nombre}
-        className="rounded-lg object-cover shrink-0"
-        style={{ width: size, height: size, border: "1px solid rgba(255,255,255,0.08)" }}
+        className="rounded-lg object-contain shrink-0"
+        style={{
+          width: size,
+          height: size,
+          padding: Math.max(2, Math.round(size * 0.12)),
+          backgroundColor: "rgba(154,98,250,0.12)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxSizing: "border-box",
+        }}
       />
     );
   }
@@ -146,7 +152,7 @@ export function EvaluadorHistorialView() {
         ) : (
           <div className="flex flex-col gap-3">
             {registrosFiltrados.map(({ empresa, calculo, fecha }) => {
-              const estadoCfg = ESTADO_CONFIG[empresa.estado] ?? ESTADO_CONFIG.evaluado;
+              const estadoCfg = ESTADO_CONFIG[empresa.estado] ?? ESTADO_CONFIG.publicado;
               return (
                 <Link
                   key={empresa.id}

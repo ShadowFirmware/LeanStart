@@ -9,7 +9,6 @@ import { EvaluacionForm } from "../components/evaluacion-form";
 
 const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }> = {
   en_evaluacion: { label: "En evaluación", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  evaluado: { label: "Evaluado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 };

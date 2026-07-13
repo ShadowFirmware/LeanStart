@@ -202,3 +202,13 @@ nextjs-portal {
     transform-origin: bottom left;
   }
 }
+
+/* ─── Vitrina pública (landing): indicadores tipo "stories" ─── */
+@keyframes lp-story-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

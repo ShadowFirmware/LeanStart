@@ -89,7 +89,14 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             <div className="flex items-center gap-4 min-w-0">
               {empresa.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={empresa.logoUrl} alt={empresa.nombre} style={{ width: 56, height: 56, borderRadius: 12, objectFit: "cover", border: `1px solid ${LINE}` }} />
+                <img
+                  src={empresa.logoUrl}
+                  alt={empresa.nombre}
+                  style={{
+                    width: 56, height: 56, borderRadius: 12, padding: 6, boxSizing: "border-box",
+                    objectFit: "contain", background: "#F1ECFB", border: `1px solid ${LINE}`,
+                  }}
+                />
               ) : (
                 <div style={{ width: 56, height: 56, borderRadius: 12, background: "#F1ECFB", color: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 24 }}>
                   {empresa.nombre.charAt(0)}

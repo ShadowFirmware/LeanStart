@@ -10,7 +10,6 @@ export type EstadoEmpresa =
   | 'observaciones_atendidas'
   | 'pendiente_evaluacion'
   | 'en_evaluacion'
-  | 'evaluado'
   | 'publicado'
   | 'devuelto';
 

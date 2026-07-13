@@ -9,7 +9,7 @@ export function EvaluadorEmpresasView() {
       readOnly
       title="Empresas"
       soloAsignados="evaluador"
-      estadosPermitidos={["en_evaluacion", "evaluado", "publicado", "devuelto"]}
+      estadosPermitidos={["en_evaluacion", "publicado", "devuelto"]}
       mostrarFiltroGiro
     />
   );

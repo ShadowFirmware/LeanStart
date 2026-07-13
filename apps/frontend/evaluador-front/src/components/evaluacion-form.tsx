@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ClipboardList, MessageSquare } from "lucide-react";
+import { CheckCircle2, ClipboardList, MessageSquare, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Textarea,
@@ -35,6 +35,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   const criterios = useCriteriosStore((s) => s.criterios);
   const niveles = useViabilidadStore((s) => s.niveles);
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
+  const umbralPublicacion = useViabilidadStore((s) => s.umbralPublicacion);
 
   const evaluacion = useEvaluacionesStore((s) => s.evaluaciones[empresaId]);
   const setPuntaje = useEvaluacionesStore((s) => s.setPuntaje);
@@ -48,6 +49,8 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   const puedeEvaluar = empresa.estado === "en_evaluacion";
   const calculo = calcularReporte(empresa, evaluacion, criterios, niveles, pesoEvaluacion);
   const comentarioGeneral = evaluacion?.comentarioEvaluador ?? "";
+  // Por debajo de la calificación mínima configurada, el proyecto se devuelve al emprendedor.
+  const accionResultante = calculo.scoreFinal >= umbralPublicacion ? "publicado" : "devuelto";
 
   function setPuntos(criterioId: string, peso: number, puntos: number) {
     const clamped = Math.max(0, Math.min(peso, Math.round(puntos)));
@@ -57,8 +60,12 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
 
   function finalizarEvaluacion() {
     if (!empresa) return;
-    actualizarEmpresa(empresaId, { estado: "evaluado" });
-    toast.success(`Evaluación de "${empresa.nombre}" registrada.`);
+    actualizarEmpresa(empresaId, { estado: accionResultante });
+    toast.success(
+      accionResultante === "publicado"
+        ? `"${empresa.nombre}" fue evaluada y publicada.`
+        : `"${empresa.nombre}" fue devuelta al emprendedor.`
+    );
     setConfirmarOpen(false);
     router.push("/evaluador/empresas");
   }
@@ -147,13 +154,31 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
               )}
             </div>
 
+            <div
+              className="flex items-center gap-2 text-xs rounded-lg px-3 py-2"
+              style={{
+                color: accionResultante === "publicado" ? "#10B981" : "#EF4444",
+                backgroundColor: accionResultante === "publicado" ? "rgba(16,185,129,0.10)" : "rgba(239,68,68,0.10)",
+              }}
+            >
+              {accionResultante === "publicado" ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <Undo2 className="w-3.5 h-3.5 shrink-0" />}
+              {accionResultante === "publicado"
+                ? `Calificación ≥ ${umbralPublicacion}%: el proyecto se publicará.`
+                : `Calificación < ${umbralPublicacion}%: el proyecto se devolverá al emprendedor.`}
+            </div>
+
             <button
               type="button"
               onClick={() => setConfirmarOpen(true)}
               className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold border-0 transition-opacity hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              style={
+                accionResultante === "publicado"
+                  ? { background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }
+                  : { background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#FBFBFC" }
+              }
             >
-              <CheckCircle2 className="w-4 h-4" /> Finalizar evaluación
+              {accionResultante === "publicado" ? <CheckCircle2 className="w-4 h-4" /> : <Undo2 className="w-4 h-4" />}
+              Finalizar evaluación
             </button>
           </div>
         </div>
@@ -162,9 +187,15 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
         <AlertDialog open={confirmarOpen} onOpenChange={setConfirmarOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Finalizar evaluación</AlertDialogTitle>
+              <AlertDialogTitle>
+                {accionResultante === "publicado" ? "Publicar proyecto" : "Devolver proyecto"}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Se registrará la calificación final de {calculo.scoreFinal}% para &quot;{empresa.nombre}&quot; y el proyecto pasará a estado &quot;Evaluado&quot;. Después de finalizar, la evaluación queda como consulta.
+                Se registrará la calificación final de {calculo.scoreFinal}% para &quot;{empresa.nombre}&quot;.{" "}
+                {accionResultante === "publicado"
+                  ? "El proyecto pasará a estado \"Publicado\"."
+                  : "El proyecto pasará a estado \"Devuelto\" y el emprendedor podrá volver a editarlo."}{" "}
+                Después de finalizar, la evaluación queda como consulta.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -172,9 +203,14 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
               <AlertDialogAction
                 onClick={finalizarEvaluacion}
                 className="border-0"
-                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                style={
+                  accionResultante === "publicado"
+                    ? { background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }
+                    : { background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#FBFBFC" }
+                }
               >
-                <CheckCircle2 className="w-4 h-4" /> Finalizar
+                {accionResultante === "publicado" ? <CheckCircle2 className="w-4 h-4" /> : <Undo2 className="w-4 h-4" />}
+                {accionResultante === "publicado" ? "Publicar" : "Devolver"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

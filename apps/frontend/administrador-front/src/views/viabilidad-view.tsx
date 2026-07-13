@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { TrendingUp, Plus, Minus, Pencil, Trash2, Check, GripVertical } from "lucide-react";
+import { TrendingUp, Plus, Minus, Pencil, Trash2, Check, GripVertical, ArrowRightLeft } from "lucide-react";
 import {
   Button,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -82,6 +82,8 @@ export function ViabilidadView() {
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
   const actualizarPesoEvaluacion = useViabilidadStore((s) => s.actualizarPesoEvaluacion);
   const niveles = useViabilidadStore((s) => s.niveles);
+  const umbralPublicacion = useViabilidadStore((s) => s.umbralPublicacion);
+  const actualizarUmbralPublicacion = useViabilidadStore((s) => s.actualizarUmbralPublicacion);
   const actualizarHastaNivel = useViabilidadStore((s) => s.actualizarHastaNivel);
   const editarNivel = useViabilidadStore((s) => s.editarNivel);
   const agregarNivel = useViabilidadStore((s) => s.agregarNivel);
@@ -176,7 +178,7 @@ export function ViabilidadView() {
           <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Pesos del Score de Viabilidad</p>
         </div>
         <p className="text-xs mb-4" style={{ color: "#7E7C86" }}>
-          El score combina la evaluación del evaluador y el porcentaje de hipótesis validadas. Deben sumar 100%.
+          Deben sumar 100%.
         </p>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
@@ -224,7 +226,7 @@ export function ViabilidadView() {
           </Button>
         </div>
         <p className="text-xs mb-4" style={{ color: "#7E7C86" }}>
-          Los rangos son continuos: no pueden solaparse ni dejar huecos entre 0% y 100%.
+          Rango de 0% a 100%.
         </p>
 
         <div className="flex flex-col gap-2">
@@ -304,6 +306,53 @@ export function ViabilidadView() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Resultado según viabilidad */}
+      <div
+        className="rounded-xl p-5"
+        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <ArrowRightLeft className="w-4 h-4" style={{ color: "#9A62FA" }} />
+          <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Resultado según viabilidad</p>
+        </div>
+        <p className="text-xs mb-6" style={{ color: "#7E7C86" }}>
+          Calificación mínima para publicar.
+        </p>
+
+        <div className="px-1">
+          <div className="relative" style={{ height: 26 }}>
+            <div
+              className="absolute -translate-x-1/2 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ left: `${umbralPublicacion}%`, backgroundColor: "rgba(154,98,250,0.16)", color: "#C9A8FE" }}
+            >
+              {umbralPublicacion}%
+            </div>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={umbralPublicacion}
+            onChange={(e) => actualizarUmbralPublicacion(Number(e.target.value))}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer outline-none
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
+              [&::-webkit-slider-thumb]:shadow-[0_0_0_3px_rgba(154,98,250,0.4)] [&::-webkit-slider-thumb]:cursor-pointer
+              [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
+              [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white
+              [&::-moz-range-thumb]:shadow-[0_0_0_3px_rgba(154,98,250,0.4)] [&::-moz-range-thumb]:cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, #EF4444 0%, #EF4444 ${umbralPublicacion}%, #10B981 ${umbralPublicacion}%, #10B981 100%)`,
+            }}
+            aria-label="Calificación mínima para publicar"
+          />
+          <div className="flex items-center justify-between mt-2 text-xs font-medium">
+            <span style={{ color: "#EF4444" }}>Devuelto</span>
+            <span style={{ color: "#10B981" }}>Publicado</span>
+          </div>
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, CheckCircle2, Circle, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
+import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
 import {
   Button,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -24,7 +24,6 @@ const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: s
   observaciones_atendidas: { label: "Obs. atendidas", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_evaluacion: { label: "En evaluación", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  evaluado: { label: "Evaluado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 };
@@ -45,7 +44,7 @@ const FILTROS_ESTADO = [
   { value: TODOS_LOS_ESTADOS, label: "Todos" },
   { value: "borrador", label: "Borrador" },
   { value: "pendiente_mentoria", label: "En proceso" },
-  { value: "evaluado", label: "Evaluado" },
+  { value: "publicado", label: "Publicado" },
 ];
 
 const REQUISITOS = [
@@ -60,17 +59,9 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
   const pct = Math.round((completados / total) * 100);
 
   return (
-    <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs" style={{ color: "#7E7C86" }}>
-          {completados} de {total} requisitos para enviar
-        </span>
-        <span className="text-xs font-medium" style={{ color: pct === 100 ? "#10B981" : "#7E7C86" }}>
-          {pct}%
-        </span>
-      </div>
+    <div className="flex items-center gap-2 mt-2.5">
       <div
-        className="w-full h-1 rounded-full overflow-hidden"
+        className="flex-1 h-1 rounded-full overflow-hidden"
         style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
       >
         <div
@@ -81,23 +72,9 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
           }}
         />
       </div>
-      <div className="flex items-center gap-4 mt-2.5">
-        {REQUISITOS.map(({ key, label }) => {
-          const done = progreso[key];
-          return (
-            <div key={key} className="flex items-center gap-1">
-              {done ? (
-                <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: "#10B981" }} />
-              ) : (
-                <Circle className="w-3 h-3 shrink-0" style={{ color: "#4A4850" }} />
-              )}
-              <span className="text-[11px]" style={{ color: done ? "#F2F0F7" : "#4A4850" }}>
-                {label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <span className="text-[11px] font-medium shrink-0" style={{ color: pct === 100 ? "#10B981" : "#7E7C86" }}>
+        {pct}%
+      </span>
     </div>
   );
 }
@@ -410,7 +387,7 @@ export function EmpresasListView({
                     style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
                   >
                     {empresa.logoUrl ? (
-                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={48} height={48} className="object-contain w-full h-full p-1.5" unoptimized />
                     ) : (
                       empresa.nombre.charAt(0)
                     )}

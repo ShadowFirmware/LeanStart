@@ -209,7 +209,7 @@ export function EmpresaNewView() {
                       src={logoPreview}
                       alt="Logo preview"
                       fill
-                      className="object-cover"
+                      className="object-contain p-2"
                       unoptimized
                     />
                     <div

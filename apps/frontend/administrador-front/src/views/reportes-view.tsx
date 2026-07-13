@@ -33,8 +33,15 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
       <img
         src={empresa.logoUrl}
         alt={empresa.nombre}
-        className="rounded-xl object-cover shrink-0"
-        style={{ width: size, height: size, border: "1px solid rgba(255,255,255,0.08)" }}
+        className="rounded-xl object-contain shrink-0"
+        style={{
+          width: size,
+          height: size,
+          padding: Math.max(2, Math.round(size * 0.12)),
+          backgroundColor: "rgba(154,98,250,0.12)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxSizing: "border-box",
+        }}
       />
     );
   }

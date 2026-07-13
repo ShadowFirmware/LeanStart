@@ -54,7 +54,6 @@ const ESTADO_CONFIG = {
   observaciones_atendidas: { label: "Obs. atendidas", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_evaluacion: { label: "En evaluación", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  evaluado: { label: "Evaluado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
@@ -484,7 +483,7 @@ export function EmpresaDetailView({
                   >
                     {logoActual ? (
                       <>
-                        <Image src={logoActual} alt="Logo" fill className="object-cover" unoptimized />
+                        <Image src={logoActual} alt="Logo" fill className="object-contain p-1.5" unoptimized />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
                           <Camera className="w-4 h-4 text-white" />
                         </div>
@@ -599,10 +598,11 @@ export function EmpresaDetailView({
                   type="button"
                   onClick={() => setLogoLightboxOpen(true)}
                   className="w-16 h-16 rounded-xl shrink-0 overflow-hidden cursor-zoom-in transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9A62FA]"
+                  style={{ backgroundColor: "rgba(154,98,250,0.12)" }}
                   title="Ver imagen completa"
                   aria-label="Ver imagen completa"
                 >
-                  <Image src={logoActual} alt={empresa.nombre} width={64} height={64} className="object-cover w-full h-full" unoptimized />
+                  <Image src={logoActual} alt={empresa.nombre} width={64} height={64} className="object-contain w-full h-full p-2" unoptimized />
                 </button>
               ) : (
                 <div
