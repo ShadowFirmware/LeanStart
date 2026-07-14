@@ -56,7 +56,7 @@ export function ErrorScreen({
 
       {/* Card */}
       <div
-        className="relative w-full max-w-[440px] rounded-2xl p-9 flex flex-col items-center text-center gap-6"
+        className="relative w-full max-w-110 rounded-2xl p-9 flex flex-col items-center text-center gap-6"
         style={{
           backgroundColor: "rgba(19,18,25,0.85)",
           border: "1px solid rgba(154,98,250,0.2)",
@@ -113,24 +113,24 @@ export function ErrorScreen({
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-1">
+        <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full mt-1">
           {actions.map(({ label, href, icon: ActionIcon, variant = "primary" }) =>
             variant === "primary" ? (
               <Button
                 key={label}
-                className="h-11 w-full rounded-xl font-semibold text-sm border-0"
+                className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm border-0"
                 style={{ background: PRIMARY_BG, color: "#FBFBFC" }}
                 nativeButton={false}
                 render={<Link href={href} />}
               >
-                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4" />}
+                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
                 {label}
               </Button>
             ) : (
               <Button
                 key={label}
                 variant="outline"
-                className="h-11 w-full rounded-xl font-semibold text-sm"
+                className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm"
                 style={{
                   backgroundColor: "transparent",
                   border: "1px solid rgba(255,255,255,0.1)",
@@ -139,7 +139,7 @@ export function ErrorScreen({
                 nativeButton={false}
                 render={<Link href={href} />}
               >
-                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4" />}
+                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
                 {label}
               </Button>
             )

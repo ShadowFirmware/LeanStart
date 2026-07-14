@@ -34,7 +34,7 @@ export default function Error({
 
       {/* Card */}
       <div
-        className="relative w-full max-w-[440px] rounded-2xl p-9 flex flex-col items-center text-center gap-6"
+        className="relative w-full max-w-110 rounded-2xl p-9 flex flex-col items-center text-center gap-6"
         style={{
           backgroundColor: "rgba(19,18,25,0.85)",
           border: "1px solid rgba(154,98,250,0.2)",
@@ -95,21 +95,21 @@ export default function Error({
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-1">
+        <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full mt-1">
           <Button
             onClick={() => reset()}
-            className="h-11 w-full rounded-xl font-semibold text-sm border-0"
+            className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm border-0"
             style={{
               background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
               color: "#FBFBFC",
             }}
           >
-            <RotateCcw className="mr-2 w-4 h-4" />
+            <RotateCcw className="mr-2 w-4 h-4 shrink-0" />
             Intentar de nuevo
           </Button>
           <Button
             variant="outline"
-            className="h-11 w-full rounded-xl font-semibold text-sm"
+            className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm"
             style={{
               backgroundColor: "transparent",
               border: "1px solid rgba(255,255,255,0.1)",
@@ -118,7 +118,7 @@ export default function Error({
             nativeButton={false}
             render={<Link href="/" />}
           >
-            <Home className="mr-2 w-4 h-4" />
+            <Home className="mr-2 w-4 h-4 shrink-0" />
             Inicio
           </Button>
         </div>
