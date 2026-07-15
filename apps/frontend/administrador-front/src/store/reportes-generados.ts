@@ -8,12 +8,19 @@ export interface ReporteGenerado {
   empresaId: string;
   empresaNombre: string;
   tipo: TipoReporte;
+  /** Nombre de quien generó el reporte (administrador en sesión). */
+  generadoPor: string;
   generadoEn: string;
 }
 
 interface ReportesGeneradosStore {
   reportes: ReporteGenerado[];
-  registrarReporte: (data: { empresaId: string; empresaNombre: string; tipo: TipoReporte }) => void;
+  registrarReporte: (data: {
+    empresaId: string;
+    empresaNombre: string;
+    tipo: TipoReporte;
+    generadoPor: string;
+  }) => void;
 }
 
 function fecha(): string {

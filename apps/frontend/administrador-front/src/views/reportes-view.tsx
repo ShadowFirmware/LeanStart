@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import {
   BarChart3, FileText, LayoutTemplate, Sparkles, Search, Plus,
-  ChevronRight, ChevronLeft, History as HistoryIcon,
+  ChevronRight, ChevronLeft, History as HistoryIcon, User, CalendarDays,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  useCurrentUser,
 } from "@leanstart/commons";
-import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
+import { useEmpresasStore, useObservacionesStore, type Empresa } from "@leanstart/empresas-front";
 import { useCriteriosStore } from "../store/criterios";
 import { useViabilidadStore } from "../store/viabilidad";
 import { useEvaluacionesStore } from "../store/evaluaciones";
@@ -20,9 +21,24 @@ import { ReporteDocumento } from "../components/reporte-documento";
 const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
 const TODOS_LOS_TIPOS = "todos";
 
-const TIPO_CONFIG: Record<TipoReporte, { label: string; hint: string; icon: React.ElementType }> = {
-  boleta: { label: "Boleta de evaluación", hint: "Criterios, calificación y viabilidad", icon: FileText },
-  canvas: { label: "Reporte Lean Canvas", hint: "Bloques del canvas y comentarios del evaluador", icon: LayoutTemplate },
+const TIPO_CONFIG: Record<
+  TipoReporte,
+  { label: string; hint: string; icon: React.ElementType; color: string; bg: string }
+> = {
+  boleta: {
+    label: "Boleta de evaluación",
+    hint: "Criterios, calificación y viabilidad",
+    icon: FileText,
+    color: "#3B82F6",
+    bg: "rgba(59,130,246,0.12)",
+  },
+  canvas: {
+    label: "Reporte Lean Canvas",
+    hint: "Bloques del canvas y comentarios del evaluador",
+    icon: LayoutTemplate,
+    color: "#9A62FA",
+    bg: "rgba(154,98,250,0.12)",
+  },
 };
 
 /** Logo de la empresa (o inicial) con tamaño configurable. */
@@ -61,9 +77,12 @@ export function ReportesView() {
   const niveles = useViabilidadStore((s) => s.niveles);
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
   const evaluaciones = useEvaluacionesStore((s) => s.evaluaciones);
+  const observaciones = useObservacionesStore((s) => s.observaciones);
 
   const historial = useReportesGeneradosStore((s) => s.reportes);
   const registrarReporte = useReportesGeneradosStore((s) => s.registrarReporte);
+
+  const usuarioActual = useCurrentUser();
 
   const empresasOrdenadas = useMemo(
     () => [...empresas].sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })),
@@ -85,6 +104,9 @@ export function ReportesView() {
 
   const empresaActiva = reporteActivo ? empresas.find((e) => e.id === reporteActivo.empresaId) : undefined;
   const evaluacionActiva = reporteActivo ? evaluaciones[reporteActivo.empresaId] : undefined;
+  const observacionesActivas = reporteActivo
+    ? observaciones.filter((o) => o.empresaId === reporteActivo.empresaId)
+    : [];
   const calculoActivo = useMemo(
     () => (empresaActiva ? calcularReporte(empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion) : null),
     [empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion]
@@ -104,7 +126,12 @@ export function ReportesView() {
 
   function elegirEmpresa(empresa: Empresa) {
     if (!tipoSeleccionado) return;
-    registrarReporte({ empresaId: empresa.id, empresaNombre: empresa.nombre, tipo: tipoSeleccionado });
+    registrarReporte({
+      empresaId: empresa.id,
+      empresaNombre: empresa.nombre,
+      tipo: tipoSeleccionado,
+      generadoPor: usuarioActual?.name?.trim() || "Administrador",
+    });
     setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id });
     setDialogOpen(false);
   }
@@ -115,7 +142,10 @@ export function ReportesView() {
 
   const historialFiltrado = historial.filter((r) => {
     const coincideTipo = filtroTipo === TODOS_LOS_TIPOS || r.tipo === filtroTipo;
-    const coincideBusqueda = r.empresaNombre.toLowerCase().includes(busqueda.toLowerCase());
+    const q = busqueda.toLowerCase();
+    const coincideBusqueda =
+      r.empresaNombre.toLowerCase().includes(q) ||
+      (r.generadoPor ?? "").toLowerCase().includes(q);
     return coincideTipo && coincideBusqueda;
   });
 
@@ -144,6 +174,20 @@ export function ReportesView() {
         </button>
       </div>
 
+      {/* Encabezado de la sección de historial (siempre visible) */}
+      <div className="flex items-center gap-2 pt-1">
+        <HistoryIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
+        <h2 className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Historial de reportes</h2>
+        {historial.length > 0 && (
+          <span
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+          >
+            {historial.length}
+          </span>
+        )}
+      </div>
+
       {/* Filtros del historial */}
       {historial.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3">
@@ -151,7 +195,7 @@ export function ReportesView() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
             <input
               type="text"
-              placeholder="Buscar por empresa..."
+              placeholder="Buscar por empresa o autor..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
@@ -195,7 +239,7 @@ export function ReportesView() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {historialFiltrado.map((r) => {
             const empresa = empresas.find((e) => e.id === r.empresaId);
             const cfg = TIPO_CONFIG[r.tipo];
@@ -205,29 +249,61 @@ export function ReportesView() {
                 type="button"
                 onClick={() => setReporteActivo({ tipo: r.tipo, empresaId: r.empresaId })}
                 disabled={!empresa}
-                className="flex items-center gap-4 rounded-xl px-5 py-4 text-left transition-[border-color] disabled:opacity-50 disabled:cursor-not-allowed"
+                title={empresa ? `Abrir ${cfg.label}` : "La empresa fue eliminada"}
+                className="flex flex-col rounded-xl p-5 text-left transition-[border-color] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={cardStyle}
                 onMouseEnter={(e) => { if (empresa) e.currentTarget.style.borderColor = "rgba(154,98,250,0.25)"; }}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
               >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
-                >
-                  <cfg.icon className="w-4.5 h-4.5" style={{ color: "#9A62FA" }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>
-                      {empresa ? r.empresaNombre : `${r.empresaNombre} (eliminada)`}
+                {/* Header: logo empresa + nombre + tipo de reporte */}
+                <div className="flex items-start gap-3 mb-4">
+                  {empresa ? (
+                    <EmpresaLogo empresa={empresa} size={48} />
+                  ) : (
+                    <div
+                      className="rounded-xl flex items-center justify-center font-bold shrink-0"
+                      style={{ width: 48, height: 48, fontSize: 19, backgroundColor: "rgba(255,255,255,0.05)", color: "#7E7C86" }}
+                    >
+                      {r.empresaNombre.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "#F2F0F7" }}>
+                      {r.empresaNombre}
                     </p>
-                    <span className="text-[11px] whitespace-nowrap" style={{ color: "#4A4850" }}>{r.generadoEn}</span>
+                    <span
+                      className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1.5 inline-flex items-center gap-1 max-w-full"
+                      style={{ backgroundColor: cfg.bg, color: cfg.color }}
+                    >
+                      <cfg.icon className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{cfg.label}</span>
+                    </span>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
-                    {cfg.label}{empresa ? ` · ${GIRO_LABELS[empresa.giro]}` : ""}
-                  </p>
+                  {empresa && <ChevronRight className="w-4 h-4 shrink-0 mt-1" style={{ color: "#4A4850" }} />}
                 </div>
-                {empresa && <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "#4A4850" }} />}
+
+                {/* Pie: autor + fecha */}
+                <div
+                  className="flex items-center justify-between gap-3 pt-3.5 mt-auto"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <User className="w-3.5 h-3.5 shrink-0" style={{ color: "#4A4850" }} />
+                    <span className="text-xs truncate" style={{ color: "#7E7C86" }}>
+                      {r.generadoPor || "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <CalendarDays className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
+                    <span className="text-[11px] whitespace-nowrap" style={{ color: "#7E7C86" }}>
+                      {r.generadoEn}
+                    </span>
+                  </div>
+                </div>
+
+                {!empresa && (
+                  <span className="text-[11px] mt-2" style={{ color: "#EF4444" }}>Empresa eliminada</span>
+                )}
               </button>
             );
           })}
@@ -333,6 +409,7 @@ export function ReportesView() {
           empresa={empresaActiva}
           calculo={calculoActivo}
           comentarioEvaluador={evaluacionActiva?.comentarioEvaluador ?? ""}
+          observaciones={observacionesActivas}
           onClose={() => setReporteActivo(null)}
         />
       )}

@@ -212,3 +212,43 @@ nextjs-portal {
     width: 100%;
   }
 }
+
+/* ─── Preloader / Loader de marca ───
+   Animaciones sutiles para <LoadingScreen>: el anillo cónico gira, el glow
+   respira y los puntos del texto laten en secuencia. */
+@keyframes ls-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ls-loader-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@keyframes ls-loader-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes ls-loader-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
