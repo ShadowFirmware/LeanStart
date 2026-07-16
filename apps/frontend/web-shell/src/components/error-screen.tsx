@@ -1,7 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Logo } from "@/components/logo";
 import { Button } from "@leanstart/commons";
 import { ArrowLeft, Home, type LucideIcon } from "lucide-react";
+
+/** Ilustraciones de marca (mascotas) para las páginas de error. */
+const ART = [
+  "/images/error-robot.svg",
+  "/images/error-ghost.svg",
+  "/images/error-search.svg",
+  "/images/error-plug.svg",
+  "/images/error-lock.svg",
+  "/images/error-rocket.svg",
+  "/images/error-cloud.svg",
+];
 
 type ErrorAction = {
   label: string;
@@ -15,10 +27,13 @@ type ErrorScreenProps = {
   code?: string;
   title: string;
   description: string;
-  icon: LucideIcon;
-  /** Color de acento del icono/código. Por defecto morado de marca. */
+  /** Icono lucide (heredado, opcional). Ya no se muestra: usamos la ilustración. */
+  icon?: LucideIcon;
+  /** Color de acento del código. Por defecto morado de marca. */
   accent?: string;
+  /** @deprecated ya no se usa (se dejaba para el ícono). */
   accentBg?: string;
+  /** @deprecated ya no se usa (se dejaba para el ícono). */
   accentBorder?: string;
   actions?: ErrorAction[];
 };
@@ -26,23 +41,27 @@ type ErrorScreenProps = {
 const PRIMARY_BG = "var(--brand-gradient)";
 
 /**
- * Pantalla de error reutilizable con el lenguaje visual de LeanStart
- * (fondo oscuro, glow radial, tarjeta con acento morado). La usan las
- * páginas de estado HTTP (400/401/403/500/503) y el not-found.
+ * Pantalla de error reutilizable con el lenguaje visual de LeanStart: tarjeta
+ * de vidrio con glow morado, logo compacto, texto a la izquierda y una
+ * ilustración (mascota) a la derecha —al estilo de las páginas de error de las
+ * grandes plataformas—. La usan las páginas de estado HTTP (400/401/403/500/503)
+ * y el not-found.
  */
 export function ErrorScreen({
   code,
   title,
   description,
-  icon: Icon,
   accent = "var(--brand)",
-  accentBg = "rgba(154,98,250,0.09)",
-  accentBorder = "rgba(154,98,250,0.18)",
   actions = [{ label: "Volver al inicio", href: "/", icon: ArrowLeft, variant: "primary" }],
 }: ErrorScreenProps) {
+  // Elegimos la ilustración en el SERVIDOR, por request: aparece de inmediato
+  // (ya viene en el HTML, sin esperar a que hidrate el cliente) y cambia en
+  // cada carga. Las páginas que usan esto declaran `dynamic = "force-dynamic"`.
+  const illustration = ART[Math.floor(Math.random() * ART.length)];
+
   return (
     <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-10"
       style={{ backgroundColor: "var(--shell)" }}
     >
       {/* Radial glow superior */}
@@ -56,7 +75,7 @@ export function ErrorScreen({
 
       {/* Card */}
       <div
-        className="relative w-full max-w-110 rounded-2xl p-9 flex flex-col items-center text-center gap-6"
+        className="relative w-full max-w-4xl rounded-3xl p-8 md:p-12 flex flex-col-reverse md:flex-row items-center gap-8 md:gap-12"
         style={{
           backgroundColor: "var(--surface-glass)",
           border: "1px solid var(--brand-tint-strong)",
@@ -66,74 +85,84 @@ export function ErrorScreen({
       >
         {/* Línea de acento superior */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3 rounded-full"
+          className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-1/2 rounded-full"
           style={{
             background:
               "linear-gradient(90deg, transparent, var(--brand-line), transparent)",
           }}
         />
 
-        <Logo height={30} priority />
+        {/* Columna de texto */}
+        <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
+          <Logo height={22} priority />
 
-        {/* Icono */}
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: accentBg, border: `1px solid ${accentBorder}` }}
-        >
-          <Icon className="w-7 h-7" style={{ color: accent }} />
-        </div>
-
-        <div className="space-y-2">
           {code && (
             <p
-              className="text-6xl font-bold tracking-tight leading-none"
+              className="mt-7 text-5xl md:text-6xl font-bold tracking-tight leading-none"
               style={{ color: accent }}
             >
               {code}
             </p>
           )}
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-strong)" }}>
+          <h1
+            className="mt-3 text-xl md:text-2xl font-semibold"
+            style={{ color: "var(--text-strong)" }}
+          >
             {title}
           </h1>
           <p
-            className="text-sm leading-relaxed max-w-xs mx-auto"
+            className="mt-2.5 text-sm leading-relaxed max-w-sm"
             style={{ color: "var(--text-dim)" }}
           >
             {description}
           </p>
+
+          <div className="mt-7 flex flex-col sm:flex-row items-stretch gap-3 w-full sm:w-auto">
+            {actions.map(({ label, href, icon: ActionIcon, variant = "primary" }) =>
+              variant === "primary" ? (
+                <Button
+                  key={label}
+                  className="h-11 min-w-0 rounded-xl font-semibold text-sm border-0 px-6"
+                  style={{ background: PRIMARY_BG, color: "var(--brand-fg)" }}
+                  nativeButton={false}
+                  render={<Link href={href} />}
+                >
+                  {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
+                  {label}
+                </Button>
+              ) : (
+                <Button
+                  key={label}
+                  variant="outline"
+                  className="h-11 min-w-0 rounded-xl font-semibold text-sm px-6"
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "1px solid var(--border-hair)",
+                    color: "var(--text-strong)",
+                  }}
+                  nativeButton={false}
+                  render={<Link href={href} />}
+                >
+                  {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
+                  {label}
+                </Button>
+              )
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full mt-1">
-          {actions.map(({ label, href, icon: ActionIcon, variant = "primary" }) =>
-            variant === "primary" ? (
-              <Button
-                key={label}
-                className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm border-0"
-                style={{ background: PRIMARY_BG, color: "var(--brand-fg)" }}
-                nativeButton={false}
-                render={<Link href={href} />}
-              >
-                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
-                {label}
-              </Button>
-            ) : (
-              <Button
-                key={label}
-                variant="outline"
-                className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm"
-                style={{
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--border-hair)",
-                  color: "var(--text-strong)",
-                }}
-                nativeButton={false}
-                render={<Link href={href} />}
-              >
-                {ActionIcon && <ActionIcon className="mr-2 w-4 h-4 shrink-0" />}
-                {label}
-              </Button>
-            )
-          )}
+        {/* Ilustración (mascota aleatoria, elegida por request) */}
+        <div className="shrink-0 w-52 sm:w-64 md:w-72">
+          <Image
+            src={illustration}
+            alt=""
+            width={320}
+            height={320}
+            priority
+            unoptimized
+            draggable={false}
+            className="w-full h-auto select-none [animation:error-art-in_0.22s_ease-out_both]"
+          />
         </div>
       </div>
     </div>

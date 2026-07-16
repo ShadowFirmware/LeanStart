@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { ServerCrash, Home } from "lucide-react";
 import { ErrorScreen } from "@/components/error-screen";
 
+// Render por request para que la ilustración sea aleatoria en cada carga.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Error del servidor · LeanStart",
 };

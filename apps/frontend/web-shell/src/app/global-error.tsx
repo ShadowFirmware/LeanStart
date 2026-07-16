@@ -1,6 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const ERROR_ART = [
+  "/images/error-robot.svg",
+  "/images/error-ghost.svg",
+  "/images/error-search.svg",
+  "/images/error-plug.svg",
+  "/images/error-lock.svg",
+  "/images/error-rocket.svg",
+  "/images/error-cloud.svg",
+];
 
 /**
  * Boundary de error a nivel raíz. Reemplaza al layout completo cuando el
@@ -15,9 +25,28 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [art, setArt] = useState<string | null>(null);
+
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  useEffect(() => {
+    let last: string | null = null;
+    try {
+      last = sessionStorage.getItem("ls-error-art");
+    } catch {
+      /* noop */
+    }
+    const pool = last ? ERROR_ART.filter((a) => a !== last) : ERROR_ART;
+    const choice = pool[Math.floor(Math.random() * pool.length)] ?? ERROR_ART[0];
+    try {
+      sessionStorage.setItem("ls-error-art", choice);
+    } catch {
+      /* noop */
+    }
+    setArt(choice);
+  }, []);
 
   return (
     <html lang="es">
@@ -77,33 +106,20 @@ export default function GlobalError({
             }}
           />
 
-          {/* Icono */}
-          <div
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(239,110,110,0.09)",
-              border: "1px solid rgba(239,110,110,0.2)",
-            }}
-          >
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#EF6E6E"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-              <path d="M12 9v4" />
-              <path d="M12 17h.01" />
-            </svg>
+          {/* Ilustración (mascota aleatoria). <img> nativo: global-error debe
+              funcionar aun si falla el layout raíz, por eso no usamos next/image.
+              Reservamos el espacio para no provocar salto al cargar. */}
+          <div style={{ width: "180px", height: "180px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {art && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={art}
+                alt=""
+                width={180}
+                height={180}
+                style={{ width: "180px", height: "auto", animation: "error-art-in 0.22s ease-out both" }}
+              />
+            )}
           </div>
 
           <div>

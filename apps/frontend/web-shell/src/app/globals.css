@@ -265,6 +265,44 @@
   }
 }
 
+/* ─── Cursor de mano en TODO lo interactivo ───
+   Tailwind v4 deja los <button> en `cursor: default` y varios componentes de
+   shadcn (SelectItem, DropdownMenuItem…) traen `cursor-default` explícito, lo
+   que hacía que en unos elementos apareciera la manita y en otros no. Esta
+   regla va SIN @layer a propósito: así gana sobre las utilidades `cursor-*` de
+   Tailwind, pero sigue respetando los `style` inline (p. ej. los bloques del
+   Lean Canvas, que alternan pointer/default según sean clicables) y los
+   estados deshabilitados. */
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"]:not([aria-disabled="true"]),
+[role="radio"]:not([aria-disabled="true"]),
+[role="checkbox"]:not([aria-disabled="true"]),
+[role="option"]:not([aria-disabled="true"]),
+[role="menuitem"]:not([aria-disabled="true"]),
+[role="menuitemradio"]:not([aria-disabled="true"]),
+[role="menuitemcheckbox"]:not([aria-disabled="true"]),
+[role="switch"]:not([aria-disabled="true"]),
+[role="combobox"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+summary,
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+input[type="file"]:not(:disabled) {
+  cursor: pointer;
+}
+
+:disabled,
+[aria-disabled="true"],
+[data-disabled] {
+  cursor: not-allowed;
+}
+
 /* ─── Scrollbars finos y temáticos en toda la app ───
    Reemplaza la barra gruesa por defecto del SO (fea en Windows) por una
    delgada, translúcida y en el morado de la marca. La utilidad .no-scrollbar
@@ -378,5 +416,17 @@ nextjs-portal {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Entrada suave de la ilustración de las error pages */
+@keyframes error-art-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
