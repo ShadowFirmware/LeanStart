@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 
 type LoadingScreenProps = {
   /** Texto opcional bajo el logo (ej. "Cargando tu espacio…"). */
@@ -28,7 +28,7 @@ export function LoadingScreen({
           ? "fixed inset-0 z-50 flex items-center justify-center overflow-hidden px-4"
           : "flex min-h-60 w-full items-center justify-center overflow-hidden px-4"
       }
-      style={fullScreen ? { backgroundColor: "#0D0C10" } : undefined}
+      style={fullScreen ? { backgroundColor: "var(--shell)" } : undefined}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -48,16 +48,7 @@ export function LoadingScreen({
         className="relative flex flex-col items-center gap-8 text-center"
         style={{ animation: "ls-loader-in 0.5s ease-out both" }}
       >
-        <Image
-          src="/logo.png"
-          alt="LeanStart"
-          height={30}
-          width={140}
-          unoptimized
-          style={{ width: "auto", height: "auto" }}
-          className="object-contain opacity-95"
-          priority
-        />
+        <Logo height={30} priority />
 
         {/* Spinner: anillo cónico + núcleo que respira */}
         <div className="relative h-14 w-14">
@@ -74,7 +65,7 @@ export function LoadingScreen({
           {/* Pista tenue del anillo */}
           <div
             className="absolute inset-0 rounded-full"
-            style={{ border: "3px solid rgba(154,98,250,0.12)" }}
+            style={{ border: "3px solid var(--brand-tint)" }}
           />
 
           {/* Arco morado que gira (cónico enmascarado a anillo) */}
@@ -82,7 +73,7 @@ export function LoadingScreen({
             className="absolute inset-0 rounded-full"
             style={{
               background:
-                "conic-gradient(from 90deg, transparent 0deg, transparent 60deg, #9A62FA 300deg, #AE6CFD 360deg)",
+                "conic-gradient(from 90deg, transparent 0deg, transparent 60deg, var(--brand) 300deg, var(--brand-2) 360deg)",
               WebkitMask:
                 "radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px))",
               mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px))",
@@ -95,7 +86,7 @@ export function LoadingScreen({
           <div className="flex items-center gap-1.5">
             <span
               className="text-sm font-medium tracking-wide"
-              style={{ color: "#9B9A9F" }}
+              style={{ color: "var(--muted-foreground)" }}
             >
               {message}
             </span>
@@ -105,7 +96,7 @@ export function LoadingScreen({
                   key={i}
                   className="inline-block h-1 w-1 rounded-full"
                   style={{
-                    backgroundColor: "#9A62FA",
+                    backgroundColor: "var(--brand)",
                     animation: `ls-loader-dot 1.4s ease-in-out ${i * 0.2}s infinite`,
                   }}
                 />

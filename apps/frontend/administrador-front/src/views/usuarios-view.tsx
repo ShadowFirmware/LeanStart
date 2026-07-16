@@ -52,9 +52,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const inputStyle = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
 export function UsuariosView() {
@@ -122,15 +122,15 @@ export function UsuariosView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Gestión de Usuarios</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Gestión de Usuarios</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             Administra las cuentas y roles de la plataforma.
           </p>
         </div>
         <Button
           onClick={abrirCrear}
           className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
-          style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+          style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
         >
           <Plus className="w-4 h-4" />
           Crear usuario
@@ -140,21 +140,21 @@ export function UsuariosView() {
       {/* Búsqueda + filtros por rol */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
           <input
             type="text"
             placeholder="Buscar por nombre o correo..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+            style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
           />
         </div>
         <div
           className="flex items-center gap-1 rounded-lg p-1 shrink-0 overflow-x-auto"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)" }}
         >
           {FILTROS_ROL.map(({ value, label }) => {
             const isActive = filtroRol === value;
@@ -165,7 +165,7 @@ export function UsuariosView() {
                 className="px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0"
                 style={{
                   backgroundColor: isActive ? "rgba(154,98,250,0.18)" : "transparent",
-                  color: isActive ? "#F2F0F7" : "#7E7C86",
+                  color: isActive ? "var(--text-strong)" : "var(--text-dim)",
                 }}
               >
                 {label}
@@ -179,13 +179,13 @@ export function UsuariosView() {
       {usuariosFiltrados.length === 0 ? (
         <div
           className="rounded-xl p-14 text-center"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
         >
-          <Users className="w-9 h-9 mx-auto mb-3" style={{ color: "#4A4850" }} />
-          <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>
+          <Users className="w-9 h-9 mx-auto mb-3" style={{ color: "var(--text-faint)" }} />
+          <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>
             {busqueda || filtroRol !== TODOS_LOS_ROLES ? "Sin resultados" : "Aún no hay usuarios"}
           </p>
-          <p className="text-sm" style={{ color: "#7E7C86" }}>
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>
             {busqueda || filtroRol !== TODOS_LOS_ROLES ? "Prueba con otros términos o filtros." : "Crea el primer usuario para comenzar."}
           </p>
         </div>
@@ -198,9 +198,9 @@ export function UsuariosView() {
               <div
                 key={u.id}
                 className="flex flex-wrap items-center gap-4 rounded-xl px-5 py-4 transition-[border-color]"
-                style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
               >
                 {/* Usuario */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -211,8 +211,8 @@ export function UsuariosView() {
                     {u.nombre.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{u.nombre}</p>
-                    <p className="text-xs truncate" style={{ color: "#7E7C86" }}>{u.correo}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{u.nombre}</p>
+                    <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{u.correo}</p>
                   </div>
                 </div>
 
@@ -238,7 +238,7 @@ export function UsuariosView() {
                         variant="ghost"
                         size="icon-sm"
                         className="shrink-0"
-                        style={{ color: "#7E7C86" }}
+                        style={{ color: "var(--text-dim)" }}
                         aria-label="Acciones de usuario"
                       />
                     }
@@ -337,7 +337,7 @@ export function UsuariosView() {
                 <Button
                   type="submit"
                   className="border-0"
-                  style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                  style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                 >
                   {editTarget ? "Guardar cambios" : "Crear usuario"}
                 </Button>

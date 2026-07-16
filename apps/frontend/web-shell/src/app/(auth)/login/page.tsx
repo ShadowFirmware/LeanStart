@@ -18,10 +18,9 @@ import { Input } from "@leanstart/commons";
 import { Button } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { ControllerRenderProps } from "react-hook-form";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import logo from "../../../../public/logo.png";
+import { Logo } from "@/components/logo";
 
 const loginSchema = z.object({
   email: z.email("Correo electrónico inválido"),
@@ -60,15 +59,15 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
-      style={{ backgroundColor: "#151419" }}
+      style={{ backgroundColor: "var(--background)" }}
     >
       {/* Back button */}
       <Link
         href="/"
         className="absolute top-10 left-12 z-10 flex items-center gap-2 text-sm transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         Volver al inicio
@@ -96,11 +95,10 @@ export default function LoginPage() {
       <div
         className="relative w-full max-w-[420px] rounded-2xl p-8 flex flex-col gap-7"
         style={{
-          backgroundColor: "rgba(32,33,37,0.85)",
-          border: "1px solid rgba(154,98,250,0.2)",
+          backgroundColor: "var(--surface-glass)",
+          border: "1px solid var(--brand-tint-strong)",
           backdropFilter: "blur(16px)",
-          boxShadow:
-            "0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 64px rgba(0,0,0,0.4)",
+          boxShadow: "var(--shadow-elevated)",
         }}
       >
         {/* Top accent line */}
@@ -108,28 +106,21 @@ export default function LoginPage() {
           className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3 rounded-full"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(154,98,250,0.6), transparent)",
+              "linear-gradient(90deg, transparent, var(--brand-line), transparent)",
           }}
         />
 
         {/* Logo + heading */}
         <div className="flex flex-col items-center gap-4">
-          <Image
-            src={logo}
-            alt="LeanStart"
-            height={32}
-            style={{ width: "auto" }}
-            className="object-contain"
-            priority
-          />
+          <Logo height={32} priority />
           <div className="text-center space-y-1">
             <h1
               className="text-xl font-semibold tracking-tight"
-              style={{ color: "#FBFBFC" }}
+              style={{ color: "var(--foreground)" }}
             >
               Inicia sesión en tu cuenta
             </h1>
-            <p className="text-sm" style={{ color: "#9B9A9F" }}>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
               Ingresa tus credenciales para continuar
             </p>
           </div>
@@ -138,7 +129,7 @@ export default function LoginPage() {
         {/* Divider */}
         <div
           className="h-px w-full"
-          style={{ background: "rgba(255,255,255,0.06)" }}
+          style={{ background: "var(--border-subtle)" }}
         />
 
         {/* Form */}
@@ -158,7 +149,7 @@ export default function LoginPage() {
                 <FormItem className="gap-1.5">
                   <FormLabel
                     className="text-xs font-medium uppercase tracking-wider"
-                    style={{ color: "#9B9A9F" }}
+                    style={{ color: "var(--muted-foreground)" }}
                   >
                     Correo electrónico
                   </FormLabel>
@@ -187,21 +178,21 @@ export default function LoginPage() {
                   <div className="flex items-center justify-between">
                     <FormLabel
                       className="text-xs font-medium uppercase tracking-wider"
-                      style={{ color: "#9B9A9F" }}
+                      style={{ color: "var(--muted-foreground)" }}
                     >
                       Contraseña
                     </FormLabel>
                     <Link
                       href="/recuperar"
                       className="text-xs transition-colors"
-                      style={{ color: "#9A62FA" }}
+                      style={{ color: "var(--brand)" }}
                       onMouseEnter={(e) =>
                         ((e.currentTarget as HTMLElement).style.color =
-                          "#C687F5")
+                          "var(--brand-accent)")
                       }
                       onMouseLeave={(e) =>
                         ((e.currentTarget as HTMLElement).style.color =
-                          "#9A62FA")
+                          "var(--brand)")
                       }
                     >
                       ¿Olvidaste tu contraseña?
@@ -219,9 +210,9 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => setShowPassword((v) => !v)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                        style={{ color: "#7E7C86" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+                        style={{ color: "var(--text-dim)" }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -238,18 +229,18 @@ export default function LoginPage() {
               disabled={loading}
               className="h-11 w-full rounded-xl font-semibold text-sm mt-1 border-0 transition-all duration-200"
               style={{
-                background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-                color: "#FBFBFC",
+                background: "var(--brand-gradient)",
+                color: "var(--brand-fg)",
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
                   (e.currentTarget as HTMLElement).style.background =
-                    "linear-gradient(135deg, #8E58EE 0%, #9A62FA 100%)";
+                    "var(--brand-gradient-hover)";
                 }
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.background =
-                  "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)";
+                  "var(--brand-gradient)";
               }}
             >
               {loading ? (
@@ -280,14 +271,14 @@ export default function LoginPage() {
                 "Iniciar sesión"
               )}
             </Button>
-            <p className="text-center text-sm" style={{ color: "#7E7C86" }}>
+            <p className="text-center text-sm" style={{ color: "var(--text-dim)" }}>
               ¿No tienes cuenta?{" "}
               <Link
                 href="/registro"
                 className="transition-colors"
-                style={{ color: "#9A62FA" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
+                style={{ color: "var(--brand)" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand-accent)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand)")}
               >
                 Crear cuenta
               </Link>

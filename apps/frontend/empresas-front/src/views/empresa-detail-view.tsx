@@ -47,7 +47,7 @@ const GIROS: { value: GiroEmpresa; label: string }[] = [
 ];
 
 const ESTADO_CONFIG = {
-  borrador: { label: "Borrador", color: "#9A62FA", bg: "rgba(154,98,250,0.12)" },
+  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
   pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   observaciones_pendientes: { label: "Observaciones pendientes", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
@@ -59,7 +59,7 @@ const ESTADO_CONFIG = {
 } as const;
 
 const ESTADO_HIPOTESIS_CONFIG = {
-  pendiente_validacion: { label: "Pendiente", color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  pendiente_validacion: { label: "Pendiente", color: "var(--text-dim)", bg: "var(--border-subtle)" },
   validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
@@ -95,26 +95,26 @@ function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+      style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
     >
       <div
         className="flex items-center justify-between gap-3 flex-wrap gap-y-2 px-4 md:px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className="relative w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
           >
-            <Icon className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
+            <Icon className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
             {tienePendiente && (
               <span
                 className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: "#EF4444", border: "2px solid #131219" }}
+                style={{ backgroundColor: "#EF4444", border: "2px solid var(--surface-profile)" }}
               />
             )}
           </div>
-          <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>{title}</span>
+          <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>{title}</span>
         </div>
         {action}
       </div>
@@ -124,7 +124,7 @@ function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
 }
 
 const FASE_CONFIG = {
-  1: { label: "Creación",    color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  1: { label: "Creación",    color: "var(--text-dim)", bg: "var(--border-subtle)" },
   2: { label: "Experimento", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   3: { label: "Completa",    color: "#10B981", bg: "rgba(16,185,129,0.12)" },
 } as const;
@@ -162,18 +162,18 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
           <Link
             href={`${basePath}/${empresaId}/hipotesis/nueva`}
             className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
-            style={{ color: "#9A62FA", backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.2)" }}
+            style={{ color: "var(--brand)", backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid var(--brand-tint-strong)" }}
           >
             <Plus className="w-3 h-3" /> Agregar hipótesis
           </Link>
         ) : (
-          <span className="text-xs" style={{ color: "#4A4850" }}>Máximo 3 hipótesis</span>
+          <span className="text-xs" style={{ color: "var(--text-faint)" }}>Máximo 3 hipótesis</span>
         )
       }
     >
       <div className="flex flex-col gap-3">
         {hipotesisList.length === 0 && (
-          <p className="text-sm" style={{ color: "#7E7C86" }}>
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>
             {puedeEditar ? "No tienes hipótesis registradas. Las hipótesis te ayudan a validar las suposiciones de tu modelo de negocio." : "Esta empresa no tiene hipótesis registradas."}
           </p>
         )}
@@ -189,16 +189,16 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
               key={h.id}
               href={editHref}
               className="flex items-start gap-3 rounded-xl px-4 py-3 transition-all"
-              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
+              style={{ backgroundColor: "var(--hover-surface-2)", border: "1px solid var(--border-subtle)" }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.25)")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
             >
-              <span className="text-xs font-bold shrink-0 mt-0.5 w-5 text-center" style={{ color: "#4A4850" }}>
+              <span className="text-xs font-bold shrink-0 mt-0.5 w-5 text-center" style={{ color: "var(--text-faint)" }}>
                 {i + 1}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>{h.titulo}</p>
-                <p className="text-xs mt-0.5 leading-relaxed line-clamp-2 break-words" style={{ color: "#7E7C86", overflowWrap: "anywhere" }}>{h.descripcion}</p>
+                <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>{h.titulo}</p>
+                <p className="text-xs mt-0.5 leading-relaxed line-clamp-2 break-words" style={{ color: "var(--text-dim)", overflowWrap: "anywhere" }}>{h.descripcion}</p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {estadoEmpresa === "borrador" && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
@@ -327,13 +327,13 @@ export function EmpresaDetailView({
   if (!empresa) {
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto">
-        <Link href={basePath} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+        <Link href={basePath} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "var(--text-dim)" }}>
           <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Link>
         <div className="flex flex-col items-center text-center py-20">
-          <AlertCircle className="w-10 h-10 mb-4" style={{ color: "#4A4850" }} />
-          <p className="text-base font-medium mb-1" style={{ color: "#F2F0F7" }}>Empresa no encontrada</p>
-          <p className="text-sm" style={{ color: "#7E7C86" }}>Esta empresa no existe o fue eliminada.</p>
+          <AlertCircle className="w-10 h-10 mb-4" style={{ color: "var(--text-faint)" }} />
+          <p className="text-base font-medium mb-1" style={{ color: "var(--text-strong)" }}>Empresa no encontrada</p>
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>Esta empresa no existe o fue eliminada.</p>
         </div>
       </div>
     );
@@ -457,9 +457,9 @@ export function EmpresaDetailView({
       <Link
         href={basePath}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" /> {backLabel}
       </Link>
@@ -467,7 +467,7 @@ export function EmpresaDetailView({
       {/* ── Información general ── */}
       <div
         className="rounded-2xl p-4 md:p-6"
-        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
       >
         {editando && puedeEditarProyecto ? (
           <Form {...form}>
@@ -490,8 +490,8 @@ export function EmpresaDetailView({
                       </>
                     ) : (
                       <>
-                        <span className="text-xl font-bold" style={{ color: "#9A62FA" }}>{nombreActual.charAt(0).toUpperCase()}</span>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "rgba(13,12,16,0.6)" }}>
+                        <span className="text-xl font-bold" style={{ color: "var(--brand)" }}>{nombreActual.charAt(0).toUpperCase()}</span>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "var(--shell-header)" }}>
                           <Camera className="w-4 h-4 text-white" />
                         </div>
                       </>
@@ -504,22 +504,22 @@ export function EmpresaDetailView({
                     name="nombre"
                     render={({ field }: { field: ControllerRenderProps<FormValues, "nombre"> }) => (
                       <FormItem className="gap-1.5">
-                        <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Nombre</FormLabel>
+                        <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Nombre</FormLabel>
                         <FormControl>
-                          <Input className="h-9 text-sm focus-visible:ring-0" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }} {...field} />
+                          <Input className="h-9 text-sm focus-visible:ring-0" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }} {...field} />
                         </FormControl>
                         <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
                   <FormItem className="gap-1.5">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Giro</FormLabel>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Giro</FormLabel>
                     <Controller
                       control={form.control}
                       name="giro"
                       render={({ field }) => (
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
+                          <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}>
                             <SelectValue placeholder="Selecciona un giro" />
                           </SelectTrigger>
                           <SelectContent>
@@ -535,7 +535,7 @@ export function EmpresaDetailView({
                 </div>
               </div>
 
-              <div className="h-px" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+              <div className="h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
 
               <FormField
                 control={form.control}
@@ -543,11 +543,11 @@ export function EmpresaDetailView({
                 render={({ field }: { field: ControllerRenderProps<FormValues, "descripcion"> }) => (
                   <FormItem className="gap-1.5">
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Descripción</FormLabel>
-                      <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 20 ? "#4A4850" : "#7E7C86" }}>{field.value?.length ?? 0} / 500 (mín. 20)</span>
+                      <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Descripción</FormLabel>
+                      <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 20 ? "var(--text-faint)" : "var(--text-dim)" }}>{field.value?.length ?? 0} / 500 (mín. 20)</span>
                     </div>
                     <FormControl>
-                      <Textarea maxLength={500} className="min-h-20 resize-none text-sm focus-visible:ring-0" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }} {...field} />
+                      <Textarea maxLength={500} className="min-h-20 resize-none text-sm focus-visible:ring-0" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }} {...field} />
                     </FormControl>
                     <FormMessage className="text-xs" />
                   </FormItem>
@@ -560,11 +560,11 @@ export function EmpresaDetailView({
                 render={({ field }: { field: ControllerRenderProps<FormValues, "mercadoObjetivo"> }) => (
                   <FormItem className="gap-1.5">
                     <div className="flex items-center justify-between">
-                      <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Mercado objetivo</FormLabel>
-                      <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 20 ? "#4A4850" : "#7E7C86" }}>{field.value?.length ?? 0} / 500 (mín. 20)</span>
+                      <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Mercado objetivo</FormLabel>
+                      <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 20 ? "var(--text-faint)" : "var(--text-dim)" }}>{field.value?.length ?? 0} / 500 (mín. 20)</span>
                     </div>
                     <FormControl>
-                      <Textarea maxLength={500} className="min-h-20 resize-none text-sm focus-visible:ring-0" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }} {...field} />
+                      <Textarea maxLength={500} className="min-h-20 resize-none text-sm focus-visible:ring-0" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }} {...field} />
                     </FormControl>
                     <FormMessage className="text-xs" />
                   </FormItem>
@@ -576,14 +576,14 @@ export function EmpresaDetailView({
                   type="button"
                   onClick={cancelarEdicion}
                   className="inline-flex items-center gap-1.5 text-sm px-4 h-9 rounded-lg"
-                  style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                 >
                   <X className="w-3.5 h-3.5" /> Cancelar
                 </button>
                 <Button
                   type="submit"
                   className="h-9 px-5 text-sm font-semibold border-0"
-                  style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                  style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                 >
                   <Check className="w-3.5 h-3.5" /> Guardar cambios
                 </Button>
@@ -598,7 +598,7 @@ export function EmpresaDetailView({
                   type="button"
                   onClick={() => setLogoLightboxOpen(true)}
                   className="w-16 h-16 rounded-xl shrink-0 overflow-hidden cursor-zoom-in transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9A62FA]"
-                  style={{ backgroundColor: "rgba(154,98,250,0.12)" }}
+                  style={{ backgroundColor: "var(--brand-tint)" }}
                   title="Ver imagen completa"
                   aria-label="Ver imagen completa"
                 >
@@ -607,7 +607,7 @@ export function EmpresaDetailView({
               ) : (
                 <div
                   className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold shrink-0 overflow-hidden"
-                  style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+                  style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
                 >
                   {empresa.nombre.charAt(0)}
                 </div>
@@ -615,9 +615,9 @@ export function EmpresaDetailView({
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h1 className="text-xl font-bold break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>{empresa.nombre}</h1>
+                    <h1 className="text-xl font-bold break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>{empresa.nombre}</h1>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#7E7C86" }}>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}>
                         {GIRO_LABELS[empresa.giro]}
                       </span>
                       <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}>
@@ -640,9 +640,9 @@ export function EmpresaDetailView({
                       <button
                         onClick={() => setEditando(true)}
                         className="inline-flex items-center gap-1.5 text-xs px-3 h-7 rounded-lg transition-colors"
-                        style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+                        style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
                       >
                         <Pencil className="w-3 h-3" /> Editar
                       </button>
@@ -652,28 +652,28 @@ export function EmpresaDetailView({
               </div>
             </div>
 
-            <div className="h-px mt-5 mb-5" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+            <div className="h-px mt-5 mb-5" style={{ backgroundColor: "var(--border-subtle)" }} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "#4A4850" }}>Descripción</p>
-                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}>{empresa.descripcion}</p>
+                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-faint)" }}>Descripción</p>
+                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>{empresa.descripcion}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "#4A4850" }}>Mercado objetivo</p>
-                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}>{empresa.mercadoObjetivo}</p>
+                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-faint)" }}>Mercado objetivo</p>
+                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>{empresa.mercadoObjetivo}</p>
               </div>
             </div>
 
-            <p className="text-xs mt-4" style={{ color: "#4A4850" }}>Creada el {empresa.creadaEn}</p>
+            <p className="text-xs mt-4" style={{ color: "var(--text-faint)" }}>Creada el {empresa.creadaEn}</p>
 
             {!readOnly && empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
               <>
-                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>Proyecto listo para enviar</p>
-                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>Proyecto listo para enviar</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                       Completaste todos los requisitos: producto, canvas e hipótesis.
                     </p>
                   </div>
@@ -684,7 +684,7 @@ export function EmpresaDetailView({
                       toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
                     }}
                     className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                   >
                     <Send className="w-3.5 h-3.5" />
                     Enviar a mentoría
@@ -695,11 +695,11 @@ export function EmpresaDetailView({
 
             {!readOnly && empresa.estado === "observaciones_pendientes" && todosComentariosResueltos && (
               <>
-                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>Cambios listos</p>
-                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>Cambios listos</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                       Atendiste todos los comentarios del mentor. Envía tu proyecto para que los revise de nuevo.
                     </p>
                   </div>
@@ -707,7 +707,7 @@ export function EmpresaDetailView({
                     type="button"
                     onClick={enviarNuevamenteAlMentor}
                     className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                    style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                   >
                     <Send className="w-3.5 h-3.5" />
                     Enviar cambios
@@ -718,13 +718,13 @@ export function EmpresaDetailView({
 
             {permitirAsignaciones && (empresa.estado === "pendiente_mentoria" || empresa.estado === "pendiente_evaluacion") && (
               <>
-                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>
                       {empresa.estado === "pendiente_mentoria" ? "Pendiente de asignar mentor" : "Pendiente de asignar evaluador"}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                       {empresa.estado === "pendiente_mentoria"
                         ? "Elige un mentor activo para comenzar la revisión."
                         : "Elige un evaluador activo para comenzar la evaluación."}
@@ -734,7 +734,7 @@ export function EmpresaDetailView({
                     type="button"
                     onClick={() => abrirAsignar(empresa.estado === "pendiente_mentoria" ? "mentor" : "evaluador")}
                     className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                    style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                   >
                     <UserCog className="w-3.5 h-3.5" />
                     {empresa.estado === "pendiente_mentoria" ? "Asignar mentor" : "Asignar evaluador"}
@@ -745,14 +745,14 @@ export function EmpresaDetailView({
 
             {permitirComentarios && (empresa.estado === "en_mentoria" || empresa.estado === "observaciones_atendidas") && (listoParaEvaluacion || !todosComentariosResueltos) && (
               <>
-                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "#F2F0F7" }}>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>
                       {listoParaEvaluacion ? "Revisión completa" : "Envía la retroalimentación al emprendedor"}
                     </p>
                     {listoParaEvaluacion && (
-                      <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                         Validaste todas las hipótesis y no quedan observaciones pendientes.
                       </p>
                     )}
@@ -762,7 +762,7 @@ export function EmpresaDetailView({
                       type="button"
                       onClick={enviarAEvaluacion}
                       className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                      style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "#FBFBFC" }}
+                      style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "var(--brand-fg)" }}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Enviar a evaluación
@@ -772,7 +772,7 @@ export function EmpresaDetailView({
                       type="button"
                       onClick={enviarComentariosEmprendedor}
                       className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                      style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                      style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       Enviar comentarios
@@ -796,34 +796,34 @@ export function EmpresaDetailView({
           return count === 0 ? (
             puedeEditarProyecto ? (
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm" style={{ color: "#7E7C86" }}>No tienes productos ni servicios registrados aún.</p>
+                <p className="text-sm" style={{ color: "var(--text-dim)" }}>No tienes productos ni servicios registrados aún.</p>
                 <Link
                   href={`${basePath}/${id}/productos`}
                   className="inline-flex items-center gap-1 text-xs transition-colors shrink-0"
-                  style={{ color: "#9A62FA" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
+                  style={{ color: "var(--brand)" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand-accent)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand)")}
                 >
                   Agregar <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             ) : (
-              <p className="text-sm" style={{ color: "#7E7C86" }}>Esta empresa no tiene productos ni servicios registrados.</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>Esta empresa no tiene productos ni servicios registrados.</p>
             )
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold" style={{ color: "#F2F0F7" }}>{count}</span>
-                <span className="text-sm" style={{ color: "#7E7C86" }}>
+                <span className="text-3xl font-bold" style={{ color: "var(--text-strong)" }}>{count}</span>
+                <span className="text-sm" style={{ color: "var(--text-dim)" }}>
                   {count === 1 ? "producto o servicio" : "productos y servicios"}
                 </span>
               </div>
               <Link
                 href={`${basePath}/${id}/productos`}
                 className="inline-flex items-center gap-1 text-xs transition-colors shrink-0"
-                style={{ color: "#9A62FA" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
+                style={{ color: "var(--brand)" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand-accent)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand)")}
               >
                 Ver todos <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -841,9 +841,9 @@ export function EmpresaDetailView({
           <Link
             href={`${basePath}/${id}/canvas`}
             className="inline-flex items-center gap-1 text-xs transition-colors"
-            style={{ color: "#9A62FA" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#C687F5")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9A62FA")}
+            style={{ color: "var(--brand)" }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand-accent)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--brand)")}
           >
             {!puedeEditarProyecto ? "Ver canvas" : (empresa.canvasBloques ?? 0) === 0 ? "Comenzar" : "Continuar"} <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -852,24 +852,24 @@ export function EmpresaDetailView({
         {empresa.estado === "borrador" && (
           <>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm" style={{ color: "#7E7C86" }}>
+              <span className="text-sm" style={{ color: "var(--text-dim)" }}>
                 {empresa.canvasBloques ?? 0} de {CANVAS_TOTAL} bloques completados
               </span>
               <span
                 className="text-xs font-semibold"
-                style={{ color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "#9A62FA" : "#4A4850" }}
+                style={{ color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "var(--brand)" : "var(--text-faint)" }}
               >
                 {canvasPct}%
               </span>
             </div>
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
               <div
                 className="h-full rounded-full transition-all"
-                style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "#9A62FA" }}
+                style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "var(--brand)" }}
               />
             </div>
             {puedeEditarProyecto && (empresa.canvasBloques ?? 0) === 0 && (
-              <p className="text-xs mt-3" style={{ color: "#4A4850" }}>
+              <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>
                 El Lean Canvas es un requisito para enviar tu empresa a evaluación.
               </p>
             )}
@@ -905,7 +905,7 @@ export function EmpresaDetailView({
               src={logoActual}
               alt={empresa.nombre}
               className="block mx-auto w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl"
-              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
             />
           )}
         </DialogContent>
@@ -926,12 +926,12 @@ export function EmpresaDetailView({
               onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}
               items={usuarios.map((u) => ({ value: u.id, label: u.nombre }))}
             >
-              <SelectTrigger className="w-full" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
+              <SelectTrigger className="w-full" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}>
                 <SelectValue placeholder={`Selecciona un ${asignarTipo ?? ""}`} />
               </SelectTrigger>
               <SelectContent>
                 {opcionesAsignables.length === 0 ? (
-                  <div className="px-2 py-4 text-sm text-center" style={{ color: "#7E7C86" }}>
+                  <div className="px-2 py-4 text-sm text-center" style={{ color: "var(--text-dim)" }}>
                     No hay {asignarTipo === "mentor" ? "mentores" : "evaluadores"} activos.
                   </div>
                 ) : (
@@ -950,7 +950,7 @@ export function EmpresaDetailView({
                 disabled={!usuarioSeleccionado}
                 onClick={confirmarAsignar}
                 className="border-0"
-                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
               >
                 Asignar
               </Button>

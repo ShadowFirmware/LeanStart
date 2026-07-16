@@ -149,9 +149,9 @@ export function EmpresaNewView() {
       <Link
         href="/emprendedor/empresas"
         className="inline-flex items-center gap-2 text-sm mb-8 transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         Mis Empresas
@@ -159,10 +159,10 @@ export function EmpresaNewView() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>
           Nueva empresa
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Registra la información general. Después podrás agregar productos,
           el Lean Canvas y tus hipótesis.
         </p>
@@ -175,8 +175,9 @@ export function EmpresaNewView() {
           <div
             className="rounded-2xl p-4 md:p-6 flex items-center gap-6"
             style={{
-              backgroundColor: "#131219",
-              border: "1px solid rgba(255,255,255,0.06)",
+              backgroundColor: "var(--surface-profile)",
+              boxShadow: "var(--shadow-card)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
             {/* Logo upload */}
@@ -197,7 +198,7 @@ export function EmpresaNewView() {
                   border: "2px dashed rgba(154,98,250,0.3)",
                 }}
                 onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.6)")
+                  ((e.currentTarget as HTMLElement).style.borderColor = "var(--brand-line)")
                 }
                 onMouseLeave={(e) =>
                   ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.3)")
@@ -216,23 +217,23 @@ export function EmpresaNewView() {
                       className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
                     >
-                      <Camera className="w-5 h-5" style={{ color: "#F2F0F7" }} />
+                      <Camera className="w-5 h-5" style={{ color: "var(--text-strong)" }} />
                     </div>
                   </>
                 ) : nombreActual ? (
                   <>
-                    <span className="text-2xl font-bold" style={{ color: "#9A62FA" }}>
+                    <span className="text-2xl font-bold" style={{ color: "var(--brand)" }}>
                       {nombreActual.charAt(0).toUpperCase()}
                     </span>
                     <div
                       className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ backgroundColor: "rgba(13,12,16,0.6)" }}
+                      style={{ backgroundColor: "var(--shell-header)" }}
                     >
-                      <Camera className="w-5 h-5" style={{ color: "#F2F0F7" }} />
+                      <Camera className="w-5 h-5" style={{ color: "var(--text-strong)" }} />
                     </div>
                   </>
                 ) : (
-                  <Camera className="w-6 h-6" style={{ color: "#9A62FA" }} />
+                  <Camera className="w-6 h-6" style={{ color: "var(--brand)" }} />
                 )}
               </button>
             </div>
@@ -247,11 +248,11 @@ export function EmpresaNewView() {
                     <div className="flex items-center justify-between">
                       <FormLabel
                         className="text-xs font-medium uppercase tracking-wider"
-                        style={{ color: "#7E7C86" }}
+                        style={{ color: "var(--text-dim)" }}
                       >
                         Nombre de la empresa
                       </FormLabel>
-                      <span className="text-xs" style={{ color: "#4A4850" }}>
+                      <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                         {field.value?.length ?? 0} / {MAX_NOMBRE}
                       </span>
                     </div>
@@ -260,9 +261,9 @@ export function EmpresaNewView() {
                         placeholder="Ej. EcoBottle"
                         className="h-9 text-sm focus-visible:ring-0"
                         style={{
-                          backgroundColor: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          color: "#F2F0F7",
+                          backgroundColor: "var(--hover-surface)",
+                          border: "1px solid var(--border-hair)",
+                          color: "var(--text-strong)",
                         }}
                         maxLength={MAX_NOMBRE}
                         {...field}
@@ -276,7 +277,7 @@ export function EmpresaNewView() {
               <FormItem className="gap-1.5">
                 <FormLabel
                   className="text-xs font-medium uppercase tracking-wider"
-                  style={{ color: "#7E7C86" }}
+                  style={{ color: "var(--text-dim)" }}
                 >
                   Giro o categoría
                 </FormLabel>
@@ -288,9 +289,9 @@ export function EmpresaNewView() {
                       <SelectTrigger
                         className="w-full h-9 text-sm focus-visible:ring-0"
                         style={{
-                          backgroundColor: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          color: "#F2F0F7",
+                          backgroundColor: "var(--hover-surface)",
+                          border: "1px solid var(--border-hair)",
+                          color: "var(--text-strong)",
                         }}
                       >
                         <SelectValue placeholder="Selecciona un giro" />
@@ -318,8 +319,9 @@ export function EmpresaNewView() {
           <div
             className="rounded-2xl p-4 md:p-6 flex flex-col gap-5"
             style={{
-              backgroundColor: "#131219",
-              border: "1px solid rgba(255,255,255,0.06)",
+              backgroundColor: "var(--surface-profile)",
+              boxShadow: "var(--shadow-card)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
             <FormField
@@ -330,13 +332,13 @@ export function EmpresaNewView() {
                   <div className="flex items-center justify-between">
                     <FormLabel
                       className="text-xs font-medium uppercase tracking-wider"
-                      style={{ color: "#7E7C86" }}
+                      style={{ color: "var(--text-dim)" }}
                     >
                       Descripción
                     </FormLabel>
                     <span
                       className="text-xs"
-                      style={{ color: (field.value?.length ?? 0) < 20 ? "#4A4850" : "#7E7C86" }}
+                      style={{ color: (field.value?.length ?? 0) < 20 ? "var(--text-faint)" : "var(--text-dim)" }}
                     >
                       {field.value?.length ?? 0} / {MAX_DESCRIPCION} (mín. 20)
                     </span>
@@ -346,9 +348,9 @@ export function EmpresaNewView() {
                       placeholder="Describe en qué consiste tu empresa o idea de negocio."
                       className="min-h-24 resize-none text-sm focus-visible:ring-0"
                       style={{
-                        backgroundColor: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        color: "#F2F0F7",
+                        backgroundColor: "var(--hover-surface)",
+                        border: "1px solid var(--border-hair)",
+                        color: "var(--text-strong)",
                       }}
                       maxLength={MAX_DESCRIPCION}
                       {...field}
@@ -361,7 +363,7 @@ export function EmpresaNewView() {
 
             <div
               className="h-px w-full"
-              style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              style={{ backgroundColor: "var(--border-subtle)" }}
             />
 
             <FormField
@@ -372,13 +374,13 @@ export function EmpresaNewView() {
                   <div className="flex items-center justify-between">
                     <FormLabel
                       className="text-xs font-medium uppercase tracking-wider"
-                      style={{ color: "#7E7C86" }}
+                      style={{ color: "var(--text-dim)" }}
                     >
                       Mercado objetivo
                     </FormLabel>
                     <span
                       className="text-xs"
-                      style={{ color: (field.value?.length ?? 0) < 20 ? "#4A4850" : "#7E7C86" }}
+                      style={{ color: (field.value?.length ?? 0) < 20 ? "var(--text-faint)" : "var(--text-dim)" }}
                     >
                       {field.value?.length ?? 0} / {MAX_MERCADO} (mín. 20)
                     </span>
@@ -388,9 +390,9 @@ export function EmpresaNewView() {
                       placeholder="¿A quién va dirigida tu empresa? Describe el perfil de tu cliente ideal."
                       className="min-h-24 resize-none text-sm focus-visible:ring-0"
                       style={{
-                        backgroundColor: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        color: "#F2F0F7",
+                        backgroundColor: "var(--hover-surface)",
+                        border: "1px solid var(--border-hair)",
+                        color: "var(--text-strong)",
                       }}
                       maxLength={MAX_MERCADO}
                       {...field}
@@ -404,9 +406,9 @@ export function EmpresaNewView() {
 
           {/* Footer */}
           <div className="flex items-center justify-between">
-            <p className="text-xs" style={{ color: "#4A4850" }}>
+            <p className="text-xs" style={{ color: "var(--text-faint)" }}>
               Se registrará con estado{" "}
-              <span style={{ color: "#9A62FA" }}>Borrador</span>
+              <span style={{ color: "var(--brand)" }}>Borrador</span>
             </p>
             <div className="flex items-center gap-3">
               <Button
@@ -414,9 +416,9 @@ export function EmpresaNewView() {
                 nativeButton={false}
                 className="h-9 px-5 text-sm"
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "#F2F0F7",
+                  backgroundColor: "var(--border-subtle)",
+                  border: "1px solid var(--border-hair)",
+                  color: "var(--text-strong)",
                 }}
                 render={<Link href="/emprendedor/empresas" />}
               >
@@ -427,8 +429,8 @@ export function EmpresaNewView() {
                 disabled={loading}
                 className="h-9 px-6 text-sm font-semibold border-0"
                 style={{
-                  background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-                  color: "#FBFBFC",
+                  background: "var(--brand-gradient)",
+                  color: "var(--brand-fg)",
                 }}
               >
                 {loading ? "Registrando..." : "Registrar empresa"}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 import { Button } from "@leanstart/commons";
 import { ArrowLeft, Home, type LucideIcon } from "lucide-react";
 
@@ -23,7 +23,7 @@ type ErrorScreenProps = {
   actions?: ErrorAction[];
 };
 
-const PRIMARY_BG = "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)";
+const PRIMARY_BG = "var(--brand-gradient)";
 
 /**
  * Pantalla de error reutilizable con el lenguaje visual de LeanStart
@@ -35,7 +35,7 @@ export function ErrorScreen({
   title,
   description,
   icon: Icon,
-  accent = "#9A62FA",
+  accent = "var(--brand)",
   accentBg = "rgba(154,98,250,0.09)",
   accentBorder = "rgba(154,98,250,0.18)",
   actions = [{ label: "Volver al inicio", href: "/", icon: ArrowLeft, variant: "primary" }],
@@ -43,7 +43,7 @@ export function ErrorScreen({
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
-      style={{ backgroundColor: "#0D0C10" }}
+      style={{ backgroundColor: "var(--shell)" }}
     >
       {/* Radial glow superior */}
       <div
@@ -58,11 +58,10 @@ export function ErrorScreen({
       <div
         className="relative w-full max-w-110 rounded-2xl p-9 flex flex-col items-center text-center gap-6"
         style={{
-          backgroundColor: "rgba(19,18,25,0.85)",
-          border: "1px solid rgba(154,98,250,0.2)",
+          backgroundColor: "var(--surface-glass)",
+          border: "1px solid var(--brand-tint-strong)",
           backdropFilter: "blur(16px)",
-          boxShadow:
-            "0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 64px rgba(0,0,0,0.4)",
+          boxShadow: "var(--shadow-elevated)",
         }}
       >
         {/* Línea de acento superior */}
@@ -70,20 +69,11 @@ export function ErrorScreen({
           className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-2/3 rounded-full"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(154,98,250,0.6), transparent)",
+              "linear-gradient(90deg, transparent, var(--brand-line), transparent)",
           }}
         />
 
-        <Image
-          src="/logo.png"
-          alt="LeanStart"
-          height={30}
-          width={130}
-          unoptimized
-          style={{ width: "auto", height: "auto" }}
-          className="object-contain"
-          priority
-        />
+        <Logo height={30} priority />
 
         {/* Icono */}
         <div
@@ -102,12 +92,12 @@ export function ErrorScreen({
               {code}
             </p>
           )}
-          <h1 className="text-xl font-semibold" style={{ color: "#F2F0F7" }}>
+          <h1 className="text-xl font-semibold" style={{ color: "var(--text-strong)" }}>
             {title}
           </h1>
           <p
             className="text-sm leading-relaxed max-w-xs mx-auto"
-            style={{ color: "#7E7C86" }}
+            style={{ color: "var(--text-dim)" }}
           >
             {description}
           </p>
@@ -119,7 +109,7 @@ export function ErrorScreen({
               <Button
                 key={label}
                 className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm border-0"
-                style={{ background: PRIMARY_BG, color: "#FBFBFC" }}
+                style={{ background: PRIMARY_BG, color: "var(--brand-fg)" }}
                 nativeButton={false}
                 render={<Link href={href} />}
               >
@@ -133,8 +123,8 @@ export function ErrorScreen({
                 className="h-11 flex-1 min-w-0 rounded-xl font-semibold text-sm"
                 style={{
                   backgroundColor: "transparent",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "#F2F0F7",
+                  border: "1px solid var(--border-hair)",
+                  color: "var(--text-strong)",
                 }}
                 nativeButton={false}
                 render={<Link href={href} />}

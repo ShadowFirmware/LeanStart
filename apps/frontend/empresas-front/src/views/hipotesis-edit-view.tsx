@@ -30,13 +30,13 @@ const TIPO_EXPERIMENTO_LABELS: Record<TipoExperimento, string> = Object.fromEntr
 ) as Record<TipoExperimento, string>;
 
 const ESTADO_HIPOTESIS_CONFIG = {
-  pendiente_validacion: { label: "Pendiente", color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  pendiente_validacion: { label: "Pendiente", color: "var(--text-dim)", bg: "var(--border-subtle)" },
   validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
 
 const FASE_CONFIG = {
-  1: { label: "Creación",    color: "#7E7C86", bg: "rgba(255,255,255,0.06)" },
+  1: { label: "Creación",    color: "var(--text-dim)", bg: "var(--border-subtle)" },
   2: { label: "Experimento", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   3: { label: "Completa",    color: "#10B981", bg: "rgba(16,185,129,0.12)" },
 } as const;
@@ -45,14 +45,14 @@ const MAX_TITULO = 120;
 const MAX_TEXTAREA = 400;
 
 const inputStyle: React.CSSProperties = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "#7E7C86" }}>
+    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "var(--text-dim)" }}>
       {children}
     </p>
   );
@@ -66,19 +66,19 @@ function SectionCard({ title, icon: Icon, children }: {
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+      style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
     >
       <div
         className="flex items-center gap-2.5 px-4 md:px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center"
           style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
         >
-          <Icon className="w-3.5 h-3.5" style={{ color: "#9A62FA" }} />
+          <Icon className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
         </div>
-        <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>{title}</span>
+        <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>{title}</span>
       </div>
       <div className="px-4 md:px-6 py-5 flex flex-col gap-5">{children}</div>
     </div>
@@ -89,8 +89,8 @@ function ReadField({ label, value }: { label: string; value?: string }) {
   return (
     <div>
       <Label>{label}</Label>
-      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}>
-        {value && value.trim() ? value : <span style={{ color: "#4A4850" }}>Sin información</span>}
+      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>
+        {value && value.trim() ? value : <span style={{ color: "var(--text-faint)" }}>Sin información</span>}
       </p>
     </div>
   );
@@ -205,10 +205,10 @@ export function HipotesisEditView({
   if (!empresa || !hipotesis) {
     return (
       <div className="p-4 md:p-8 max-w-3xl mx-auto">
-        <Link href={`${basePath}/${id}`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+        <Link href={`${basePath}/${id}`} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "var(--text-dim)" }}>
           <ArrowLeft className="w-4 h-4" /> Volver
         </Link>
-        <p className="text-sm" style={{ color: "#7E7C86" }}>Esta hipótesis no existe o fue eliminada.</p>
+        <p className="text-sm" style={{ color: "var(--text-dim)" }}>Esta hipótesis no existe o fue eliminada.</p>
       </div>
     );
   }
@@ -286,9 +286,9 @@ export function HipotesisEditView({
         <Link
           href={`${basePath}/${id}`}
           className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
-          style={{ color: "#7E7C86" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+          style={{ color: "var(--text-dim)" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="truncate max-w-[180px] md:max-w-none">{empresa.nombre}</span>
@@ -296,7 +296,7 @@ export function HipotesisEditView({
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>{hipotesis.titulo}</h1>
+            <h1 className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{hipotesis.titulo}</h1>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {empresa.estado === "borrador" && (
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ color: faseCfg.color, backgroundColor: faseCfg.bg }}>
@@ -325,7 +325,7 @@ export function HipotesisEditView({
               type="button"
               onClick={entrarEdicion}
               className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg shrink-0 transition-colors"
-              style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
+              style={{ color: "var(--brand)", border: "1px solid rgba(154,98,250,0.3)", backgroundColor: "rgba(154,98,250,0.08)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.14)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.08)")}
             >
@@ -355,7 +355,7 @@ export function HipotesisEditView({
                 )}
               </>
             ) : (
-              <p className="text-sm" style={{ color: "#7E7C86" }}>Aún no se ha diseñado el experimento.</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>Aún no se ha diseñado el experimento.</p>
             )}
           </SectionCard>
 
@@ -372,14 +372,14 @@ export function HipotesisEditView({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-sm"
-                        style={{ color: "#C687F5" }}
+                        style={{ color: "var(--brand-accent)" }}
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> {hipotesis.resultados.evidencia}
                       </a>
                     ) : (
                       <div
                         className="rounded-xl p-3 flex items-start gap-3"
-                        style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
+                        style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
                       >
                         {hipotesis.resultados.tipoEvidencia === "imagen" ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -387,18 +387,18 @@ export function HipotesisEditView({
                             src={hipotesis.resultados.evidencia}
                             alt={hipotesis.resultados.evidenciaNombre || "Evidencia"}
                             className="w-auto h-auto max-w-[160px] max-h-[160px] rounded-lg object-contain shrink-0"
-                            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                            style={{ border: "1px solid var(--border-hair)" }}
                           />
                         ) : (
                           <div
                             className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                            style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                           >
-                            <FileText className="w-8 h-8" style={{ color: "#C687F5" }} />
+                            <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>
+                          <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
                             {hipotesis.resultados.evidenciaNombre || "Archivo cargado"}
                           </p>
                           <div className="mt-2">
@@ -416,7 +416,7 @@ export function HipotesisEditView({
                 <ReadField label="Conclusión" value={hipotesis.resultados.conclusion} />
               </>
             ) : (
-              <p className="text-sm" style={{ color: "#7E7C86" }}>Aún no hay resultados registrados.</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>Aún no hay resultados registrados.</p>
             )}
           </SectionCard>
 
@@ -424,11 +424,11 @@ export function HipotesisEditView({
           {readOnly && mentorPuedeComentar && fase === 3 && (
             <div
               className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
             >
               <div>
-                <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>Validación de la hipótesis</p>
-                <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>Validación de la hipótesis</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                   Evalúa la evidencia presentada y define el estado de esta hipótesis.
                 </p>
               </div>
@@ -465,17 +465,17 @@ export function HipotesisEditView({
         type="button"
         onClick={cancelarEdicion}
         className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="truncate max-w-[180px] md:max-w-none">{empresa.nombre}</span>
       </button>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>Editar hipótesis</h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <h1 className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>Editar hipótesis</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Actualiza cualquier campo. Los cambios se guardan al dar &quot;Guardar cambios&quot;.
         </p>
       </div>
@@ -486,7 +486,7 @@ export function HipotesisEditView({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Título</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{titulo.length} / {MAX_TITULO}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{titulo.length} / {MAX_TITULO}</span>
             </div>
             <input
               type="text"
@@ -496,14 +496,14 @@ export function HipotesisEditView({
               className="w-full h-9 px-3 rounded-lg text-sm outline-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Descripción</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{descripcion.length} / {MAX_TEXTAREA}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descripcion.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
               value={descripcion}
@@ -513,7 +513,7 @@ export function HipotesisEditView({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
@@ -527,14 +527,14 @@ export function HipotesisEditView({
                   onClick={() => setTipoExp(t.value)}
                   className="rounded-xl px-3 py-2.5 text-left transition-all"
                   style={{
-                    backgroundColor: tipoExp === t.value ? "rgba(154,98,250,0.15)" : "rgba(255,255,255,0.03)",
-                    border: tipoExp === t.value ? "1px solid rgba(154,98,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                    backgroundColor: tipoExp === t.value ? "rgba(154,98,250,0.15)" : "var(--hover-surface-2)",
+                    border: tipoExp === t.value ? "1px solid rgba(154,98,250,0.4)" : "1px solid var(--border-hair)",
                   }}
                 >
-                  <p className="text-xs font-semibold" style={{ color: tipoExp === t.value ? "#C687F5" : "#F2F0F7" }}>
+                  <p className="text-xs font-semibold" style={{ color: tipoExp === t.value ? "var(--brand-accent)" : "var(--text-strong)" }}>
                     {t.label}
                   </p>
-                  <p className="text-[11px] mt-0.5" style={{ color: "#7E7C86" }}>{t.descripcion}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "var(--text-dim)" }}>{t.descripcion}</p>
                 </button>
               ))}
             </div>
@@ -546,7 +546,7 @@ export function HipotesisEditView({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Descripción del experimento</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{descExp.length} / {MAX_TEXTAREA}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descExp.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
               value={descExp}
@@ -556,14 +556,14 @@ export function HipotesisEditView({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Objetivo</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
               value={objetivo}
@@ -573,14 +573,14 @@ export function HipotesisEditView({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Criterio de éxito</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{criterio.length} / 200</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{criterio.length} / 200</span>
             </div>
             <input
               type="text"
@@ -590,7 +590,7 @@ export function HipotesisEditView({
               className="w-full h-9 px-3 rounded-lg text-sm outline-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
         </SectionCard>
@@ -600,7 +600,7 @@ export function HipotesisEditView({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Resultado</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{resultado.length} / {MAX_TEXTAREA}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{resultado.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
               value={resultado}
@@ -610,14 +610,14 @@ export function HipotesisEditView({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Evidencia</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>Opcional</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {(["pdf", "imagen", "documento", "url"] as TipoEvidencia[]).map((t) => {
@@ -632,9 +632,9 @@ export function HipotesisEditView({
                     onClick={() => { setTipoEvidencia(active ? "" : t); limpiarEvidencia(); }}
                     className="text-[11px] px-2.5 h-7 rounded-full font-medium transition-all"
                     style={{
-                      color: active ? "#C687F5" : "#7E7C86",
-                      backgroundColor: active ? "rgba(154,98,250,0.15)" : "rgba(255,255,255,0.04)",
-                      border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                      color: active ? "var(--brand-accent)" : "var(--text-dim)",
+                      backgroundColor: active ? "rgba(154,98,250,0.15)" : "var(--hover-surface)",
+                      border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid var(--border-hair)",
                     }}
                   >
                     {labels[t]}
@@ -653,7 +653,7 @@ export function HipotesisEditView({
                 className="w-full h-9 px-3 rounded-lg text-sm outline-none"
                 style={inputStyle}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
               />
             )}
 
@@ -661,11 +661,11 @@ export function HipotesisEditView({
               <label
                 className="flex items-center gap-3 rounded-lg px-4 h-10 cursor-pointer transition-colors"
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  border: "1px dashed rgba(255,255,255,0.1)",
+                  backgroundColor: "var(--hover-surface-2)",
+                  border: "1px dashed var(--border-hair)",
                 }}
               >
-                <span className="text-sm truncate" style={{ color: "#7E7C86" }}>
+                <span className="text-sm truncate" style={{ color: "var(--text-dim)" }}>
                   Seleccionar archivo…
                 </span>
                 <input
@@ -688,7 +688,7 @@ export function HipotesisEditView({
             {tipoEvidencia && tipoEvidencia !== "url" && evidenciaDataUrl && (
               <div
                 className="rounded-xl p-3 flex items-start gap-3"
-                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
+                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
               >
                 {tipoEvidencia === "imagen" ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -696,21 +696,21 @@ export function HipotesisEditView({
                     src={evidenciaDataUrl}
                     alt={evidenciaNombre || "Evidencia"}
                     className="w-20 h-20 rounded-lg object-cover shrink-0"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ border: "1px solid var(--border-hair)" }}
                   />
                 ) : (
                   <div
                     className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
-                    <FileText className="w-8 h-8" style={{ color: "#C687F5" }} />
+                    <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>
+                  <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
                     {evidenciaNombre || "Archivo cargado"}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                     {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
@@ -721,7 +721,7 @@ export function HipotesisEditView({
                     />
                     <label
                       className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
-                      style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
                       Reemplazar
                       <input
@@ -755,7 +755,7 @@ export function HipotesisEditView({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label>Conclusión</Label>
-              <span className="text-xs" style={{ color: "#4A4850" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
               value={conclusion}
@@ -765,7 +765,7 @@ export function HipotesisEditView({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
               style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
         </SectionCard>
@@ -776,7 +776,7 @@ export function HipotesisEditView({
             type="button"
             onClick={cancelarEdicion}
             className="inline-flex items-center justify-center gap-2 text-sm px-5 h-9 rounded-lg"
-            style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)" }}
           >
             Cancelar
           </button>
@@ -784,7 +784,7 @@ export function HipotesisEditView({
             type="button"
             onClick={guardar}
             className="h-9 px-6 text-sm font-semibold rounded-lg"
-            style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
             Guardar cambios
           </button>

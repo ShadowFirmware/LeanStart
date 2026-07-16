@@ -6,7 +6,7 @@ import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotific
 
 const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: string; bg: string; label: string }> = {
   comentario_mentor:   { icon: MessageSquare,  color: "#3B82F6", bg: "rgba(59,130,246,0.12)",   label: "Comentario de mentor" },
-  cambio_emprendedor:  { icon: PencilLine,     color: "#9A62FA", bg: "rgba(154,98,250,0.12)",   label: "Cambio del emprendedor" },
+  cambio_emprendedor:  { icon: PencilLine,     color: "var(--brand)", bg: "var(--brand-tint)",   label: "Cambio del emprendedor" },
   enviado_evaluacion:  { icon: ClipboardCheck, color: "#F59E0B", bg: "rgba(245,158,11,0.12)",   label: "Enviado a evaluación" },
   proyecto_publicado:  { icon: CheckCircle2,   color: "#10B981", bg: "rgba(16,185,129,0.12)",   label: "Publicado" },
   proyecto_devuelto:   { icon: RotateCcw,      color: "#EF4444", bg: "rgba(239,68,68,0.12)",    label: "Devuelto" },
@@ -34,15 +34,15 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
     return (
       <div className="p-4 md:p-8 max-w-2xl mx-auto">
         <div className="mb-8">
-          <div className="h-7 w-48 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
-          <div className="h-4 w-24 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+          <div className="h-7 w-48 rounded-md animate-pulse" style={{ backgroundColor: "var(--border-subtle)" }} />
+          <div className="h-4 w-24 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "var(--hover-surface)" }} />
         </div>
         <div className="flex flex-col gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="h-20 rounded-xl animate-pulse"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)" }}
             />
           ))}
         </div>
@@ -55,8 +55,8 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Notificaciones</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Notificaciones</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             {noLeidas > 0
               ? `${noLeidas} sin leer`
               : "Todo al día"}
@@ -67,8 +67,8 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
             type="button"
             onClick={marcarTodasLeidas}
             className="text-xs px-3 h-8 rounded-lg transition-colors w-full sm:w-auto shrink-0"
-            style={{ color: "#9A62FA", border: "1px solid rgba(154,98,250,0.2)", backgroundColor: "rgba(154,98,250,0.06)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.12)")}
+            style={{ color: "var(--brand)", border: "1px solid var(--brand-tint-strong)", backgroundColor: "rgba(154,98,250,0.06)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--brand-tint)")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.06)")}
           >
             Marcar todas como leídas
@@ -80,11 +80,11 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
       {notificaciones.length === 0 ? (
         <div
           className="rounded-xl p-14 text-center"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
         >
-          <Bell className="w-9 h-9 mx-auto mb-3" style={{ color: "#4A4850" }} />
-          <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin notificaciones</p>
-          <p className="text-sm" style={{ color: "#7E7C86" }}>
+          <Bell className="w-9 h-9 mx-auto mb-3" style={{ color: "var(--text-faint)" }} />
+          <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>Sin notificaciones</p>
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>
             Aquí aparecerán los avisos sobre tus proyectos.
           </p>
         </div>
@@ -99,8 +99,8 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
                 onClick={() => { if (!n.leida) marcarLeida(n.id); }}
                 className="flex items-start gap-4 rounded-xl px-5 py-4 text-left w-full transition-colors"
                 style={{
-                  backgroundColor: n.leida ? "#131219" : "#19172280",
-                  border: `1px solid ${n.leida ? "rgba(255,255,255,0.06)" : "rgba(154,98,250,0.18)"}`,
+                  backgroundColor: n.leida ? "var(--surface-profile)" : "var(--brand-tint)",
+                  border: `1px solid ${n.leida ? "var(--border-subtle)" : "rgba(154,98,250,0.18)"}`,
                 }}
                 onMouseEnter={(e) => {
                   if (!n.leida) (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.35)";
@@ -120,7 +120,7 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
                   {!n.leida && (
                     <span
                       className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
-                      style={{ backgroundColor: "#9A62FA" }}
+                      style={{ backgroundColor: "var(--brand)" }}
                     />
                   )}
                 </div>
@@ -130,7 +130,7 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
                   <div className="flex items-start justify-between gap-3">
                     <p
                       className="text-sm font-semibold leading-snug"
-                      style={{ color: n.leida ? "#9B9A9F" : "#F2F0F7" }}
+                      style={{ color: n.leida ? "var(--muted-foreground)" : "var(--text-strong)" }}
                     >
                       {n.titulo}
                     </p>
@@ -141,19 +141,19 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
                       {cfg.label}
                     </span>
                   </div>
-                  <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "#7E7C86" }}>
+                  <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-dim)" }}>
                     {n.mensaje}
                   </p>
                   <div className="flex items-center gap-3 mt-2.5">
                     {n.empresaNombre && (
                       <div className="flex items-center gap-1">
-                        <Building2 className="w-3 h-3" style={{ color: "#4A4850" }} />
-                        <span className="text-[11px]" style={{ color: "#4A4850" }}>{n.empresaNombre}</span>
+                        <Building2 className="w-3 h-3" style={{ color: "var(--text-faint)" }} />
+                        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>{n.empresaNombre}</span>
                       </div>
                     )}
-                    <span className="text-[11px]" style={{ color: "#4A4850" }}>{n.creadaEn}</span>
+                    <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>{n.creadaEn}</span>
                     {!n.leida && (
-                      <span className="text-[11px] ml-auto" style={{ color: "#9A62FA" }}>
+                      <span className="text-[11px] ml-auto" style={{ color: "var(--brand)" }}>
                         Clic para marcar como leída
                       </span>
                     )}

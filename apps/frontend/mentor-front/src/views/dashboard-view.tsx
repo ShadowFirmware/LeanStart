@@ -7,7 +7,7 @@ import { useHasHydrated } from "@leanstart/commons";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 
 const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
-  borrador: { label: "Borrador", color: "#9A62FA", bg: "rgba(154,98,250,0.12)" },
+  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
   pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   observaciones_pendientes: { label: "Observaciones pendientes", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
@@ -47,10 +47,10 @@ export function MentorDashboardView() {
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>
           Dashboard
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Resumen de los proyectos que tienes en mentoría.
         </p>
       </div>
@@ -66,8 +66,9 @@ export function MentorDashboardView() {
             key={label}
             className="rounded-xl p-5 flex items-center gap-4"
             style={{
-              backgroundColor: "#131219",
-              border: "1px solid rgba(255,255,255,0.06)",
+              backgroundColor: "var(--surface-profile)",
+              boxShadow: "var(--shadow-card)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
             <div
@@ -77,13 +78,13 @@ export function MentorDashboardView() {
                 border: "1px solid rgba(154,98,250,0.15)",
               }}
             >
-              <Icon className="w-5 h-5" style={{ color: "#9A62FA" }} />
+              <Icon className="w-5 h-5" style={{ color: "var(--brand)" }} />
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: "#7E7C86" }}>
+              <p className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>
                 {label}
               </p>
-              <p className="text-2xl font-bold mt-0.5" style={{ color: "#F2F0F7" }}>
+              <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--text-strong)" }}>
                 {value}
               </p>
             </div>
@@ -95,7 +96,7 @@ export function MentorDashboardView() {
       <div>
         <p
           className="text-xs font-semibold uppercase tracking-widest mb-4"
-          style={{ color: "#7E7C86" }}
+          style={{ color: "var(--text-dim)" }}
         >
           Pendientes de revisión
         </p>
@@ -104,12 +105,13 @@ export function MentorDashboardView() {
           <div
             className="rounded-xl p-10 text-center"
             style={{
-              backgroundColor: "#131219",
-              border: "1px solid rgba(255,255,255,0.06)",
+              backgroundColor: "var(--surface-profile)",
+              boxShadow: "var(--shadow-card)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
-            <GraduationCap className="w-8 h-8 mx-auto mb-3" style={{ color: "#7E7C86" }} />
-            <p className="text-sm" style={{ color: "#7E7C86" }}>
+            <GraduationCap className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-dim)" }} />
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>
               No tienes proyectos pendientes de revisión por ahora.
             </p>
           </div>
@@ -123,17 +125,18 @@ export function MentorDashboardView() {
                   href={`/mentor/empresas/${empresa.id}`}
                   className="flex items-start gap-4 rounded-xl px-5 py-4 transition-[border-color]"
                   style={{
-                    backgroundColor: "#131219",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    backgroundColor: "var(--surface-profile)",
+                    boxShadow: "var(--shadow-card)",
+                    border: "1px solid var(--border-subtle)",
                   }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
                   <div
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5"
                     style={{
-                      backgroundColor: "rgba(154,98,250,0.12)",
-                      color: "#9A62FA",
+                      backgroundColor: "var(--brand-tint)",
+                      color: "var(--brand)",
                     }}
                   >
                     {empresa.nombre.charAt(0)}
@@ -141,10 +144,10 @@ export function MentorDashboardView() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>
+                        <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>
                           {empresa.nombre}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                           {GIRO_LABELS[empresa.giro]}
                         </p>
                       </div>

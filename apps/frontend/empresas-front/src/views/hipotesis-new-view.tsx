@@ -48,16 +48,16 @@ function StepIndicator({ actual }: { actual: number }) {
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                 style={{
-                  backgroundColor: done ? "#9A62FA" : active ? "rgba(154,98,250,0.15)" : "rgba(255,255,255,0.05)",
-                  border: done ? "none" : active ? "2px solid #9A62FA" : "2px solid rgba(255,255,255,0.1)",
-                  color: done ? "#fff" : active ? "#9A62FA" : "#4A4850",
+                  backgroundColor: done ? "var(--brand)" : active ? "rgba(154,98,250,0.15)" : "var(--border-subtle)",
+                  border: done ? "none" : active ? "2px solid var(--brand)" : "2px solid var(--border-hair)",
+                  color: done ? "var(--brand-fg)" : active ? "var(--brand)" : "var(--text-faint)",
                 }}
               >
                 {done ? <Check className="w-3.5 h-3.5" /> : paso.num}
               </div>
               <span
                 className="text-[10px] md:text-[11px] font-medium whitespace-nowrap"
-                style={{ color: active ? "#F2F0F7" : done ? "#9A62FA" : "#4A4850" }}
+                style={{ color: active ? "var(--text-strong)" : done ? "var(--brand)" : "var(--text-faint)" }}
               >
                 {paso.label}
               </span>
@@ -65,7 +65,7 @@ function StepIndicator({ actual }: { actual: number }) {
             {i < PASOS.length - 1 && (
               <div
                 className="flex-1 h-px mx-3 mb-5"
-                style={{ backgroundColor: done ? "#9A62FA" : "rgba(255,255,255,0.07)" }}
+                style={{ backgroundColor: done ? "var(--brand)" : "var(--border-hair)" }}
               />
             )}
           </div>
@@ -77,14 +77,14 @@ function StepIndicator({ actual }: { actual: number }) {
 
 /* ─── Estilos reutilizables ─── */
 const inputStyle: React.CSSProperties = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "#7E7C86" }}>
+    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "var(--text-dim)" }}>
       {children}
     </p>
   );
@@ -159,7 +159,7 @@ export function HipotesisNewView() {
   if (!empresa) {
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto">
-        <p className="text-sm" style={{ color: "#7E7C86" }}>Empresa no encontrada.</p>
+        <p className="text-sm" style={{ color: "var(--text-dim)" }}>Empresa no encontrada.</p>
       </div>
     );
   }
@@ -297,9 +297,9 @@ export function HipotesisNewView() {
       <Link
         href={`/emprendedor/empresas/${id}`}
         className="inline-flex items-center gap-2 text-sm mb-8 transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="truncate max-w-[180px] md:max-w-none">{empresa.nombre}</span>
@@ -307,8 +307,8 @@ export function HipotesisNewView() {
 
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Nueva hipótesis</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Nueva hipótesis</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             Define y valida una suposición de tu modelo de negocio en 3 pasos.
           </p>
         </div>
@@ -327,21 +327,21 @@ export function HipotesisNewView() {
             {paso === 1 && (
               <div
                 className="rounded-2xl p-4 md:p-6 flex flex-col gap-5"
-                style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
               >
                 <div>
-                  <p className="text-base font-semibold" style={{ color: "#F2F0F7" }}>Creación de hipótesis</p>
-                  <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+                  <p className="text-base font-semibold" style={{ color: "var(--text-strong)" }}>Creación de hipótesis</p>
+                  <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
                     Define la suposición que quieres validar sobre tu modelo de negocio.
                   </p>
                 </div>
 
-                <div className="h-px" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Título</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       {titulo.length} / {MAX_TITULO}
                     </span>
                   </div>
@@ -354,7 +354,7 @@ export function HipotesisNewView() {
                     className="w-full h-9 px-3 rounded-lg text-sm outline-none"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.titulo} />
                 </Field>
@@ -362,7 +362,7 @@ export function HipotesisNewView() {
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Descripción de la hipótesis</Label>
-                    <span className="text-xs" style={{ color: descripcion.length < 15 ? "#4A4850" : "#7E7C86" }}>
+                    <span className="text-xs" style={{ color: descripcion.length < 15 ? "var(--text-faint)" : "var(--text-dim)" }}>
                       {descripcion.length} / {MAX_TEXTAREA} (mín. 15)
                     </span>
                   </div>
@@ -375,7 +375,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.descripcion} />
                 </Field>
@@ -391,14 +391,14 @@ export function HipotesisNewView() {
                         onClick={() => setTipoExp(t.value)}
                         className="rounded-xl px-3 py-2.5 text-left transition-all"
                         style={{
-                          backgroundColor: tipoExp === t.value ? "rgba(154,98,250,0.15)" : "rgba(255,255,255,0.03)",
-                          border: tipoExp === t.value ? "1px solid rgba(154,98,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                          backgroundColor: tipoExp === t.value ? "rgba(154,98,250,0.15)" : "var(--hover-surface-2)",
+                          border: tipoExp === t.value ? "1px solid rgba(154,98,250,0.4)" : "1px solid var(--border-hair)",
                         }}
                       >
-                        <p className="text-xs font-semibold" style={{ color: tipoExp === t.value ? "#C687F5" : "#F2F0F7" }}>
+                        <p className="text-xs font-semibold" style={{ color: tipoExp === t.value ? "var(--brand-accent)" : "var(--text-strong)" }}>
                           {t.label}
                         </p>
-                        <p className="text-[11px] mt-0.5" style={{ color: "#7E7C86" }}>{t.descripcion}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: "var(--text-dim)" }}>{t.descripcion}</p>
                       </button>
                     ))}
                   </div>
@@ -410,7 +410,7 @@ export function HipotesisNewView() {
                     type="button"
                     onClick={avanzarPaso1}
                     className="h-9 px-6 text-sm font-semibold rounded-lg w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                    style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                   >
                     Siguiente →
                   </button>
@@ -422,21 +422,21 @@ export function HipotesisNewView() {
             {paso === 2 && (
               <div
                 className="rounded-2xl p-4 md:p-6 flex flex-col gap-5"
-                style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
               >
                 <div>
-                  <p className="text-base font-semibold" style={{ color: "#F2F0F7" }}>Diseño del experimento</p>
-                  <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+                  <p className="text-base font-semibold" style={{ color: "var(--text-strong)" }}>Diseño del experimento</p>
+                  <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
                     Define cómo vas a probar si tu hipótesis es cierta o no.
                   </p>
                 </div>
 
-                <div className="h-px" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Descripción del experimento</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>{descExp.length} / {MAX_TEXTAREA}</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descExp.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
                     placeholder="¿Cómo vas a ejecutar el experimento?"
@@ -447,7 +447,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.descExp} />
                 </Field>
@@ -455,7 +455,7 @@ export function HipotesisNewView() {
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Objetivo</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
                     placeholder="¿Qué quieres aprender o comprobar?"
@@ -466,7 +466,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-28"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.objetivo} />
                 </Field>
@@ -474,7 +474,7 @@ export function HipotesisNewView() {
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Criterio de éxito</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>{criterio.length} / 300</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>{criterio.length} / 300</span>
                   </div>
                   <textarea
                     placeholder="Ej. Al menos 30% de los encuestados pagaría"
@@ -485,7 +485,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-24"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.criterio} />
                 </Field>
@@ -495,7 +495,7 @@ export function HipotesisNewView() {
                     type="button"
                     onClick={() => { setErrores({}); setPaso(1); }}
                     className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1"
-                    style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
                     ← Anterior
                   </button>
@@ -504,7 +504,7 @@ export function HipotesisNewView() {
                       type="button"
                       onClick={guardarParcial}
                       className="text-sm px-4 h-9 rounded-lg"
-                      style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
                       Guardar y salir
                     </button>
@@ -512,7 +512,7 @@ export function HipotesisNewView() {
                       type="button"
                       onClick={avanzarPaso2}
                       className="h-9 px-6 text-sm font-semibold rounded-lg"
-                      style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                      style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
                       Siguiente →
                     </button>
@@ -525,21 +525,21 @@ export function HipotesisNewView() {
             {paso === 3 && (
               <div
                 className="rounded-2xl p-4 md:p-6 flex flex-col gap-5"
-                style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
               >
                 <div>
-                  <p className="text-base font-semibold" style={{ color: "#F2F0F7" }}>Registro de resultados</p>
-                  <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+                  <p className="text-base font-semibold" style={{ color: "var(--text-strong)" }}>Registro de resultados</p>
+                  <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
                     Documenta qué ocurrió al ejecutar el experimento y cuál es tu conclusión.
                   </p>
                 </div>
 
-                <div className="h-px" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+                <div className="h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Resultado</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>{resultado.length} / {MAX_TEXTAREA}</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>{resultado.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
                     placeholder="Ej. 78 estudiantes mostraron interés."
@@ -550,7 +550,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.resultado} />
                 </Field>
@@ -558,7 +558,7 @@ export function HipotesisNewView() {
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Evidencia</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>Opcional</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {(["pdf", "imagen", "documento", "url"] as TipoEvidencia[]).map((t) => {
@@ -573,9 +573,9 @@ export function HipotesisNewView() {
                           onClick={() => { setTipoEvidencia(active ? "" : t); limpiarEvidencia(); }}
                           className="text-[11px] px-2.5 h-7 rounded-full font-medium transition-all"
                           style={{
-                            color: active ? "#C687F5" : "#7E7C86",
-                            backgroundColor: active ? "rgba(154,98,250,0.15)" : "rgba(255,255,255,0.04)",
-                            border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                            color: active ? "var(--brand-accent)" : "var(--text-dim)",
+                            backgroundColor: active ? "rgba(154,98,250,0.15)" : "var(--hover-surface)",
+                            border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid var(--border-hair)",
                           }}
                         >
                           {labels[t]}
@@ -594,7 +594,7 @@ export function HipotesisNewView() {
                       className="w-full h-9 px-3 rounded-lg text-sm outline-none"
                       style={inputStyle}
                       onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                     />
                   )}
 
@@ -602,11 +602,11 @@ export function HipotesisNewView() {
                     <label
                       className="flex items-center gap-3 rounded-lg px-4 h-10 cursor-pointer transition-colors"
                       style={{
-                        backgroundColor: "rgba(255,255,255,0.03)",
-                        border: "1px dashed rgba(255,255,255,0.1)",
+                        backgroundColor: "var(--hover-surface-2)",
+                        border: "1px dashed var(--border-hair)",
                       }}
                     >
-                      <span className="text-sm truncate" style={{ color: "#7E7C86" }}>Seleccionar archivo…</span>
+                      <span className="text-sm truncate" style={{ color: "var(--text-dim)" }}>Seleccionar archivo…</span>
                       <input
                         type="file"
                         accept={
@@ -627,7 +627,7 @@ export function HipotesisNewView() {
                   {tipoEvidencia && tipoEvidencia !== "url" && evidenciaDataUrl && (
                     <div
                       className="rounded-xl p-3 flex items-start gap-3"
-                      style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid rgba(154,98,250,0.2)" }}
+                      style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
                     >
                       {tipoEvidencia === "imagen" ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -635,21 +635,21 @@ export function HipotesisNewView() {
                           src={evidenciaDataUrl}
                           alt={evidenciaNombre || "Evidencia"}
                           className="w-auto h-auto max-w-[160px] max-h-[160px] rounded-lg object-contain shrink-0"
-                          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                          style={{ border: "1px solid var(--border-hair)" }}
                         />
                       ) : (
                         <div
                           className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                          style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                         >
-                          <FileText className="w-8 h-8" style={{ color: "#C687F5" }} />
+                          <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium break-words" style={{ color: "#F2F0F7", overflowWrap: "anywhere" }}>
+                        <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
                           {evidenciaNombre || "Archivo cargado"}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                           {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
                         </p>
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -660,7 +660,7 @@ export function HipotesisNewView() {
                           />
                           <label
                             className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
-                            style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                            style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                           >
                             Reemplazar
                             <input
@@ -694,7 +694,7 @@ export function HipotesisNewView() {
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label>Conclusión</Label>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
                     placeholder="Ej. Existe interés real por parte del segmento identificado."
@@ -705,7 +705,7 @@ export function HipotesisNewView() {
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   />
                   <FieldError msg={errores.conclusion} />
                 </Field>
@@ -715,7 +715,7 @@ export function HipotesisNewView() {
                     type="button"
                     onClick={() => { setErrores({}); setPaso(2); }}
                     className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1"
-                    style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
                     ← Anterior
                   </button>
@@ -724,7 +724,7 @@ export function HipotesisNewView() {
                       type="button"
                       onClick={guardarParcial}
                       className="text-sm px-4 h-9 rounded-lg"
-                      style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
                       Guardar y salir
                     </button>
@@ -732,7 +732,7 @@ export function HipotesisNewView() {
                       type="button"
                       onClick={finalizarPaso3}
                       className="h-9 px-6 text-sm font-semibold rounded-lg"
-                      style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                      style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
                       Finalizar
                     </button>
@@ -763,7 +763,7 @@ export function HipotesisNewView() {
                 setConfirmEvidenciaVacia(false);
                 ejecutarFinalizar();
               }}
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC", border: 0 }}
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)", border: 0 }}
             >
               Continuar sin evidencia
             </AlertDialogAction>

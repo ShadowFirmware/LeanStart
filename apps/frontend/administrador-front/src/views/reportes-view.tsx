@@ -18,7 +18,7 @@ import { useReportesGeneradosStore, type TipoReporte } from "../store/reportes-g
 import { calcularReporte, GIRO_LABELS } from "../lib/reporte";
 import { ReporteDocumento } from "../components/reporte-documento";
 
-const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
+const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" };
 const TODOS_LOS_TIPOS = "todos";
 
 const TIPO_CONFIG: Record<
@@ -36,8 +36,8 @@ const TIPO_CONFIG: Record<
     label: "Reporte Lean Canvas",
     hint: "Bloques del canvas y comentarios del evaluador",
     icon: LayoutTemplate,
-    color: "#9A62FA",
-    bg: "rgba(154,98,250,0.12)",
+    color: "var(--brand)",
+    bg: "var(--brand-tint)",
   },
 };
 
@@ -54,8 +54,8 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
           width: size,
           height: size,
           padding: Math.max(2, Math.round(size * 0.12)),
-          backgroundColor: "rgba(154,98,250,0.12)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "var(--brand-tint)",
+          border: "1px solid var(--border-hair)",
           boxSizing: "border-box",
         }}
       />
@@ -64,7 +64,7 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
   return (
     <div
       className="rounded-xl flex items-center justify-center font-bold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
     >
       {empresa.nombre.charAt(0).toUpperCase()}
     </div>
@@ -154,12 +154,12 @@ export function ReportesView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.2)" }}>
-            <BarChart3 className="w-5 h-5" style={{ color: "#9A62FA" }} />
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}>
+            <BarChart3 className="w-5 h-5" style={{ color: "var(--brand)" }} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Reportes</h1>
-            <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Reportes</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
               Consulta el historial de reportes generados o crea uno nuevo para una empresa.
             </p>
           </div>
@@ -168,7 +168,7 @@ export function ReportesView() {
           type="button"
           onClick={abrirDialogo}
           className="inline-flex items-center justify-center gap-2 text-sm font-medium px-4 h-10 rounded-xl border-0 shrink-0 transition-opacity hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+          style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
         >
           <Plus className="w-4 h-4" /> Generar reporte
         </button>
@@ -176,12 +176,12 @@ export function ReportesView() {
 
       {/* Encabezado de la sección de historial (siempre visible) */}
       <div className="flex items-center gap-2 pt-1">
-        <HistoryIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
-        <h2 className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Historial de reportes</h2>
+        <HistoryIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+        <h2 className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Historial de reportes</h2>
         {historial.length > 0 && (
           <span
             className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+            style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
           >
             {historial.length}
           </span>
@@ -192,22 +192,22 @@ export function ReportesView() {
       {historial.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
             <input
               type="text"
               placeholder="Buscar por empresa o autor..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
           <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v ?? TODOS_LOS_TIPOS)}>
             <SelectTrigger
               className="w-full sm:w-56 h-9 text-sm shrink-0"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               <SelectValue placeholder="Filtrar por tipo" />
             </SelectTrigger>
@@ -226,15 +226,15 @@ export function ReportesView() {
         <div className="rounded-2xl p-10 flex flex-col items-center text-center" style={cardStyle}>
           {historial.length === 0 ? (
             <>
-              <HistoryIcon className="w-9 h-9 mb-3" style={{ color: "#4A4850" }} />
-              <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Aún no se han generado reportes</p>
-              <p className="text-sm" style={{ color: "#7E7C86" }}>Usa “Generar reporte” para crear la boleta de evaluación o el reporte de Lean Canvas de una empresa.</p>
+              <HistoryIcon className="w-9 h-9 mb-3" style={{ color: "var(--text-faint)" }} />
+              <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>Aún no se han generado reportes</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>Usa “Generar reporte” para crear la boleta de evaluación o el reporte de Lean Canvas de una empresa.</p>
             </>
           ) : (
             <>
-              <Sparkles className="w-9 h-9 mb-3" style={{ color: "#4A4850" }} />
-              <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin resultados</p>
-              <p className="text-sm" style={{ color: "#7E7C86" }}>Prueba con otros términos o filtros.</p>
+              <Sparkles className="w-9 h-9 mb-3" style={{ color: "var(--text-faint)" }} />
+              <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>Sin resultados</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>Prueba con otros términos o filtros.</p>
             </>
           )}
         </div>
@@ -253,7 +253,7 @@ export function ReportesView() {
                 className="flex flex-col rounded-xl p-5 text-left transition-[border-color] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={cardStyle}
                 onMouseEnter={(e) => { if (empresa) e.currentTarget.style.borderColor = "rgba(154,98,250,0.25)"; }}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
               >
                 {/* Header: logo empresa + nombre + tipo de reporte */}
                 <div className="flex items-start gap-3 mb-4">
@@ -262,13 +262,13 @@ export function ReportesView() {
                   ) : (
                     <div
                       className="rounded-xl flex items-center justify-center font-bold shrink-0"
-                      style={{ width: 48, height: 48, fontSize: 19, backgroundColor: "rgba(255,255,255,0.05)", color: "#7E7C86" }}
+                      style={{ width: 48, height: 48, fontSize: 19, backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
                     >
                       {r.empresaNombre.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "#F2F0F7" }}>
+                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "var(--text-strong)" }}>
                       {r.empresaNombre}
                     </p>
                     <span
@@ -279,23 +279,23 @@ export function ReportesView() {
                       <span className="truncate">{cfg.label}</span>
                     </span>
                   </div>
-                  {empresa && <ChevronRight className="w-4 h-4 shrink-0 mt-1" style={{ color: "#4A4850" }} />}
+                  {empresa && <ChevronRight className="w-4 h-4 shrink-0 mt-1" style={{ color: "var(--text-faint)" }} />}
                 </div>
 
                 {/* Pie: autor + fecha */}
                 <div
                   className="flex items-center justify-between gap-3 pt-3.5 mt-auto"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                  style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <User className="w-3.5 h-3.5 shrink-0" style={{ color: "#4A4850" }} />
-                    <span className="text-xs truncate" style={{ color: "#7E7C86" }}>
+                    <User className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-xs truncate" style={{ color: "var(--text-dim)" }}>
                       {r.generadoPor || "—"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <CalendarDays className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
-                    <span className="text-[11px] whitespace-nowrap" style={{ color: "#7E7C86" }}>
+                    <CalendarDays className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-[11px] whitespace-nowrap" style={{ color: "var(--text-dim)" }}>
                       {r.generadoEn}
                     </span>
                   </div>
@@ -326,18 +326,18 @@ export function ReportesView() {
                     type="button"
                     onClick={() => elegirTipo(tipo)}
                     className="flex items-center gap-3 rounded-xl p-3.5 text-left transition-colors"
-                    style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    style={{ backgroundColor: "var(--hover-surface-2)", border: "1px solid var(--border-hair)" }}
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                   >
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(154,98,250,0.10)" }}>
-                      <cfg.icon className="w-4.5 h-4.5" style={{ color: "#9A62FA" }} />
+                      <cfg.icon className="w-4.5 h-4.5" style={{ color: "var(--brand)" }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{cfg.label}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>{cfg.hint}</p>
+                      <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{cfg.label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{cfg.hint}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 shrink-0 ml-auto" style={{ color: "#4A4850" }} />
+                    <ChevronRight className="w-4 h-4 shrink-0 ml-auto" style={{ color: "var(--text-faint)" }} />
                   </button>
                 ))}
               </div>
@@ -349,9 +349,9 @@ export function ReportesView() {
                   type="button"
                   onClick={() => setPaso("tipo")}
                   className="inline-flex items-center gap-1 text-xs mb-1 w-fit transition-colors"
-                  style={{ color: "#7E7C86" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F0F7")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#7E7C86")}
+                  style={{ color: "var(--text-dim)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-strong)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Cambiar tipo de reporte
                 </button>
@@ -360,22 +360,22 @@ export function ReportesView() {
               </DialogHeader>
 
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
                 <input
                   type="text"
                   placeholder="Buscar empresa..."
                   value={busquedaEmpresa}
                   onChange={(e) => setBusquedaEmpresa(e.target.value)}
                   className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-                  style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+                  style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                 />
               </div>
 
               <div className="max-h-80 overflow-y-auto flex flex-col gap-2 pr-1">
                 {empresasFiltradasDialogo.length === 0 ? (
-                  <p className="text-sm text-center py-6" style={{ color: "#7E7C86" }}>No se encontraron empresas.</p>
+                  <p className="text-sm text-center py-6" style={{ color: "var(--text-dim)" }}>No se encontraron empresas.</p>
                 ) : (
                   empresasFiltradasDialogo.map((e) => (
                     <button
@@ -383,16 +383,16 @@ export function ReportesView() {
                       type="button"
                       onClick={() => elegirEmpresa(e)}
                       className="flex items-center gap-3 rounded-xl p-3 text-left transition-colors"
-                      style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                      style={{ backgroundColor: "var(--hover-surface-2)", border: "1px solid var(--border-hair)" }}
                       onMouseEnter={(ev) => (ev.currentTarget.style.borderColor = "rgba(154,98,250,0.35)")}
-                      onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+                      onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = "var(--border-hair)")}
                     >
                       <EmpresaLogo empresa={e} size={36} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{e.nombre}</p>
-                        <p className="text-xs truncate" style={{ color: "#7E7C86" }}>{GIRO_LABELS[e.giro]}</p>
+                        <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{e.nombre}</p>
+                        <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{GIRO_LABELS[e.giro]}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "#4A4850" }} />
+                      <ChevronRight className="w-4 h-4 shrink-0" style={{ color: "var(--text-faint)" }} />
                     </button>
                   ))
                 )}

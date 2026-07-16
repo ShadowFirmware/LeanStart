@@ -36,9 +36,9 @@ const MODALIDADES: { value: ModalidadPrecioServicio; label: string; hint: string
 ];
 
 const inputStyle = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
 function sanitizePrecio(v: string): string | null {
@@ -53,7 +53,7 @@ function MoneyInput({
 }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#4A4850" }}>$</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-faint)" }}>$</span>
       <input
         type="number"
         inputMode="decimal"
@@ -96,18 +96,18 @@ export function ServicioPrecioField({ value, onChange, error }: ServicioPrecioFi
               onClick={() => set({ modalidad: v })}
               className="flex flex-col gap-1.5 rounded-xl p-3 text-left transition-colors"
               style={{
-                backgroundColor: activo ? "rgba(154,98,250,0.12)" : "rgba(255,255,255,0.03)",
-                border: `1px solid ${activo ? "rgba(154,98,250,0.5)" : "rgba(255,255,255,0.08)"}`,
+                backgroundColor: activo ? "var(--brand-tint)" : "var(--hover-surface-2)",
+                border: `1px solid ${activo ? "rgba(154,98,250,0.5)" : "var(--border-hair)"}`,
               }}
             >
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: activo ? "rgba(154,98,250,0.2)" : "rgba(255,255,255,0.05)" }}
+                style={{ backgroundColor: activo ? "var(--brand-tint-strong)" : "var(--border-subtle)" }}
               >
-                <Icon className="w-4 h-4" style={{ color: activo ? "#9A62FA" : "#7E7C86" }} />
+                <Icon className="w-4 h-4" style={{ color: activo ? "var(--brand)" : "var(--text-dim)" }} />
               </div>
-              <span className="text-sm font-medium" style={{ color: activo ? "#F2F0F7" : "#C4C2CC" }}>{label}</span>
-              <span className="text-[11px] leading-snug" style={{ color: "#7E7C86" }}>{hint}</span>
+              <span className="text-sm font-medium" style={{ color: activo ? "var(--text-strong)" : "var(--muted-foreground)" }}>{label}</span>
+              <span className="text-[11px] leading-snug" style={{ color: "var(--text-dim)" }}>{hint}</span>
             </button>
           );
         })}
@@ -117,11 +117,11 @@ export function ServicioPrecioField({ value, onChange, error }: ServicioPrecioFi
       {value.modalidad === "rango" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Precio mínimo</label>
+            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Precio mínimo</label>
             <MoneyInput value={value.precioMin} onChange={(v) => set({ precioMin: v })} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Precio máximo</label>
+            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Precio máximo</label>
             <MoneyInput value={value.precioMax} onChange={(v) => set({ precioMax: v })} />
           </div>
         </div>
@@ -130,11 +130,11 @@ export function ServicioPrecioField({ value, onChange, error }: ServicioPrecioFi
       {value.modalidad === "periodo" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Precio</label>
+            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Precio</label>
             <MoneyInput value={value.precioPeriodo} onChange={(v) => set({ precioPeriodo: v })} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Por</label>
+            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Por</label>
             <Select value={value.unidadTiempo || undefined} onValueChange={(v) => set({ unidadTiempo: (v as UnidadTiempoServicio) ?? "" })}>
               <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={inputStyle}>
                 <SelectValue placeholder="Selecciona la unidad" />
@@ -152,8 +152,8 @@ export function ServicioPrecioField({ value, onChange, error }: ServicioPrecioFi
       {value.modalidad === "personalizado" && (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Esquema de cobro</label>
-            <span className="text-xs" style={{ color: "#4A4850" }}>{value.precioPersonalizado.length} / {MAX_PERSONALIZADO}</span>
+            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Esquema de cobro</label>
+            <span className="text-xs" style={{ color: "var(--text-faint)" }}>{value.precioPersonalizado.length} / {MAX_PERSONALIZADO}</span>
           </div>
           <Textarea
             value={value.precioPersonalizado}

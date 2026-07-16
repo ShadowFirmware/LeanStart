@@ -82,14 +82,14 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
           <div
             key={i}
             className="relative aspect-square rounded-xl overflow-hidden group"
-            style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}
+            style={{ border: "1px solid var(--border-hair)", backgroundColor: "var(--hover-surface-2)" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
             {i === 0 && (
               <span
                 className="absolute bottom-1 left-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
-                style={{ backgroundColor: "rgba(13,12,16,0.75)", color: "#C9A8FE" }}
+                style={{ backgroundColor: "var(--shell-header)", color: "var(--brand-accent)" }}
               >
                 Portada
               </span>
@@ -99,7 +99,7 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
                 type="button"
                 onClick={() => quitar(i)}
                 className="absolute top-1 right-1 flex items-center justify-center w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ backgroundColor: "rgba(13,12,16,0.8)", color: "#F2F0F7" }}
+                style={{ backgroundColor: "var(--shell-header)", color: "var(--text-strong)" }}
                 aria-label={`Quitar imagen ${i + 1}`}
               >
                 <X className="w-3.5 h-3.5" />
@@ -116,9 +116,9 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
             style={{
               backgroundColor: "rgba(154,98,250,0.08)",
               border: "2px dashed rgba(154,98,250,0.3)",
-              color: "#9A62FA",
+              color: "var(--brand)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.6)")}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand-line)")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.3)")}
           >
             <ImagePlus className="w-5 h-5" />
@@ -129,7 +129,7 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
 
       {/* Contador + aviso */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <span className="text-xs" style={{ color: "#4A4850" }}>
+        <span className="text-xs" style={{ color: "var(--text-faint)" }}>
           {value.length} / {MAX_IMAGENES} · máx. {MAX_MB}MB c/u
         </span>
         {faltantes > 0 && (

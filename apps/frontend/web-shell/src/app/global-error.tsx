@@ -29,7 +29,7 @@ export default function GlobalError({
           alignItems: "center",
           justifyContent: "center",
           padding: "1rem",
-          backgroundColor: "#0D0C10",
+          backgroundColor: "var(--shell)",
           fontFamily:
             "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         }}
@@ -57,10 +57,9 @@ export default function GlobalError({
             alignItems: "center",
             textAlign: "center",
             gap: "1.5rem",
-            backgroundColor: "rgba(19,18,25,0.9)",
-            border: "1px solid rgba(154,98,250,0.2)",
-            boxShadow:
-              "0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 64px rgba(0,0,0,0.4)",
+            backgroundColor: "var(--surface-glass)",
+            border: "1px solid var(--brand-tint-strong)",
+            boxShadow: "var(--shadow-elevated)",
           }}
         >
           {/* Línea de acento superior */}
@@ -74,7 +73,7 @@ export default function GlobalError({
               width: "66%",
               borderRadius: "9999px",
               background:
-                "linear-gradient(90deg, transparent, rgba(154,98,250,0.6), transparent)",
+                "linear-gradient(90deg, transparent, var(--brand-line), transparent)",
             }}
           />
 
@@ -112,7 +111,7 @@ export default function GlobalError({
               style={{
                 fontSize: "1.25rem",
                 fontWeight: 600,
-                color: "#F2F0F7",
+                color: "var(--text-strong)",
                 margin: "0 0 0.5rem",
               }}
             >
@@ -122,7 +121,7 @@ export default function GlobalError({
               style={{
                 fontSize: "0.875rem",
                 lineHeight: 1.6,
-                color: "#7E7C86",
+                color: "var(--text-dim)",
                 maxWidth: "20rem",
                 margin: "0 auto",
               }}
@@ -135,7 +134,7 @@ export default function GlobalError({
                 style={{
                   fontSize: "11px",
                   fontFamily: "monospace",
-                  color: "#4A4850",
+                  color: "var(--text-dim)",
                   paddingTop: "0.5rem",
                   margin: 0,
                 }}
@@ -155,8 +154,8 @@ export default function GlobalError({
               fontSize: "0.875rem",
               border: "none",
               cursor: "pointer",
-              color: "#FBFBFC",
-              background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
+              color: "var(--brand-fg)",
+              background: "var(--brand-gradient)",
             }}
           >
             Recargar aplicación

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Button } from "@leanstart/commons";
 import { ArrowRight, LayoutTemplate, Users, TrendingUp } from "lucide-react";
 import { PublicGallery } from "@/components/landing/public-gallery";
+import { Logo } from "@/components/logo";
 
 const features = [
   {
@@ -29,7 +30,7 @@ export default function LandingPage() {
   return (
     <div
       className="min-h-screen flex flex-col relative"
-      style={{ backgroundColor: "#0D0C10" }}
+      style={{ backgroundColor: "var(--shell)" }}
     >
       {/* Background glow */}
       <div className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden" style={{ height: "700px" }}>
@@ -48,21 +49,13 @@ export default function LandingPage() {
       <header
         className="sticky top-0 z-50 border-b backdrop-blur-md"
         style={{
-          borderColor: "rgba(255,255,255,0.06)",
-          backgroundColor: "rgba(13,12,16,0.82)",
+          borderColor: "var(--border-subtle)",
+          backgroundColor: "var(--shell-header)",
         }}
       >
         <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="LeanStart"
-              width={130}
-              height={130}
-              unoptimized
-              style={{ height: "auto" }}
-              className="rounded-md"
-            />
+            <Logo height={30} priority />
           </Link>
 
           <div className="flex items-center gap-3">
@@ -96,27 +89,27 @@ export default function LandingPage() {
               style={{
                 backgroundColor: "rgba(154,98,250,0.08)",
                 border: "1px solid rgba(154,98,250,0.18)",
-                color: "#9A62FA",
+                color: "var(--brand)",
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#9A62FA" }} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--brand)" }} />
               Metodología Lean Canvas
             </div>
 
-            <h1 className="text-4xl md:text-[3.2rem] font-bold tracking-tight max-w-xl leading-[1.08]" style={{ color: "#F2F0F7" }}>
+            <h1 className="text-4xl md:text-[3.2rem] font-bold tracking-tight max-w-xl leading-[1.08]" style={{ color: "var(--text-strong)" }}>
               La plataforma que convierte{" "}
-              <span style={{ color: "#9A62FA" }}>
+              <span style={{ color: "var(--brand)" }}>
                 ideas en negocios viables
               </span>
             </h1>
 
-            <p className="mt-6 text-base max-w-md leading-relaxed" style={{ color: "#7E7C86" }}>
+            <p className="mt-6 text-base max-w-md leading-relaxed" style={{ color: "var(--text-dim)" }}>
               LeanStart te guía paso a paso para estructurar, validar y mejorar
               tu modelo de negocio — con mentores reales y métricas objetivas,
               todo en un solo lugar.
             </p>
 
-            <ul className="mt-7 flex flex-col gap-3 text-sm" style={{ color: "#7E7C86" }}>
+            <ul className="mt-7 flex flex-col gap-3 text-sm" style={{ color: "var(--text-dim)" }}>
               {[
                 "Construcción guiada de tu modelo de negocio en 9 bloques",
                 "Evaluación de viabilidad con criterios objetivos de mercado",
@@ -125,7 +118,7 @@ export default function LandingPage() {
                 <li key={point} className="flex items-center gap-3">
                   <span
                     className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
-                    style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+                    style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
                   >
                     ✓
                   </span>
@@ -167,11 +160,11 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <p
             className="text-xs font-semibold tracking-widest uppercase mb-3"
-            style={{ color: "#9A62FA" }}
+            style={{ color: "var(--brand)" }}
           >
             Por qué LeanStart
           </p>
-          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: "#F2F0F7" }}>
+          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: "var(--text-strong)" }}>
             Todo lo que necesitas para lanzar con confianza
           </h2>
         </div>
@@ -182,9 +175,10 @@ export default function LandingPage() {
               key={title}
               className="rounded-xl p-6 flex flex-col gap-4"
               style={{
-                backgroundColor: "#131219",
-                border: "1px solid rgba(255,255,255,0.06)",
+                backgroundColor: "var(--surface-profile)",
+                border: "1px solid var(--border-subtle)",
                 borderTop: "1px solid rgba(154,98,250,0.28)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <div
@@ -194,11 +188,11 @@ export default function LandingPage() {
                   border: "1px solid rgba(154,98,250,0.14)",
                 }}
               >
-                <Icon className="w-5 h-5" style={{ color: "#9A62FA" }} />
+                <Icon className="w-5 h-5" style={{ color: "var(--brand)" }} />
               </div>
               <div>
-                <h3 className="font-semibold mb-2" style={{ color: "#F2F0F7" }}>{title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#7E7C86" }}>
+                <h3 className="font-semibold mb-2" style={{ color: "var(--text-strong)" }}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>
                   {description}
                 </p>
               </div>
@@ -214,8 +208,8 @@ export default function LandingPage() {
       <footer
         className="border-t py-8 text-center text-sm"
         style={{
-          borderColor: "rgba(255,255,255,0.06)",
-          color: "#4A4850",
+          borderColor: "var(--border-subtle)",
+          color: "var(--text-dim)",
         }}
       >
         © 2025 LeanStart. Todos los derechos reservados.

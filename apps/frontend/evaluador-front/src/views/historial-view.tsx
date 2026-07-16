@@ -31,8 +31,8 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
           width: size,
           height: size,
           padding: Math.max(2, Math.round(size * 0.12)),
-          backgroundColor: "rgba(154,98,250,0.12)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "var(--brand-tint)",
+          border: "1px solid var(--border-hair)",
           boxSizing: "border-box",
         }}
       />
@@ -41,7 +41,7 @@ function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }
   return (
     <div
       className="rounded-lg flex items-center justify-center font-bold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
     >
       {empresa.nombre.charAt(0).toUpperCase()}
     </div>
@@ -82,8 +82,8 @@ export function EvaluadorHistorialView() {
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Historial de Evaluaciones</h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Historial de Evaluaciones</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Consulta las evaluaciones que has realizado anteriormente.
         </p>
       </div>
@@ -98,17 +98,17 @@ export function EvaluadorHistorialView() {
           <div
             key={label}
             className="rounded-xl p-5 flex items-center gap-4"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
               style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.15)" }}
             >
-              <Icon className="w-5 h-5" style={{ color: "#9A62FA" }} />
+              <Icon className="w-5 h-5" style={{ color: "var(--brand)" }} />
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: "#7E7C86" }}>{label}</p>
-              <p className="text-2xl font-bold mt-0.5" style={{ color: "#F2F0F7" }}>{value}</p>
+              <p className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>{label}</p>
+              <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--text-strong)" }}>{value}</p>
             </div>
           </div>
         ))}
@@ -117,33 +117,33 @@ export function EvaluadorHistorialView() {
       {/* Búsqueda */}
       {registros.length > 0 && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
           <input
             type="text"
             placeholder="Buscar por empresa..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+            style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
           />
         </div>
       )}
 
       {/* Lista de evaluaciones */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#7E7C86" }}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-dim)" }}>
           Evaluaciones realizadas
         </p>
 
         {registrosFiltrados.length === 0 ? (
           <div
             className="rounded-xl p-10 text-center"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
           >
-            <History className="w-8 h-8 mx-auto mb-3" style={{ color: "#7E7C86" }} />
-            <p className="text-sm" style={{ color: "#7E7C86" }}>
+            <History className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-dim)" }} />
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>
               {registros.length === 0
                 ? "Aún no has finalizado ninguna evaluación. Cuando finalices una, aparecerá aquí."
                 : "Sin resultados para tu búsqueda."}
@@ -158,17 +158,17 @@ export function EvaluadorHistorialView() {
                   key={empresa.id}
                   href={`/evaluador/historial/${empresa.id}`}
                   className="flex flex-col gap-3 rounded-xl px-5 py-4 transition-[border-color]"
-                  style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                  style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
                   <div className="flex items-start gap-3">
                     <EmpresaLogo empresa={empresa} size={40} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>{empresa.nombre}</p>
-                          <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                          <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                             {REPORTE_GIRO_LABELS[empresa.giro]} · {fecha}
                           </p>
                         </div>
@@ -182,10 +182,10 @@ export function EvaluadorHistorialView() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-5 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-5 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-lg font-bold" style={{ color: "#F2F0F7" }}>{calculo.scoreFinal}%</span>
-                      <span className="text-xs" style={{ color: "#7E7C86" }}>calificación final</span>
+                      <span className="text-lg font-bold" style={{ color: "var(--text-strong)" }}>{calculo.scoreFinal}%</span>
+                      <span className="text-xs" style={{ color: "var(--text-dim)" }}>calificación final</span>
                     </div>
                     {calculo.nivel && (
                       <div className="flex items-center gap-1.5">

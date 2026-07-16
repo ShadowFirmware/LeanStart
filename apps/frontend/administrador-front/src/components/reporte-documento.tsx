@@ -53,7 +53,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
   return (
     <div
       className="fixed inset-0 z-[100] overflow-y-auto"
-      style={{ backgroundColor: "rgba(8,7,12,0.85)", backdropFilter: "blur(4px)" }}
+      style={{ backgroundColor: "var(--shell-header)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -61,10 +61,10 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
       {/* Toolbar (no se imprime) */}
       <div
         className="no-print sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-3"
-        style={{ backgroundColor: "#131219", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ backgroundColor: "var(--surface-profile)", borderBottom: "1px solid var(--border-hair)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-sm font-medium" style={{ color: "#F2F0F7" }}>
+        <span className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>
           {esBoleta ? "Boleta de evaluación" : "Reporte Lean Canvas"} · {empresa.nombre}
         </span>
         <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             type="button"
             onClick={() => window.print()}
             className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg border-0"
-            style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
             <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
           </button>
@@ -80,7 +80,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             type="button"
             onClick={onClose}
             className="inline-flex items-center justify-center w-9 h-9 rounded-lg"
-            style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.06)" }}
+            style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)" }}
             aria-label="Cerrar"
           >
             <X className="w-4 h-4" />

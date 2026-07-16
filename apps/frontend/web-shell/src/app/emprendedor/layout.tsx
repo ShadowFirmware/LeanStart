@@ -21,7 +21,7 @@ export default async function EmprendedorLayout({
   const userEmail = session?.user?.email ?? DEV_USER.email;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#0D0C10" }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "var(--shell)" }}>
       <EmprendedorSidebar userName={userName} userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}

@@ -44,14 +44,107 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Tokens de la coraza (shell) y utilidades expuestas a Tailwind */
+  --color-shell: var(--shell);
+  --color-text-strong: var(--text-strong);
+  --color-text-dim: var(--text-dim);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-accent: var(--brand-accent);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* ─── LeanStart Design System — Dark as default ─── */
+/* ─── Marca LeanStart — morados fijos (idénticos en claro y oscuro) ───
+   El acento de la marca no cambia con el tema; solo cambian las superficies
+   y los textos. Estos tokens se referencian con var(--brand…) en estilos
+   inline para no volver a codificar el morado a mano. */
 :root {
+  --brand:                #9A62FA;
+  --brand-hover:          #8E58EE;
+  --brand-2:              #AE6CFD;
+  --brand-accent:         #C687F5;
+  --brand-fg:             #FBFBFC;
+  --brand-gradient:       linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%);
+  --brand-gradient-hover: linear-gradient(135deg, #8E58EE 0%, #9A62FA 100%);
+  --brand-tint:           rgba(154, 98, 250, 0.12);
+  --brand-tint-strong:    rgba(154, 98, 250, 0.20);
+  --brand-line:           rgba(154, 98, 250, 0.60);
+  --brand-glow:           rgba(154, 98, 250, 0.16);
+  --brand-border:         rgba(154, 98, 250, 0.20);
+
+  --radius: 0.625rem;
+}
+
+/* ─── Tema CLARO (por defecto en :root) ─── */
+:root {
+  --background:        #F5F5FA;
+  --background-secondary: #FFFFFF;
+  --foreground:        #1E1D26;
+  --foreground-muted:  #6C6A75;
+
+  --card:              #FFFFFF;
+  --card-foreground:   #1E1D26;
+
+  --popover:           #FFFFFF;
+  --popover-foreground: #1E1D26;
+
+  --primary:           #9A62FA;
+  --primary-hover:     #8E58EE;
+  --primary-foreground: #FFFFFF;
+
+  --secondary:         #AE6CFD;
+  --secondary-accent:  #8E58EE;
+  --secondary-foreground: #FFFFFF;
+
+  --muted:             #EFEEF4;
+  --muted-foreground:  #6C6A75;
+
+  --accent:            #9A62FA;
+  --accent-foreground: #FFFFFF;
+
+  --destructive:       oklch(0.58 0.22 25);
+
+  --border:            rgba(20, 18, 40, 0.10);
+  --input:             rgba(20, 18, 40, 0.12);
+  --ring:              #9A62FA;
+
+  --sidebar:                    #FFFFFF;
+  --sidebar-foreground:         #1E1D26;
+  --sidebar-primary:            #9A62FA;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:             rgba(154, 98, 250, 0.12);
+  --sidebar-accent-foreground:  #1E1D26;
+  --sidebar-border:             rgba(20, 18, 40, 0.08);
+  --sidebar-ring:               #9A62FA;
+
+  /* Coraza / superficies del shell */
+  --shell:             #EEEDF3;
+  --shell-header:      rgba(255, 255, 255, 0.85);
+  --surface-glass:     rgba(255, 255, 255, 0.90);
+  --surface-profile:   #FFFFFF;
+  --text-strong:       #1E1D26;
+  --text-dim:          #78767F;
+  --text-faint:        #AAA8B4;
+  --hover-surface:     rgba(20, 18, 40, 0.04);
+  --hover-surface-2:   rgba(20, 18, 40, 0.05);
+  --border-subtle:     rgba(20, 18, 40, 0.08);
+  --border-hair:       rgba(20, 18, 40, 0.10);
+  --input-surface:     #FFFFFF;
+  --overlay:           rgba(20, 18, 40, 0.35);
+  --shadow-elevated:   0 0 0 1px rgba(20, 18, 40, 0.04) inset, 0 24px 48px rgba(20, 18, 40, 0.12);
+  --shadow-card:       0 1px 2px rgba(20, 18, 45, 0.04), 0 4px 14px rgba(20, 18, 45, 0.06);
+  --shadow-card-hover: 0 2px 6px rgba(20, 18, 45, 0.07), 0 14px 32px rgba(20, 18, 45, 0.11);
+  --shadow-sidebar:    1px 0 20px rgba(20, 18, 45, 0.05);
+
+  color-scheme: light;
+}
+
+/* ─── Tema OSCURO ─── */
+.dark {
   --background:        #151419;
   --background-secondary: #202125;
   --foreground:        #FBFBFC;
@@ -83,8 +176,6 @@
   --input:             rgba(255, 255, 255, 0.06);
   --ring:              #9A62FA;
 
-  --radius: 0.625rem;
-
   --sidebar:                    #202125;
   --sidebar-foreground:         #FBFBFC;
   --sidebar-primary:            #9A62FA;
@@ -93,14 +184,51 @@
   --sidebar-accent-foreground:  #FBFBFC;
   --sidebar-border:             rgba(255, 255, 255, 0.08);
   --sidebar-ring:               #9A62FA;
+
+  /* Coraza / superficies del shell */
+  --shell:             #0D0C10;
+  --shell-header:      rgba(13, 12, 16, 0.85);
+  --surface-glass:     rgba(32, 33, 37, 0.85);
+  --surface-profile:   #131219;
+  --text-strong:       #F2F0F7;
+  --text-dim:          #7E7C86;
+  --text-faint:        #4A4850;
+  --hover-surface:     rgba(255, 255, 255, 0.04);
+  --hover-surface-2:   rgba(255, 255, 255, 0.03);
+  --border-subtle:     rgba(255, 255, 255, 0.06);
+  --border-hair:       rgba(255, 255, 255, 0.08);
+  --input-surface:     rgba(255, 255, 255, 0.04);
+  --overlay:           rgba(0, 0, 0, 0.60);
+  --shadow-elevated:   0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 64px rgba(0, 0, 0, 0.40);
+  --shadow-card:       0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.22);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.40), 0 16px 34px rgba(0, 0, 0, 0.32);
+  --shadow-sidebar:    none;
+
+  color-scheme: dark;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+
+  /* Transiciones suaves de color/sombra en toda la app: dan un crossfade
+     agradable al cambiar de tema y a los estados hover. Solo animamos
+     propiedades "baratas" (color/fondo/borde/sombra), nunca layout.
+     Los elementos con su propia `transition` (inline o clases Tailwind)
+     conservan la suya por mayor especificidad. */
+  @media (prefers-reduced-motion: no-preference) {
+    body * {
+      transition-property: background-color, border-color, color, box-shadow, fill, stroke;
+      transition-duration: 0.22s;
+      transition-timing-function: ease;
+    }
   }
 }
 
@@ -108,14 +236,14 @@
   .input-auth {
     height: 2.75rem;
     border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background-color: rgba(255, 255, 255, 0.04);
-    color: #fbfbfc;
+    border: 1px solid var(--border-hair);
+    background-color: var(--input-surface);
+    color: var(--text-strong);
     transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
     outline: none !important;
   }
   .input-auth::placeholder {
-    color: rgba(155, 154, 159, 0.5);
+    color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
   }
   .input-auth:focus,
   .input-auth:focus-visible {
