@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 
 export interface NivelViabilidad {
   id: string;
@@ -17,13 +18,14 @@ interface ViabilidadStore {
   niveles: NivelViabilidad[];
   /** Calificación final mínima (0-100) para publicar un proyecto; por debajo, se devuelve al emprendedor. */
   umbralPublicacion: number;
-  actualizarPesoEvaluacion: (peso: number) => void;
-  actualizarHastaNivel: (id: string, hasta: number) => void;
-  editarNivel: (id: string, data: { nombre: string; color: string }) => void;
-  actualizarUmbralPublicacion: (umbral: number) => void;
-  agregarNivel: () => boolean;
-  eliminarNivel: (id: string) => void;
-  reordenarNivel: (desde: number, hasta: number) => void;
+  cargarViabilidad: () => Promise<void>;
+  actualizarPesoEvaluacion: (peso: number) => Promise<void>;
+  actualizarHastaNivel: (id: string, hasta: number) => Promise<void>;
+  editarNivel: (id: string, data: { nombre: string; color: string }) => Promise<void>;
+  actualizarUmbralPublicacion: (umbral: number) => Promise<void>;
+  agregarNivel: () => Promise<boolean>;
+  eliminarNivel: (id: string) => Promise<void>;
+  reordenarNivel: (desde: number, hasta: number) => Promise<void>;
 }
 
 const NIVELES_DEFAULT: NivelViabilidad[] = [
@@ -39,15 +41,40 @@ export const useViabilidadStore = create<ViabilidadStore>()(
       niveles: NIVELES_DEFAULT,
       umbralPublicacion: 70,
 
-      actualizarPesoEvaluacion(peso) {
-        set({ pesoEvaluacion: Math.max(0, Math.min(100, Math.round(peso))) });
+      async cargarViabilidad() {
+        if (modoDemo()) return;
+        const config = await apiFetch<{ pesoEvaluacion: number; umbralPublicacion: number; niveles: NivelViabilidad[] }>(
+          "/viabilidad"
+        );
+        set({ pesoEvaluacion: config.pesoEvaluacion, umbralPublicacion: config.umbralPublicacion, niveles: config.niveles });
       },
 
-      actualizarUmbralPublicacion(umbral) {
-        set({ umbralPublicacion: Math.max(0, Math.min(100, Math.round(umbral))) });
+      async actualizarPesoEvaluacion(peso) {
+        const clamped = Math.max(0, Math.min(100, Math.round(peso)));
+        if (!modoDemo()) {
+          await apiFetch(`/viabilidad/peso-evaluacion`, { method: "PATCH", body: JSON.stringify({ peso: clamped }) });
+        }
+        set({ pesoEvaluacion: clamped });
       },
 
-      actualizarHastaNivel(id, hasta) {
+      async actualizarUmbralPublicacion(umbral) {
+        const clamped = Math.max(0, Math.min(100, Math.round(umbral)));
+        if (!modoDemo()) {
+          await apiFetch(`/viabilidad/umbral-publicacion`, { method: "PATCH", body: JSON.stringify({ umbral: clamped }) });
+        }
+        set({ umbralPublicacion: clamped });
+      },
+
+      async actualizarHastaNivel(id, hasta) {
+        if (!modoDemo()) {
+          const niveles = await apiFetch<NivelViabilidad[]>(`/viabilidad/niveles/${id}/hasta`, {
+            method: "PATCH",
+            body: JSON.stringify({ hasta: Math.round(hasta) }),
+          });
+          set({ niveles });
+          return;
+        }
+
         set((state) => {
           const i = state.niveles.findIndex((n) => n.id === id);
           if (i === -1 || i === state.niveles.length - 1) return state;
@@ -59,13 +86,29 @@ export const useViabilidadStore = create<ViabilidadStore>()(
         });
       },
 
-      editarNivel(id, data) {
+      async editarNivel(id, data) {
+        if (!modoDemo()) {
+          const niveles = await apiFetch<NivelViabilidad[]>(`/viabilidad/niveles/${id}`, {
+            method: "PATCH",
+            body: JSON.stringify(data),
+          });
+          set({ niveles });
+          return;
+        }
         set({
           niveles: get().niveles.map((n) => (n.id === id ? { ...n, ...data } : n)),
         });
       },
 
-      agregarNivel() {
+      async agregarNivel() {
+        if (!modoDemo()) {
+          const { creado, niveles } = await apiFetch<{ creado: boolean; niveles: NivelViabilidad[] }>("/viabilidad/niveles", {
+            method: "POST",
+          });
+          set({ niveles });
+          return creado;
+        }
+
         const niveles = get().niveles;
         const lower = niveles.length >= 2 ? niveles[niveles.length - 2].hasta : 0;
         const upper = niveles[niveles.length - 1]?.hasta ?? 100;
@@ -83,7 +126,13 @@ export const useViabilidadStore = create<ViabilidadStore>()(
         return true;
       },
 
-      eliminarNivel(id) {
+      async eliminarNivel(id) {
+        if (!modoDemo()) {
+          const niveles = await apiFetch<NivelViabilidad[]>(`/viabilidad/niveles/${id}`, { method: "DELETE" });
+          set({ niveles });
+          return;
+        }
+
         set((state) => {
           if (state.niveles.length <= 1) return state;
           const niveles = state.niveles.filter((n) => n.id !== id);
@@ -92,7 +141,16 @@ export const useViabilidadStore = create<ViabilidadStore>()(
         });
       },
 
-      reordenarNivel(desde, hasta) {
+      async reordenarNivel(desde, hasta) {
+        if (!modoDemo()) {
+          const niveles = await apiFetch<NivelViabilidad[]>("/viabilidad/niveles/reordenar", {
+            method: "POST",
+            body: JSON.stringify({ desde, hasta }),
+          });
+          set({ niveles });
+          return;
+        }
+
         set((state) => {
           const niveles = state.niveles;
           if (

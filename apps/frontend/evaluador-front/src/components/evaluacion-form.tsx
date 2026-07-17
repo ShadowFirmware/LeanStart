@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ClipboardList, MessageSquare, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Textarea,
+  Textarea, debounce, modoDemo,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@leanstart/commons";
@@ -41,8 +41,38 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   const setPuntaje = useEvaluacionesStore((s) => s.setPuntaje);
   const setComentarioCriterio = useEvaluacionesStore((s) => s.setComentarioCriterio);
   const setComentario = useEvaluacionesStore((s) => s.setComentario);
+  const finalizarReal = useEvaluacionesStore((s) => s.finalizar);
+  const cargarEvaluacion = useEvaluacionesStore((s) => s.cargarEvaluacion);
+
+  useEffect(() => {
+    if (!modoDemo()) cargarEvaluacion(empresaId).catch(() => toast.error("No se pudo cargar la evaluación."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId]);
 
   const [confirmarOpen, setConfirmarOpen] = useState(false);
+
+  // Estado local para que escribir se sienta instantáneo aunque el guardado esté debounced.
+  const [comentarioLocal, setComentarioLocal] = useState(evaluacion?.comentarioEvaluador ?? "");
+  useEffect(() => setComentarioLocal(evaluacion?.comentarioEvaluador ?? ""), [evaluacion?.comentarioEvaluador]);
+
+  const guardarComentarioGeneral = useMemo(
+    () =>
+      debounce((v: string) => {
+        setComentario(empresaId, v).catch(() => toast.error("No se pudo guardar el comentario."));
+      }, 500),
+    [empresaId, setComentario]
+  );
+  const debouncedComentarioPorCriterio = useRef<Map<string, (v: string) => void>>(new Map());
+  function guardarComentarioCriterio(criterioId: string, v: string) {
+    let fn = debouncedComentarioPorCriterio.current.get(criterioId);
+    if (!fn) {
+      fn = debounce((valor: string) => {
+        setComentarioCriterio(empresaId, criterioId, valor).catch(() => toast.error("No se pudo guardar el comentario."));
+      }, 500);
+      debouncedComentarioPorCriterio.current.set(criterioId, fn);
+    }
+    fn(v);
+  }
 
   if (!empresa) return null;
 
@@ -55,19 +85,34 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   function setPuntos(criterioId: string, peso: number, puntos: number) {
     const clamped = Math.max(0, Math.min(peso, Math.round(puntos)));
     const porcentaje = peso > 0 ? (clamped / peso) * 100 : 0;
-    setPuntaje(empresaId, criterioId, porcentaje);
+    setPuntaje(empresaId, criterioId, porcentaje).catch(() => toast.error("No se pudo guardar la calificación."));
   }
 
-  function finalizarEvaluacion() {
+  async function finalizarEvaluacion() {
     if (!empresa) return;
-    actualizarEmpresa(empresaId, { estado: accionResultante });
-    toast.success(
-      accionResultante === "publicado"
-        ? `"${empresa.nombre}" fue evaluada y publicada.`
-        : `"${empresa.nombre}" fue devuelta al emprendedor.`
-    );
-    setConfirmarOpen(false);
-    router.push("/evaluador/empresas");
+    try {
+      if (modoDemo()) {
+        await actualizarEmpresa(empresaId, { estado: accionResultante });
+        toast.success(
+          accionResultante === "publicado"
+            ? `"${empresa.nombre}" fue evaluada y publicada.`
+            : `"${empresa.nombre}" fue devuelta al emprendedor.`
+        );
+      } else {
+        // El backend calcula el score con los criterios/niveles reales del servidor,
+        // transiciona la empresa y ya notifica al emprendedor — no hace falta repetir nada aquí.
+        const resultado = await finalizarReal(empresaId);
+        toast.success(
+          resultado.accionResultante === "publicado"
+            ? `"${empresa.nombre}" fue evaluada y publicada (score ${resultado.scoreFinal}%).`
+            : `"${empresa.nombre}" fue devuelta al emprendedor (score ${resultado.scoreFinal}%).`
+        );
+      }
+      setConfirmarOpen(false);
+      router.push("/evaluador/empresas");
+    } catch {
+      toast.error("No se pudo finalizar la evaluación.");
+    }
   }
 
   if (!puedeEvaluar) {
@@ -102,7 +147,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
                   criterio={c}
                   comentario={evaluacion?.comentariosCriterios?.[c.id] ?? ""}
                   onChangePuntos={(puntos) => setPuntos(c.id, c.peso, puntos)}
-                  onChangeComentario={(v) => setComentarioCriterio(empresaId, c.id, v)}
+                  onChangeComentario={(v) => guardarComentarioCriterio(c.id, v)}
                 />
               ))}
             </div>
@@ -116,14 +161,17 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
             </div>
             <p className="text-[11px]" style={{ color: "#7E7C86" }}>Conclusión general sobre la viabilidad del proyecto.</p>
             <Textarea
-              value={comentarioGeneral}
+              value={comentarioLocal}
               maxLength={MAX_COMENTARIO_GENERAL}
-              onChange={(e) => setComentario(empresaId, e.target.value)}
+              onChange={(e) => {
+                setComentarioLocal(e.target.value);
+                guardarComentarioGeneral(e.target.value);
+              }}
               placeholder="El proyecto presenta una propuesta sólida, con evidencia de validación y un mercado objetivo definido."
               className="min-h-28 resize-none text-sm focus-visible:ring-0"
               style={inputStyle}
             />
-            <span className="text-xs text-right" style={{ color: "#4A4850" }}>{comentarioGeneral.length} / {MAX_COMENTARIO_GENERAL}</span>
+            <span className="text-xs text-right" style={{ color: "#4A4850" }}>{comentarioLocal.length} / {MAX_COMENTARIO_GENERAL}</span>
           </div>
         </div>
 
@@ -301,6 +349,10 @@ function CriterioRow({ numero, criterio, comentario, onChangePuntos, onChangeCom
   onChangePuntos: (puntos: number) => void;
   onChangeComentario: (v: string) => void;
 }) {
+  // Estado local para que escribir se sienta instantáneo aunque el guardado esté debounced.
+  const [valor, setValor] = useState(comentario);
+  useEffect(() => setValor(comentario), [comentario]);
+
   return (
     <div className="rounded-2xl p-4 md:p-5 flex flex-col gap-3" style={cardStyle}>
       <div className="flex items-center gap-3">
@@ -330,13 +382,16 @@ function CriterioRow({ numero, criterio, comentario, onChangePuntos, onChangeCom
             Comentario
           </label>
           <span className="text-xs" style={{ color: "#4A4850" }}>
-            {comentario.length} / {MAX_COMENTARIO_CRITERIO}
+            {valor.length} / {MAX_COMENTARIO_CRITERIO}
           </span>
         </div>
         <Textarea
-          value={comentario}
+          value={valor}
           maxLength={MAX_COMENTARIO_CRITERIO}
-          onChange={(e) => onChangeComentario(e.target.value)}
+          onChange={(e) => {
+            setValor(e.target.value);
+            onChangeComentario(e.target.value);
+          }}
           placeholder="Justifica brevemente la calificación asignada..."
           className="min-h-16 resize-none text-sm focus-visible:ring-0"
           style={inputStyle}

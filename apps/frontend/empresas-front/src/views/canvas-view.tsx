@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, AlertCircle, Lightbulb, Sparkles, Lock, Users,
   BarChart2, Share2, TrendingDown, TrendingUp, Plus, X,
 } from "lucide-react";
+import { toast } from "sonner";
+import { modoDemo } from "@leanstart/commons";
 import { useEmpresasStore, type CanvasData, DEFAULT_CANVAS } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -154,9 +156,15 @@ export function CanvasView({
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const actualizarCanvas = useEmpresasStore((s) => s.actualizarCanvas);
   const observaciones = useObservacionesStore((s) => s.observaciones);
+  const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
 
   const [openBlock, setOpenBlock] = useState<BlockKey | null>(null);
   const [draft, setDraft] = useState<string | string[]>("");
+
+  useEffect(() => {
+    if (!modoDemo()) cargarObservaciones(id).catch(() => toast.error("No se pudieron cargar las observaciones."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!empresa) return null;
 
@@ -196,13 +204,17 @@ export function CanvasView({
     setOpenBlock(key);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!openBlock) return;
     const meta = BLOCK_META[openBlock];
     const value = meta.type === "multi"
       ? (draft as string[]).filter((s) => s.trim())
       : draft as string;
-    actualizarCanvas(id, { [openBlock]: value });
+    try {
+      await actualizarCanvas(id, { [openBlock]: value });
+    } catch {
+      toast.error("No se pudo guardar el bloque del canvas.");
+    }
     setOpenBlock(null);
   }
 

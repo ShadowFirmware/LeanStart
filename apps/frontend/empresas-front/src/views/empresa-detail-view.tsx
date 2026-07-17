@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +31,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
-import { compressImageToDataUrl } from "@leanstart/commons";
+import { compressImageToDataUrl, modoDemo } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -146,10 +146,14 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
   const limite = hipotesisList.length >= 3;
   const puedeVerObs = puedeVerObservaciones(estadoEmpresa, readOnly, Boolean(permitirComentarios));
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
-    eliminarHipotesis(empresaId, deleteTarget.id);
-    toast.success("Hipótesis eliminada.");
+    try {
+      await eliminarHipotesis(empresaId, deleteTarget.id);
+      toast.success("Hipótesis eliminada.");
+    } catch {
+      toast.error("No se pudo eliminar la hipótesis.");
+    }
     setDeleteTarget(null);
   }
 
@@ -308,7 +312,13 @@ export function EmpresaDetailView({
   const usuarios = useUsuariosStore((s) => s.usuarios);
   const observaciones = useObservacionesStore((s) => s.observaciones);
   const cerrarObservacionesDeEmpresa = useObservacionesStore((s) => s.cerrarObservacionesDeEmpresa);
+  const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
   const empresa = empresas.find((e) => e.id === id);
+
+  useEffect(() => {
+    if (!modoDemo()) cargarObservaciones(id).catch(() => toast.error("No se pudieron cargar las observaciones."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const [editando, setEditando] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -372,20 +382,32 @@ export function EmpresaDetailView({
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
   const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente");
 
-  function enviarAEvaluacion() {
-    actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
-    cerrarObservacionesDeEmpresa(id);
-    toast.success(`"${empresa?.nombre}" fue enviada a evaluación.`);
+  async function enviarAEvaluacion() {
+    try {
+      await actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
+      await cerrarObservacionesDeEmpresa(id);
+      toast.success(`"${empresa?.nombre}" fue enviada a evaluación.`);
+    } catch {
+      toast.error("No se pudo enviar la empresa a evaluación.");
+    }
   }
 
-  function enviarComentariosEmprendedor() {
-    actualizarEmpresa(id, { estado: "observaciones_pendientes" });
-    toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
+  async function enviarComentariosEmprendedor() {
+    try {
+      await actualizarEmpresa(id, { estado: "observaciones_pendientes" });
+      toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
+    } catch {
+      toast.error("No se pudieron enviar los comentarios.");
+    }
   }
 
-  function enviarNuevamenteAlMentor() {
-    actualizarEmpresa(id, { estado: "observaciones_atendidas" });
-    toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
+  async function enviarNuevamenteAlMentor() {
+    try {
+      await actualizarEmpresa(id, { estado: "observaciones_atendidas" });
+      toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
+    } catch {
+      toast.error("No se pudo enviar al mentor.");
+    }
   }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -423,11 +445,15 @@ export function EmpresaDetailView({
     setEditando(false);
   }
 
-  function onSubmit(values: FormValues) {
-    actualizarEmpresa(id, { ...values, logoUrl: logoPreview ?? empresa?.logoUrl });
-    toast.success("Empresa actualizada correctamente.");
-    setLogoPreview(null);
-    setEditando(false);
+  async function onSubmit(values: FormValues) {
+    try {
+      await actualizarEmpresa(id, { ...values, logoUrl: logoPreview ?? empresa?.logoUrl });
+      toast.success("Empresa actualizada correctamente.");
+      setLogoPreview(null);
+      setEditando(false);
+    } catch {
+      toast.error("No se pudo actualizar la empresa.");
+    }
   }
 
   function abrirAsignar(tipo: TipoAsignacion) {
@@ -435,15 +461,19 @@ export function EmpresaDetailView({
     setUsuarioSeleccionado((tipo === "mentor" ? empresa?.mentorId : empresa?.evaluadorId) ?? "");
   }
 
-  function confirmarAsignar() {
+  async function confirmarAsignar() {
     if (!asignarTipo || !usuarioSeleccionado) return;
     const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
-    if (asignarTipo === "mentor") {
-      asignarMentor(id, usuarioSeleccionado);
-    } else {
-      asignarEvaluador(id, usuarioSeleccionado);
+    try {
+      if (asignarTipo === "mentor") {
+        await asignarMentor(id, usuarioSeleccionado);
+      } else {
+        await asignarEvaluador(id, usuarioSeleccionado);
+      }
+      toast.success(`${asignarTipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado.`);
+    } catch {
+      toast.error("No se pudo completar la asignación.");
     }
-    toast.success(`${asignarTipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado.`);
     setAsignarTipo(null);
   }
 
@@ -679,9 +709,13 @@ export function EmpresaDetailView({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      actualizarEmpresa(id, { estado: "pendiente_mentoria" });
-                      toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                    onClick={async () => {
+                      try {
+                        await actualizarEmpresa(id, { estado: "pendiente_mentoria" });
+                        toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                      } catch {
+                        toast.error("No se pudo enviar la empresa a mentoría.");
+                      }
                     }}
                     className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
                     style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}

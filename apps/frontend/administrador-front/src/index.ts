@@ -9,7 +9,7 @@ export { ReportesView } from "./views/reportes-view";
 
 // Stores (para rehidratación centralizada en web-shell)
 export { useEvaluacionesStore } from "./store/evaluaciones";
-export type { EvaluacionEmpresa } from "./store/evaluaciones";
+export type { EvaluacionEmpresa, ResultadoFinalizar } from "./store/evaluaciones";
 export { usePrivilegiosStore } from "./store/privilegios";
 export { useReportesGeneradosStore } from "./store/reportes-generados";
 export type { ReporteGenerado, TipoReporte } from "./store/reportes-generados";

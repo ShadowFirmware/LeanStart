@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 import type { Modulo, Accion } from "@leanstart/commons";
 
 export const MODULOS: Modulo[] = [
@@ -16,12 +17,15 @@ type MatrizPrivilegios = Record<string, MatrizRol>;
 interface PrivilegiosStore {
   privilegios: MatrizPrivilegios;
   tienePrivilegio: (rolId: string, modulo: Modulo, accion: Accion) => boolean;
-  toggleAccion: (rolId: string, modulo: Modulo, accion: Accion) => void;
-  toggleModuloCompleto: (rolId: string, modulo: Modulo) => void;
+  /** Trae la matriz real de un rol desde el backend (no-op en modo demo). */
+  cargarPrivilegios: (rolId: string) => Promise<void>;
+  toggleAccion: (rolId: string, modulo: Modulo, accion: Accion) => Promise<void>;
+  toggleModuloCompleto: (rolId: string, modulo: Modulo) => Promise<void>;
   /** Activa/desactiva una acción en TODOS los módulos a la vez (toggle por columna). */
-  toggleAccionColumna: (rolId: string, accion: Accion) => void;
+  toggleAccionColumna: (rolId: string, accion: Accion) => Promise<void>;
   /** Otorga o revoca TODOS los permisos del rol de una sola vez. */
-  setTodos: (rolId: string, activar: boolean) => void;
+  setTodos: (rolId: string, activar: boolean) => Promise<void>;
+  /** Roles personalizados: solo existen en modo demo (el backend no los soporta todavía). */
   inicializarRol: (rolId: string) => void;
   eliminarRol: (rolId: string) => void;
 }
@@ -32,6 +36,11 @@ function matriz(base: Partial<Record<Modulo, Accion[]>>): MatrizRol {
     result[modulo] = base[modulo] ?? [];
   }
   return result;
+}
+
+/** Convierte el array `[{modulo, acciones}]` que devuelve el backend a la matriz `{modulo: acciones[]}`. */
+function mapMatriz(privilegiosApi: { modulo: Modulo; acciones: Accion[] }[]): MatrizRol {
+  return matriz(Object.fromEntries(privilegiosApi.map((p) => [p.modulo, p.acciones])));
 }
 
 const PRIVILEGIOS_DEFAULT: MatrizPrivilegios = {
@@ -81,7 +90,22 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         return get().privilegios[rolId]?.[modulo].includes(accion) ?? false;
       },
 
-      toggleAccion(rolId, modulo, accion) {
+      async cargarPrivilegios(rolId) {
+        if (modoDemo()) return;
+        const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(`/privilegios/${rolId}`);
+        set((state) => ({ privilegios: { ...state.privilegios, [rolId]: mapMatriz(respuesta) } }));
+      },
+
+      async toggleAccion(rolId, modulo, accion) {
+        if (!modoDemo()) {
+          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
+            `/privilegios/${rolId}/toggle-accion`,
+            { method: "PATCH", body: JSON.stringify({ modulo, accion }) }
+          );
+          set((state) => ({ privilegios: { ...state.privilegios, [rolId]: mapMatriz(respuesta) } }));
+          return;
+        }
+
         set((state) => {
           const actual = state.privilegios[rolId]?.[modulo] ?? [];
           const actualizado = actual.includes(accion)
@@ -96,7 +120,16 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         });
       },
 
-      toggleModuloCompleto(rolId, modulo) {
+      async toggleModuloCompleto(rolId, modulo) {
+        if (!modoDemo()) {
+          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
+            `/privilegios/${rolId}/toggle-modulo`,
+            { method: "PATCH", body: JSON.stringify({ modulo }) }
+          );
+          set((state) => ({ privilegios: { ...state.privilegios, [rolId]: mapMatriz(respuesta) } }));
+          return;
+        }
+
         set((state) => {
           const actual = state.privilegios[rolId]?.[modulo] ?? [];
           const actualizado = actual.length === ACCIONES.length ? [] : [...ACCIONES];
@@ -109,7 +142,16 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         });
       },
 
-      toggleAccionColumna(rolId, accion) {
+      async toggleAccionColumna(rolId, accion) {
+        if (!modoDemo()) {
+          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
+            `/privilegios/${rolId}/toggle-columna`,
+            { method: "PATCH", body: JSON.stringify({ accion }) }
+          );
+          set((state) => ({ privilegios: { ...state.privilegios, [rolId]: mapMatriz(respuesta) } }));
+          return;
+        }
+
         set((state) => {
           const rolMatriz = state.privilegios[rolId] ?? matriz({});
           const todosLaTienen = MODULOS.every((m) => (rolMatriz[m] ?? []).includes(accion));
@@ -124,7 +166,16 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         });
       },
 
-      setTodos(rolId, activar) {
+      async setTodos(rolId, activar) {
+        if (!modoDemo()) {
+          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
+            `/privilegios/${rolId}/set-todos`,
+            { method: "PATCH", body: JSON.stringify({ activar }) }
+          );
+          set((state) => ({ privilegios: { ...state.privilegios, [rolId]: mapMatriz(respuesta) } }));
+          return;
+        }
+
         set((state) => ({
           privilegios: {
             ...state.privilegios,

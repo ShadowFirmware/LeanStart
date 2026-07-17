@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck, Rocket, GraduationCap, ClipboardCheck, Pencil, Check, Plus, Trash2, UserCog,
@@ -14,7 +14,7 @@ import {
   Input, Textarea,
 } from "@leanstart/commons";
 import type { Role, Modulo, Accion } from "@leanstart/commons";
-import { useUsuariosStore } from "@leanstart/commons";
+import { modoDemo, useUsuariosStore } from "@leanstart/commons";
 import { useRolesStore, type RolPersonalizado } from "../store/roles";
 import { usePrivilegiosStore, MODULOS, ACCIONES } from "../store/privilegios";
 
@@ -85,10 +85,16 @@ export function RolesPrivilegiosView() {
 
   const [rolPrivilegios, setRolPrivilegios] = useState<string>("administrador");
   const privilegios = usePrivilegiosStore((s) => s.privilegios);
+  const cargarPrivilegios = usePrivilegiosStore((s) => s.cargarPrivilegios);
   const toggleAccion = usePrivilegiosStore((s) => s.toggleAccion);
   const toggleModuloCompleto = usePrivilegiosStore((s) => s.toggleModuloCompleto);
   const toggleAccionColumna = usePrivilegiosStore((s) => s.toggleAccionColumna);
   const setTodos = usePrivilegiosStore((s) => s.setTodos);
+
+  useEffect(() => {
+    if (!modoDemo()) cargarPrivilegios(rolPrivilegios).catch(() => toast.error("No se pudieron cargar los privilegios."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rolPrivilegios]);
 
   function abrirEditarSistema(rol: Role) {
     setEditSistemaTarget(rol);
@@ -365,14 +371,14 @@ export function RolesPrivilegiosView() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => setTodos(rolPrivilegios, true)}
+                    onClick={() => setTodos(rolPrivilegios, true).catch(() => toast.error("No se pudo actualizar los privilegios."))}
                     className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
                     style={{ color: "#C9A8FE", backgroundColor: "rgba(154,98,250,0.12)", border: "1px solid rgba(154,98,250,0.25)" }}
                   >
                     Otorgar todo
                   </button>
                   <button
-                    onClick={() => setTodos(rolPrivilegios, false)}
+                    onClick={() => setTodos(rolPrivilegios, false).catch(() => toast.error("No se pudo actualizar los privilegios."))}
                     className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
                     style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
@@ -404,7 +410,7 @@ export function RolesPrivilegiosView() {
                     return (
                       <button
                         key={accion}
-                        onClick={() => toggleAccionColumna(rolPrivilegios, accion)}
+                        onClick={() => toggleAccionColumna(rolPrivilegios, accion).catch(() => toast.error("No se pudo actualizar los privilegios."))}
                         className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors"
                         title={enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
                         style={{ color: enAlgunos ? "#C9A8FE" : "#7E7C86", backgroundColor: enTodos ? "rgba(154,98,250,0.08)" : "transparent" }}
@@ -434,7 +440,7 @@ export function RolesPrivilegiosView() {
                       style={{ gridTemplateColumns: GRID_COLS, borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.04)" }}
                     >
                       <button
-                        onClick={() => toggleModuloCompleto(rolPrivilegios, modulo)}
+                        onClick={() => toggleModuloCompleto(rolPrivilegios, modulo).catch(() => toast.error("No se pudo actualizar los privilegios."))}
                         className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
                         style={{ backgroundColor: "#131219" }}
                         title={todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
@@ -458,7 +464,7 @@ export function RolesPrivilegiosView() {
                         return (
                           <button
                             key={accion}
-                            onClick={() => toggleAccion(rolPrivilegios, modulo, accion)}
+                            onClick={() => toggleAccion(rolPrivilegios, modulo, accion).catch(() => toast.error("No se pudo actualizar los privilegios."))}
                             className="flex items-center justify-center py-3 group"
                             aria-pressed={activa}
                             aria-label={`${activa ? "Quitar" : "Otorgar"} ${ACCION_LABELS[accion]} en ${modCfg.label}`}

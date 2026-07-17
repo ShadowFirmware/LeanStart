@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 
 /** Evaluación que el administrador/evaluador captura para una empresa. */
 export interface EvaluacionEmpresa {
@@ -12,12 +13,24 @@ export interface EvaluacionEmpresa {
   actualizadoEn?: string;
 }
 
+/** Resultado de POST /evaluaciones/:id/finalizar — ya calculado y aplicado en el servidor. */
+export interface ResultadoFinalizar {
+  scoreEvaluacion: number;
+  scoreHipotesis: number;
+  scoreFinal: number;
+  nivel: { id: string; nombre: string; hasta: number; color: string } | null;
+  accionResultante: "publicado" | "devuelto";
+}
+
 interface EvaluacionesStore {
   evaluaciones: Record<string, EvaluacionEmpresa>;
   getEvaluacion: (empresaId: string) => EvaluacionEmpresa;
-  setPuntaje: (empresaId: string, criterioId: string, puntaje: number) => void;
-  setComentarioCriterio: (empresaId: string, criterioId: string, comentario: string) => void;
-  setComentario: (empresaId: string, comentario: string) => void;
+  cargarEvaluacion: (empresaId: string) => Promise<void>;
+  setPuntaje: (empresaId: string, criterioId: string, puntaje: number) => Promise<void>;
+  setComentarioCriterio: (empresaId: string, criterioId: string, comentario: string) => Promise<void>;
+  setComentario: (empresaId: string, comentario: string) => Promise<void>;
+  /** Solo modo real: calcula el score en el servidor, transiciona la empresa y notifica al emprendedor. */
+  finalizar: (empresaId: string) => Promise<ResultadoFinalizar>;
 }
 
 const VACIA: EvaluacionEmpresa = { criterios: {}, comentariosCriterios: {}, comentarioEvaluador: "" };
@@ -35,8 +48,20 @@ export const useEvaluacionesStore = create<EvaluacionesStore>()(
         return get().evaluaciones[empresaId] ?? VACIA;
       },
 
-      setPuntaje(empresaId, criterioId, puntaje) {
+      async cargarEvaluacion(empresaId) {
+        if (modoDemo()) return;
+        const evaluacion = await apiFetch<EvaluacionEmpresa>(`/evaluaciones/${empresaId}`);
+        set((state) => ({ evaluaciones: { ...state.evaluaciones, [empresaId]: evaluacion } }));
+      },
+
+      async setPuntaje(empresaId, criterioId, puntaje) {
         const clamped = Math.max(0, Math.min(100, Math.round(puntaje)));
+        if (!modoDemo()) {
+          await apiFetch(`/evaluaciones/${empresaId}/puntaje`, {
+            method: "PATCH",
+            body: JSON.stringify({ criterioId, puntaje: clamped }),
+          });
+        }
         set((state) => {
           const actual = state.evaluaciones[empresaId] ?? VACIA;
           return {
@@ -52,7 +77,13 @@ export const useEvaluacionesStore = create<EvaluacionesStore>()(
         });
       },
 
-      setComentarioCriterio(empresaId, criterioId, comentario) {
+      async setComentarioCriterio(empresaId, criterioId, comentario) {
+        if (!modoDemo()) {
+          await apiFetch(`/evaluaciones/${empresaId}/comentario-criterio`, {
+            method: "PATCH",
+            body: JSON.stringify({ criterioId, comentario }),
+          });
+        }
         set((state) => {
           const actual = state.evaluaciones[empresaId] ?? VACIA;
           return {
@@ -68,7 +99,13 @@ export const useEvaluacionesStore = create<EvaluacionesStore>()(
         });
       },
 
-      setComentario(empresaId, comentario) {
+      async setComentario(empresaId, comentario) {
+        if (!modoDemo()) {
+          await apiFetch(`/evaluaciones/${empresaId}/comentario`, {
+            method: "PATCH",
+            body: JSON.stringify({ comentario }),
+          });
+        }
         set((state) => {
           const actual = state.evaluaciones[empresaId] ?? VACIA;
           return {
@@ -78,6 +115,10 @@ export const useEvaluacionesStore = create<EvaluacionesStore>()(
             },
           };
         });
+      },
+
+      async finalizar(empresaId) {
+        return apiFetch<ResultadoFinalizar>(`/evaluaciones/${empresaId}/finalizar`, { method: "POST" });
       },
     }),
     { name: "leanstart-evaluaciones", skipHydration: true }

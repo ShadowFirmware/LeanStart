@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 import type { EstadoEmpresa, EstadoObservacion } from "@leanstart/commons";
 
 /**
@@ -55,16 +56,35 @@ export interface Observacion {
 
 interface ObservacionesStore {
   observaciones: Observacion[];
+  /** Trae las observaciones reales de una empresa (no-op en modo demo). */
+  cargarObservaciones: (empresaId: string) => Promise<void>;
   agregarObservacion: (data: {
     empresaId: string;
     tipoElemento: TipoElementoObservacion;
     elementoId: string;
     autorNombre: string;
     comentario: string;
-  }) => void;
-  actualizarEstadoObservacion: (id: string, estado: EstadoObservacion) => void;
-  eliminarObservacion: (id: string) => void;
-  cerrarObservacionesDeEmpresa: (empresaId: string) => void;
+  }) => Promise<void>;
+  actualizarEstadoObservacion: (id: string, estado: EstadoObservacion) => Promise<void>;
+  eliminarObservacion: (id: string) => Promise<void>;
+  cerrarObservacionesDeEmpresa: (empresaId: string) => Promise<void>;
+}
+
+function mapObservacion(o: Record<string, unknown>): Observacion {
+  return {
+    id: o.id as string,
+    empresaId: o.empresaId as string,
+    tipoElemento: o.tipoElemento as TipoElementoObservacion,
+    elementoId: o.elementoId as string,
+    autorNombre: o.autorNombre as string,
+    comentario: o.comentario as string,
+    estado: o.estado as EstadoObservacion,
+    creadaEn: new Date(o.createdAt as string).toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+  };
 }
 
 export const useObservacionesStore = create<ObservacionesStore>()(
@@ -72,7 +92,27 @@ export const useObservacionesStore = create<ObservacionesStore>()(
     (set, get) => ({
       observaciones: [],
 
-      agregarObservacion(data) {
+      async cargarObservaciones(empresaId) {
+        if (modoDemo()) return;
+        const observaciones = await apiFetch<Record<string, unknown>[]>(`/empresas/${empresaId}/observaciones`);
+        set((state) => ({
+          observaciones: [
+            ...state.observaciones.filter((o) => o.empresaId !== empresaId),
+            ...observaciones.map(mapObservacion),
+          ],
+        }));
+      },
+
+      async agregarObservacion(data) {
+        if (!modoDemo()) {
+          const creada = await apiFetch<Record<string, unknown>>(`/empresas/${data.empresaId}/observaciones`, {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+          set({ observaciones: [mapObservacion(creada), ...get().observaciones] });
+          return;
+        }
+
         const id = crypto.randomUUID();
         const ahora = new Date().toLocaleDateString("es-MX", {
           day: "numeric",
@@ -83,17 +123,35 @@ export const useObservacionesStore = create<ObservacionesStore>()(
         set({ observaciones: [nueva, ...get().observaciones] });
       },
 
-      actualizarEstadoObservacion(id, estado) {
+      async actualizarEstadoObservacion(id, estado) {
+        if (!modoDemo()) {
+          const empresaId = get().observaciones.find((o) => o.id === id)?.empresaId;
+          if (!empresaId) return;
+          const actualizada = await apiFetch<Record<string, unknown>>(
+            `/empresas/${empresaId}/observaciones/${id}/estado`,
+            { method: "PATCH", body: JSON.stringify({ estado }) }
+          );
+          set({ observaciones: get().observaciones.map((o) => (o.id === id ? mapObservacion(actualizada) : o)) });
+          return;
+        }
+
         set({
           observaciones: get().observaciones.map((o) => (o.id === id ? { ...o, estado } : o)),
         });
       },
 
-      eliminarObservacion(id) {
+      async eliminarObservacion(id) {
+        if (!modoDemo()) {
+          const empresaId = get().observaciones.find((o) => o.id === id)?.empresaId;
+          if (empresaId) await apiFetch(`/empresas/${empresaId}/observaciones/${id}`, { method: "DELETE" });
+        }
         set({ observaciones: get().observaciones.filter((o) => o.id !== id) });
       },
 
-      cerrarObservacionesDeEmpresa(empresaId) {
+      async cerrarObservacionesDeEmpresa(empresaId) {
+        if (!modoDemo()) {
+          await apiFetch(`/empresas/${empresaId}/observaciones/cerrar`, { method: "POST" });
+        }
         set({
           observaciones: get().observaciones.map((o) =>
             o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "cerrada" } : o

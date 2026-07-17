@@ -162,7 +162,7 @@ export function ProductoEditView({
     setEditando(false);
   }
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     if (esServicio) {
       const err = validarServicioPrecio(precioServicio);
       setPrecioError(err);
@@ -177,19 +177,24 @@ export function ProductoEditView({
       descripcion: values.descripcion,
       caracteristicas: values.caracteristicas || undefined,
     };
-    if (esServicio) {
-      actualizarProducto(id, pid, { ...base, ...servicioPrecioToStore(precioServicio) });
-    } else {
-      const precio = values.precio ? parseFloat(values.precio) : undefined;
-      actualizarProducto(id, pid, {
-        ...base,
-        precio: precio != null && !isNaN(precio) ? precio : undefined,
-        imagenes: imagenes.length > 0 ? imagenes : undefined,
-      });
+    try {
+      if (esServicio) {
+        await actualizarProducto(id, pid, { ...base, ...servicioPrecioToStore(precioServicio) });
+      } else {
+        const precio = values.precio ? parseFloat(values.precio) : undefined;
+        await actualizarProducto(id, pid, {
+          ...base,
+          precio: precio != null && !isNaN(precio) ? precio : undefined,
+          imagenes: imagenes.length > 0 ? imagenes : undefined,
+        });
+      }
+      toast.success(`"${values.nombre}" se actualizó correctamente.`);
+      setEditando(false);
+    } catch {
+      toast.error("No se pudo actualizar el producto.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    toast.success(`"${values.nombre}" se actualizó correctamente.`);
-    setEditando(false);
   }
 
   // ─────────────────────────── MODO LECTURA ───────────────────────────

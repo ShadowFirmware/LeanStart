@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { createSafeLocalStorage } from "../lib/safe-storage";
+import { apiFetch, modoDemo } from "../lib/api-client";
 
 /**
- * Datos editables del perfil del propio usuario. Como LeanStart es solo-front
- * (sin backend), los cambios que hace un usuario sobre su cuenta se guardan
- * localmente indexados por su id (el de la sesión real o el id demo por rol).
- * Al conectar backend, esto se sustituye por un PATCH /me y el mismo shape sirve.
+ * Datos editables del perfil del propio usuario. En modo demo se guardan
+ * localmente indexados por id de usuario; en modo real se sincronizan con
+ * `PATCH /auth/me` del backend (el `userId` se ignora ahí — el gateway ya
+ * sabe quién eres por el JWT — pero se conserva el parámetro para que el
+ * mismo shape sirva en ambos modos).
  */
 export interface PerfilData {
   nombre?: string;
@@ -18,14 +20,28 @@ export interface PerfilData {
 interface PerfilStore {
   /** Overrides por id de usuario. */
   perfiles: Record<string, PerfilData>;
-  actualizarPerfil: (userId: string, data: PerfilData) => void;
+  actualizarPerfil: (userId: string, data: PerfilData) => Promise<void>;
 }
 
 export const usePerfilStore = create<PerfilStore>()(
   persist(
     (set, get) => ({
       perfiles: {},
-      actualizarPerfil(userId, data) {
+      async actualizarPerfil(userId, data) {
+        if (!modoDemo()) {
+          const usuario = await apiFetch<{ nombre: string; email: string; avatarUrl?: string }>("/auth/me", {
+            method: "PATCH",
+            body: JSON.stringify(data),
+          });
+          set({
+            perfiles: {
+              ...get().perfiles,
+              [userId]: { nombre: usuario.nombre, correo: usuario.email, avatarUrl: usuario.avatarUrl },
+            },
+          });
+          return;
+        }
+
         set({
           perfiles: {
             ...get().perfiles,

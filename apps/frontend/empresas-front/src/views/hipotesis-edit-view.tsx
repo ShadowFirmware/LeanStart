@@ -213,17 +213,21 @@ export function HipotesisEditView({
     );
   }
 
-  function cambiarEstadoHipotesis(estado: EstadoHipotesis) {
-    actualizarHipotesis(id, hid, { estado });
+  async function cambiarEstadoHipotesis(estado: EstadoHipotesis) {
     const LABELS: Record<EstadoHipotesis, string> = {
       pendiente_validacion: "marcada como pendiente",
       validada: "validada",
       invalidada: "invalidada",
     };
-    toast.success(`Hipótesis ${LABELS[estado]}.`);
+    try {
+      await actualizarHipotesis(id, hid, { estado });
+      toast.success(`Hipótesis ${LABELS[estado]}.`);
+    } catch {
+      toast.error("No se pudo actualizar el estado de la hipótesis.");
+    }
   }
 
-  function guardar() {
+  async function guardar() {
     if (!titulo.trim() || titulo.trim().length < 5) {
       toast.error("El título es requerido (mín. 5 caracteres).");
       return;
@@ -244,27 +248,31 @@ export function HipotesisEditView({
     const tieneFase3 = resultado.trim() && conclusion.trim();
     const nuevaFase: 1 | 2 | 3 = tieneFase3 ? 3 : tieneFase2 ? 2 : 1;
 
-    actualizarHipotesis(id, hid, {
-      titulo: titulo.trim(),
-      descripcion: descripcion.trim(),
-      experimento: {
-        tipo: tipoExp as TipoExperimento,
-        descripcion: descExp.trim(),
-        objetivo: objetivo.trim(),
-        criterioExito: criterio.trim(),
-        fechaObjetivo: fechaObj || undefined,
-      },
-      resultados: tieneFase3 ? {
-        resultado: resultado.trim(),
-        evidencia: evidenciaFinal || undefined,
-        evidenciaNombre: tipoEvidencia !== "url" ? evidenciaNombre || undefined : undefined,
-        tipoEvidencia: (tipoEvidencia as TipoEvidencia) || undefined,
-        conclusion: conclusion.trim(),
-      } : undefined,
-      fase: nuevaFase,
-    });
-    toast.success("Hipótesis actualizada correctamente.");
-    setEditando(false);
+    try {
+      await actualizarHipotesis(id, hid, {
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim(),
+        experimento: {
+          tipo: tipoExp as TipoExperimento,
+          descripcion: descExp.trim(),
+          objetivo: objetivo.trim(),
+          criterioExito: criterio.trim(),
+          fechaObjetivo: fechaObj || undefined,
+        },
+        resultados: tieneFase3 ? {
+          resultado: resultado.trim(),
+          evidencia: evidenciaFinal || undefined,
+          evidenciaNombre: tipoEvidencia !== "url" ? evidenciaNombre || undefined : undefined,
+          tipoEvidencia: (tipoEvidencia as TipoEvidencia) || undefined,
+          conclusion: conclusion.trim(),
+        } : undefined,
+        fase: nuevaFase,
+      });
+      toast.success("Hipótesis actualizada correctamente.");
+      setEditando(false);
+    } catch {
+      toast.error("No se pudo actualizar la hipótesis.");
+    }
   }
 
   const estadoCfg = ESTADO_HIPOTESIS_CONFIG[hipotesis.estado] ?? ESTADO_HIPOTESIS_CONFIG.pendiente_validacion;

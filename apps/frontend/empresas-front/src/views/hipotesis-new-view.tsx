@@ -219,11 +219,11 @@ export function HipotesisNewView() {
   }
 
   /* ─── Guardado final (escribe en store) ─── */
-  function guardarTodo(fase: 1 | 2 | 3) {
+  async function guardarTodo(fase: 1 | 2 | 3) {
     const evidenciaFinal =
       tipoEvidencia === "url" ? evidenciaUrl.trim() : evidenciaDataUrl || undefined;
 
-    agregarHipotesis(id, {
+    await agregarHipotesis(id, {
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
       estado: "pendiente_validacion",
@@ -251,10 +251,14 @@ export function HipotesisNewView() {
     return !evidenciaDataUrl;
   }
 
-  function ejecutarFinalizar() {
-    guardarTodo(3);
-    toast.success("Hipótesis completada correctamente.");
-    router.push(`/emprendedor/empresas/${id}`);
+  async function ejecutarFinalizar() {
+    try {
+      await guardarTodo(3);
+      toast.success("Hipótesis completada correctamente.");
+      router.push(`/emprendedor/empresas/${id}`);
+    } catch {
+      toast.error("No se pudo guardar la hipótesis.");
+    }
   }
 
   function finalizarPaso3() {
@@ -278,7 +282,7 @@ export function HipotesisNewView() {
     url: "una URL",
   };
 
-  function guardarParcial() {
+  async function guardarParcial() {
     // Solo guardar si paso 1 está completo (mínimo viable)
     const e = validarPaso1();
     if (Object.keys(e).length) {
@@ -286,9 +290,13 @@ export function HipotesisNewView() {
       toast.error("Completa el paso 1 antes de guardar.");
       return;
     }
-    guardarTodo(paso === 1 ? 1 : paso === 2 ? 2 : 3);
-    toast.success("Hipótesis guardada. Puedes completar las fases restantes más adelante.");
-    router.push(`/emprendedor/empresas/${id}`);
+    try {
+      await guardarTodo(paso === 1 ? 1 : paso === 2 ? 2 : 3);
+      toast.success("Hipótesis guardada. Puedes completar las fases restantes más adelante.");
+      router.push(`/emprendedor/empresas/${id}`);
+    } catch {
+      toast.error("No se pudo guardar la hipótesis.");
+    }
   }
 
   return (

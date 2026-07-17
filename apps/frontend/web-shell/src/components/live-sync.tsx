@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
-import { useUsuariosStore, usePerfilStore } from "@leanstart/commons";
-import { useEvaluacionesStore, usePrivilegiosStore, useReportesGeneradosStore } from "@leanstart/administrador-front";
+import { modoDemo, useUsuariosStore, usePerfilStore } from "@leanstart/commons";
+import {
+  useCriteriosStore, useEvaluacionesStore, usePrivilegiosStore,
+  useReportesGeneradosStore, useViabilidadStore,
+} from "@leanstart/administrador-front";
 
 /**
  * Sincronización en vivo entre pestañas/ventanas del mismo navegador + rehidratación inicial.
@@ -32,10 +36,41 @@ const STORES = [
 ] as const;
 
 export function LiveSync() {
+  const { data: session, status } = useSession();
+  const rol = session?.user?.rol;
+
   // Rehidratación inicial (una vez, tras montar en el cliente).
   useEffect(() => {
     STORES.forEach(({ store }) => void store.persist?.rehydrate());
   }, []);
+
+  // Backend real: carga inicial desde la API una vez que hay sesión.
+  // (silencioso a propósito: la UI ya maneja el estado vacío / 403 si el rol no aplica.)
+  useEffect(() => {
+    if (modoDemo() || status !== "authenticated") return;
+
+    useEmpresasStore.getState().cargarEmpresas().catch(() => {});
+    useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
+
+    if (rol === "administrador") {
+      useUsuariosStore.getState().cargarUsuarios().catch(() => {});
+    }
+    if (rol === "administrador" || rol === "evaluador") {
+      useCriteriosStore.getState().cargarCriterios().catch(() => {});
+      useViabilidadStore.getState().cargarViabilidad().catch(() => {});
+      useReportesGeneradosStore.getState().cargarReportesGenerados().catch(() => {});
+    }
+  }, [status, rol]);
+
+  // El backend no empuja notificaciones en tiempo real: si otra persona genera una
+  // mientras esta pestaña ya está abierta, solo la vemos volviendo a pedirla.
+  useEffect(() => {
+    if (modoDemo() || status !== "authenticated") return;
+    const interval = setInterval(() => {
+      useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [status]);
 
   // Sincronización entre pestañas.
   useEffect(() => {

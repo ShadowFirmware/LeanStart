@@ -13,7 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-  Input, Textarea,
+  Input, Textarea, debounce,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useCriteriosStore, type Criterio } from "../store/criterios";
@@ -45,6 +45,14 @@ function PesoStepper({ criterio }: { criterio: Criterio }) {
 
   useEffect(() => setValor(String(criterio.peso)), [criterio.peso]);
 
+  const guardarPeso = useMemo(
+    () =>
+      debounce((id: string, peso: number) => {
+        actualizarPeso(id, peso).catch(() => toast.error("No se pudo actualizar el peso."));
+      }, 400),
+    [actualizarPeso]
+  );
+
   function commit(v: string) {
     const n = Math.max(1, Math.min(100, Math.round(parseFloat(v))));
     if (isNaN(n)) {
@@ -52,11 +60,13 @@ function PesoStepper({ criterio }: { criterio: Criterio }) {
       return;
     }
     setValor(String(n));
-    if (n !== criterio.peso) actualizarPeso(criterio.id, n);
+    if (n !== criterio.peso) guardarPeso(criterio.id, n);
   }
 
   function ajustar(delta: number) {
-    actualizarPeso(criterio.id, Math.max(1, Math.min(100, criterio.peso + delta)));
+    const nuevo = Math.max(1, Math.min(100, criterio.peso + delta));
+    setValor(String(nuevo));
+    guardarPeso(criterio.id, nuevo);
   }
 
   return (
@@ -137,22 +147,30 @@ export function CriteriosEvaluacionView() {
     setDialogOpen(true);
   }
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     const data = { nombre: values.nombre, descripcion: values.descripcion, peso: parseFloat(values.peso) };
-    if (editTarget) {
-      editarCriterio(editTarget.id, data);
-      toast.success(`"${data.nombre}" fue actualizado.`);
-    } else {
-      agregarCriterio(data);
-      toast.success(`"${data.nombre}" fue creado correctamente.`);
+    try {
+      if (editTarget) {
+        await editarCriterio(editTarget.id, data);
+        toast.success(`"${data.nombre}" fue actualizado.`);
+      } else {
+        await agregarCriterio(data);
+        toast.success(`"${data.nombre}" fue creado correctamente.`);
+      }
+      setDialogOpen(false);
+    } catch {
+      toast.error("No se pudo guardar el criterio.");
     }
-    setDialogOpen(false);
   }
 
-  function confirmarEliminar() {
+  async function confirmarEliminar() {
     if (!deleteTarget) return;
-    eliminarCriterio(deleteTarget.id);
-    toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
+    try {
+      await eliminarCriterio(deleteTarget.id);
+      toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
+    } catch {
+      toast.error("No se pudo eliminar el criterio.");
+    }
     setDeleteTarget(null);
   }
 

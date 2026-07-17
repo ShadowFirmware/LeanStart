@@ -96,24 +96,32 @@ export function UsuariosView() {
     setDialogOpen(true);
   }
 
-  function onSubmit(values: FormValues) {
-    if (editTarget) {
-      editarUsuario(editTarget.id, values);
-      toast.success(`"${values.nombre}" fue actualizado.`);
-    } else {
-      crearUsuario(values);
-      toast.success(`"${values.nombre}" fue creado correctamente.`);
+  async function onSubmit(values: FormValues) {
+    try {
+      if (editTarget) {
+        await editarUsuario(editTarget.id, values);
+        toast.success(`"${values.nombre}" fue actualizado.`);
+      } else {
+        await crearUsuario(values);
+        toast.success(`"${values.nombre}" fue creado correctamente.`);
+      }
+      setDialogOpen(false);
+    } catch {
+      toast.error("No se pudo guardar el usuario.");
     }
-    setDialogOpen(false);
   }
 
-  function toggleEstado(usuario: Usuario) {
-    if (usuario.estado === "activo") {
-      desactivarUsuario(usuario.id);
-      toast.success(`"${usuario.nombre}" fue desactivado.`);
-    } else {
-      activarUsuario(usuario.id);
-      toast.success(`"${usuario.nombre}" fue activado.`);
+  async function toggleEstado(usuario: Usuario) {
+    try {
+      if (usuario.estado === "activo") {
+        await desactivarUsuario(usuario.id);
+        toast.success(`"${usuario.nombre}" fue desactivado.`);
+      } else {
+        await activarUsuario(usuario.id);
+        toast.success(`"${usuario.nombre}" fue activado.`);
+      }
+    } catch {
+      toast.error("No se pudo actualizar el estado del usuario.");
     }
   }
 

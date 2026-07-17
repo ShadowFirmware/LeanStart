@@ -84,20 +84,24 @@ export function PerfilView() {
     }
   }
 
-  function onSubmit(values: PerfilFormValues) {
+  async function onSubmit(values: PerfilFormValues) {
     if (!currentUser) return;
-    actualizarPerfil(currentUser.id, {
-      nombre: values.nombre.trim(),
-      correo: values.correo.trim(),
-      avatarUrl,
-    });
-    toast.success("Perfil actualizado correctamente.");
-    // Regresa a la vista desde la que se abrió el perfil (no forzamos el
-    // dashboard). Si no hay historial previo, caemos al inicio del rol.
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(`/${rol}/dashboard`);
+    try {
+      await actualizarPerfil(currentUser.id, {
+        nombre: values.nombre.trim(),
+        correo: values.correo.trim(),
+        avatarUrl,
+      });
+      toast.success("Perfil actualizado correctamente.");
+      // Regresa a la vista desde la que se abrió el perfil (no forzamos el
+      // dashboard). Si no hay historial previo, caemos al inicio del rol.
+      if (window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(`/${rol}/dashboard`);
+      }
+    } catch {
+      toast.error("No se pudo actualizar el perfil.");
     }
   }
 

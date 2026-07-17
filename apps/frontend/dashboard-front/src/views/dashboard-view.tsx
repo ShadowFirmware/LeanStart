@@ -7,12 +7,6 @@ import { Button, useCurrentUser, useHasHydrated } from "@leanstart/commons";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 
-// Stats de evaluaciones y score aún vienen del backend — placeholder por ahora
-const mockStats = {
-  evaluacionesRecibidas: 0,
-  scorePromedio: 0,
-};
-
 const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
   borrador: { label: "Borrador", color: "#9A62FA", bg: "rgba(154,98,250,0.12)" },
   pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
@@ -101,6 +95,15 @@ export function DashboardView() {
     : [];
   const recientes = empresas.slice(0, 3);
 
+  const evaluadas = empresas.filter((e) => e.estado === "publicado" || e.estado === "devuelto");
+  const scoresPromediables = evaluadas
+    .map((e) => e.scoreFinal)
+    .filter((s): s is number => typeof s === "number");
+  const scorePromedio =
+    scoresPromediables.length > 0
+      ? Math.round(scoresPromediables.reduce((acc, s) => acc + s, 0) / scoresPromediables.length)
+      : 0;
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
@@ -117,8 +120,8 @@ export function DashboardView() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           { label: "Empresas creadas", value: empresas.length, suffix: "", icon: Building2 },
-          { label: "Evaluaciones recibidas", value: mockStats.evaluacionesRecibidas, suffix: "", icon: ClipboardCheck },
-          { label: "Score promedio", value: mockStats.scorePromedio, suffix: "/100", icon: TrendingUp },
+          { label: "Evaluaciones recibidas", value: evaluadas.length, suffix: "", icon: ClipboardCheck },
+          { label: "Score promedio", value: scorePromedio, suffix: "/100", icon: TrendingUp },
         ].map(({ label, value, suffix, icon: Icon }) => (
           <div
             key={label}

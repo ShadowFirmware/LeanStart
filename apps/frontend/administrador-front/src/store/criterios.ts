@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 
 export interface Criterio {
   id: string;
@@ -10,10 +11,11 @@ export interface Criterio {
 
 interface CriteriosStore {
   criterios: Criterio[];
-  agregarCriterio: (data: { nombre: string; descripcion: string; peso: number }) => void;
-  editarCriterio: (id: string, data: { nombre: string; descripcion: string; peso: number }) => void;
-  actualizarPeso: (id: string, peso: number) => void;
-  eliminarCriterio: (id: string) => void;
+  cargarCriterios: () => Promise<void>;
+  agregarCriterio: (data: { nombre: string; descripcion: string; peso: number }) => Promise<void>;
+  editarCriterio: (id: string, data: { nombre: string; descripcion: string; peso: number }) => Promise<void>;
+  actualizarPeso: (id: string, peso: number) => Promise<void>;
+  eliminarCriterio: (id: string) => Promise<void>;
 }
 
 const CRITERIOS_DEFAULT: Criterio[] = [
@@ -28,24 +30,48 @@ export const useCriteriosStore = create<CriteriosStore>()(
     (set, get) => ({
       criterios: CRITERIOS_DEFAULT,
 
-      agregarCriterio(data) {
+      async cargarCriterios() {
+        if (modoDemo()) return;
+        const criterios = await apiFetch<Criterio[]>("/criterios");
+        set({ criterios });
+      },
+
+      async agregarCriterio(data) {
+        if (!modoDemo()) {
+          const criterio = await apiFetch<Criterio>("/criterios", { method: "POST", body: JSON.stringify(data) });
+          set({ criterios: [...get().criterios, criterio] });
+          return;
+        }
         const id = crypto.randomUUID();
         set({ criterios: [...get().criterios, { id, ...data }] });
       },
 
-      editarCriterio(id, data) {
+      async editarCriterio(id, data) {
+        if (!modoDemo()) {
+          const criterio = await apiFetch<Criterio>(`/criterios/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+          set({ criterios: get().criterios.map((c) => (c.id === id ? criterio : c)) });
+          return;
+        }
         set({
           criterios: get().criterios.map((c) => (c.id === id ? { ...c, ...data } : c)),
         });
       },
 
-      actualizarPeso(id, peso) {
+      async actualizarPeso(id, peso) {
+        if (!modoDemo()) {
+          const criterio = await apiFetch<Criterio>(`/criterios/${id}/peso`, { method: "PATCH", body: JSON.stringify({ peso }) });
+          set({ criterios: get().criterios.map((c) => (c.id === id ? criterio : c)) });
+          return;
+        }
         set({
           criterios: get().criterios.map((c) => (c.id === id ? { ...c, peso } : c)),
         });
       },
 
-      eliminarCriterio(id) {
+      async eliminarCriterio(id) {
+        if (!modoDemo()) {
+          await apiFetch(`/criterios/${id}`, { method: "DELETE" });
+        }
         set({ criterios: get().criterios.filter((c) => c.id !== id) });
       },
     }),

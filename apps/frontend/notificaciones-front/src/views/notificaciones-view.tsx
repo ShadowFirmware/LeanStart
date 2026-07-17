@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine } from "lucide-react";
+import { toast } from "sonner";
 import { useHasHydrated } from "@leanstart/commons";
 import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotificacion } from "../store/notificaciones";
 
@@ -21,12 +22,17 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
   const hydrated = useHasHydrated();
   const todas = useNotificacionesStore((s) => s.notificaciones);
   const marcarLeida = useNotificacionesStore((s) => s.marcarLeida);
+  const marcarTodasLeidasStore = useNotificacionesStore((s) => s.marcarTodasLeidas);
 
   const notificaciones = todas.filter((n) => (n.destinatario ?? "emprendedor") === destinatario);
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
-  function marcarTodasLeidas() {
-    notificaciones.filter((n) => !n.leida).forEach((n) => marcarLeida(n.id));
+  async function marcarTodasLeidas() {
+    try {
+      await marcarTodasLeidasStore();
+    } catch {
+      toast.error("No se pudieron marcar las notificaciones como leídas.");
+    }
   }
 
   // Esqueleto neutro hasta rehidratar el store persistido (evita mismatch de hidratación).
@@ -96,7 +102,9 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
             return (
               <button
                 key={n.id}
-                onClick={() => { if (!n.leida) marcarLeida(n.id); }}
+                onClick={() => {
+                  if (!n.leida) marcarLeida(n.id).catch(() => toast.error("No se pudo marcar como leída."));
+                }}
                 className="flex items-start gap-4 rounded-xl px-5 py-4 text-left w-full transition-colors"
                 style={{
                   backgroundColor: n.leida ? "#131219" : "#19172280",

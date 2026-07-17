@@ -54,6 +54,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
             email: String(data.user.email),
             rol: data.user.rol as Role,
             privilegios: data.user.privilegios ?? [],
+            accessToken: String(data.accessToken),
           };
         } catch {
           return null;
@@ -67,6 +68,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.rol = user.rol;
         token.privilegios = user.privilegios;
+        token.accessToken = user.accessToken;
       }
       return token;
     },
@@ -74,6 +76,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
       session.user.id = token.id as string;
       session.user.rol = token.rol as Role;
       session.user.privilegios = token.privilegios as Privilegio[];
+      session.accessToken = token.accessToken as string;
       return session;
     },
   },

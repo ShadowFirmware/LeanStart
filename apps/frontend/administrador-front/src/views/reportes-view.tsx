@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   BarChart3, FileText, LayoutTemplate, Sparkles, Search, Plus,
   ChevronRight, ChevronLeft, History as HistoryIcon,
@@ -102,11 +103,15 @@ export function ReportesView() {
     setPaso("empresa");
   }
 
-  function elegirEmpresa(empresa: Empresa) {
+  async function elegirEmpresa(empresa: Empresa) {
     if (!tipoSeleccionado) return;
-    registrarReporte({ empresaId: empresa.id, empresaNombre: empresa.nombre, tipo: tipoSeleccionado });
-    setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id });
-    setDialogOpen(false);
+    try {
+      await registrarReporte({ empresaId: empresa.id, empresaNombre: empresa.nombre, tipo: tipoSeleccionado });
+      setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id });
+      setDialogOpen(false);
+    } catch {
+      toast.error("No se pudo registrar el reporte.");
+    }
   }
 
   const empresasFiltradasDialogo = empresasOrdenadas.filter((e) =>

@@ -67,7 +67,6 @@ export function EmpresaNewView() {
   const agregarEmpresa = useEmpresasStore((s) => s.agregarEmpresa);
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
@@ -94,7 +93,6 @@ export function EmpresaNewView() {
       return;
     }
 
-    setLogoFile(file);
     try {
       const dataUrl = await compressImageToDataUrl(file, { maxDimension: 512, mimeType: "image/png" });
       setLogoPreview(dataUrl);
@@ -107,27 +105,7 @@ export function EmpresaNewView() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("nombre", values.nombre);
-      formData.append("giro", values.giro);
-      formData.append("descripcion", values.descripcion);
-      formData.append("mercadoObjetivo", values.mercadoObjetivo);
-      formData.append("estado", "borrador");
-      if (logoFile) formData.append("logo", logoFile);
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/empresas`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("api_unavailable");
-
-      const empresa = await res.json();
-      toast.success(`"${values.nombre}" fue registrada correctamente.`);
-      router.push(`/emprendedor/empresas/${empresa.id}`);
-    } catch {
-      // Backend no disponible — guardar en store local
-      const id = agregarEmpresa({
+      const id = await agregarEmpresa({
         nombre: values.nombre,
         giro: values.giro,
         descripcion: values.descripcion,
@@ -137,6 +115,8 @@ export function EmpresaNewView() {
       });
       toast.success(`"${values.nombre}" fue registrada correctamente.`);
       router.push(`/emprendedor/empresas/${id}`);
+    } catch {
+      toast.error("No se pudo registrar la empresa. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }

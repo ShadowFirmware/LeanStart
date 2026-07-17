@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import { createSafeLocalStorage } from "@leanstart/commons";
+import { apiFetch, createSafeLocalStorage, modoDemo } from "@leanstart/commons";
 import type {
   EstadoEmpresa, GiroEmpresa, EstadoHipotesis, TipoProducto, TipoExperimento,
   ModalidadPrecioServicio, UnidadTiempoServicio,
@@ -107,10 +107,123 @@ export interface Empresa {
   ownerId?: string;
   mentorId?: string;
   evaluadorId?: string;
+  scoreFinal?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Backend (empresas-service) — mapeo de la forma de la API a la del store.
+// ─────────────────────────────────────────────────────────────────────────
+
+function formatFecha(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function calcularProgreso(productosList: Producto[], canvasBloques: number, hipotesisList: Hipotesis[]): Progreso {
+  return {
+    tieneProducto: productosList.length > 0,
+    tieneCanvas: canvasBloques > 0,
+    tieneHipotesis: hipotesisList.length > 0,
+  };
+}
+
+function mapProducto(p: Record<string, unknown>): Producto {
+  return {
+    id: p.id as string,
+    nombre: p.nombre as string,
+    tipo: p.tipo as TipoProducto,
+    descripcion: p.descripcion as string,
+    caracteristicas: (p.caracteristicas as string) ?? undefined,
+    precio: (p.precio as number) ?? undefined,
+    imagenes: (p.imagenes as string[]) ?? undefined,
+    modalidadPrecio: (p.modalidadPrecio as ModalidadPrecioServicio) ?? undefined,
+    precioMin: (p.precioMin as number) ?? undefined,
+    precioMax: (p.precioMax as number) ?? undefined,
+    precioPeriodo: (p.precioPeriodo as number) ?? undefined,
+    unidadTiempo: (p.unidadTiempo as UnidadTiempoServicio) ?? undefined,
+    precioPersonalizado: (p.precioPersonalizado as string) ?? undefined,
+    creadoEn: formatFecha(p.createdAt as string),
+  };
+}
+
+function mapHipotesis(h: Record<string, unknown>): Hipotesis {
+  return {
+    id: h.id as string,
+    titulo: h.titulo as string,
+    descripcion: h.descripcion as string,
+    experimento: (h.experimento as ExperimentoDiseno) ?? undefined,
+    resultados: (h.resultados as ResultadosHipotesis) ?? undefined,
+    estado: h.estado as EstadoHipotesis,
+    fase: h.fase as 1 | 2 | 3,
+  };
+}
+
+function mapCanvas(c: Record<string, unknown> | null | undefined): CanvasData {
+  if (!c) return { ...DEFAULT_CANVAS };
+  return {
+    problema: (c.problema as string[]) ?? [],
+    solucion: (c.solucion as string) ?? "",
+    pvp: (c.pvp as string) ?? "",
+    ventajaInjusta: (c.ventajaInjusta as string) ?? "",
+    segmentosClientes: (c.segmentosClientes as string[]) ?? [],
+    metricasClave: (c.metricasClave as string[]) ?? [],
+    canales: (c.canales as string[]) ?? [],
+    estructuraCostos: (c.estructuraCostos as string[]) ?? [],
+    fuentesIngresos: (c.fuentesIngresos as string[]) ?? [],
+  };
+}
+
+/** Mapea una empresa completa (con canvas/productos/hipotesis anidados) tal como la devuelve el gateway. */
+function mapEmpresaCompleta(e: Record<string, unknown>): Empresa {
+  const productosList = ((e.productos as Record<string, unknown>[]) ?? []).map(mapProducto);
+  const hipotesisList = ((e.hipotesis as Record<string, unknown>[]) ?? []).map(mapHipotesis);
+  const canvasBloques = (e.canvasBloques as number) ?? 0;
+  return {
+    id: e.id as string,
+    nombre: e.nombre as string,
+    giro: e.giro as GiroEmpresa,
+    descripcion: e.descripcion as string,
+    mercadoObjetivo: e.mercadoObjetivo as string,
+    estado: e.estado as EstadoEmpresa,
+    logoUrl: (e.logoUrl as string) ?? undefined,
+    ownerId: (e.ownerId as string) ?? undefined,
+    mentorId: (e.mentorId as string) ?? undefined,
+    evaluadorId: (e.evaluadorId as string) ?? undefined,
+    scoreFinal: (e.scoreFinal as number) ?? undefined,
+    canvasBloques,
+    canvas: mapCanvas(e.canvas as Record<string, unknown>),
+    productosList,
+    hipotesisList,
+    creadaEn: formatFecha(e.createdAt as string),
+    updatedAt: formatFecha(e.updatedAt as string),
+    progreso: calcularProgreso(productosList, canvasBloques, hipotesisList),
+  };
+}
+
+/**
+ * Algunos endpoints (cambiar estado, asignar mentor/evaluador) devuelven la fila
+ * de empresa "plana", sin canvas/productos/hipotesis. Ahí solo mezclamos los
+ * campos que sí vienen, preservando lo que ya había en memoria.
+ */
+function mergeEmpresaParcial(actual: Empresa, e: Record<string, unknown>): Empresa {
+  return {
+    ...actual,
+    nombre: (e.nombre as string) ?? actual.nombre,
+    giro: (e.giro as GiroEmpresa) ?? actual.giro,
+    descripcion: (e.descripcion as string) ?? actual.descripcion,
+    mercadoObjetivo: (e.mercadoObjetivo as string) ?? actual.mercadoObjetivo,
+    estado: (e.estado as EstadoEmpresa) ?? actual.estado,
+    logoUrl: (e.logoUrl as string) ?? actual.logoUrl,
+    mentorId: (e.mentorId as string) ?? actual.mentorId,
+    evaluadorId: (e.evaluadorId as string) ?? actual.evaluadorId,
+    scoreFinal: (e.scoreFinal as number) ?? actual.scoreFinal,
+    updatedAt: e.updatedAt ? formatFecha(e.updatedAt as string) : actual.updatedAt,
+  };
 }
 
 interface EmpresasStore {
   empresas: Empresa[];
+  /** Carga las empresas desde el backend real (no-op en modo demo). */
+  cargarEmpresas: () => Promise<void>;
   agregarEmpresa: (data: {
     nombre: string;
     giro: GiroEmpresa;
@@ -118,18 +231,18 @@ interface EmpresasStore {
     mercadoObjetivo: string;
     logoUrl?: string;
     ownerId?: string;
-  }) => string;
-  actualizarEmpresa: (id: string, data: Partial<Empresa>) => void;
-  eliminarEmpresa: (id: string) => void;
-  actualizarCanvas: (empresaId: string, canvas: Partial<CanvasData>) => void;
-  agregarProducto: (empresaId: string, producto: Omit<Producto, "id" | "creadoEn">) => void;
-  actualizarProducto: (empresaId: string, productoId: string, data: Partial<Omit<Producto, "id" | "creadoEn">>) => void;
-  eliminarProducto: (empresaId: string, productoId: string) => void;
-  agregarHipotesis: (empresaId: string, hipotesis: Omit<Hipotesis, "id">) => string;
-  actualizarHipotesis: (empresaId: string, hipotesisId: string, data: Partial<Hipotesis>) => void;
-  eliminarHipotesis: (empresaId: string, hipotesisId: string) => void;
-  asignarMentor: (empresaId: string, mentorId: string) => void;
-  asignarEvaluador: (empresaId: string, evaluadorId: string) => void;
+  }) => Promise<string>;
+  actualizarEmpresa: (id: string, data: Partial<Empresa>) => Promise<void>;
+  eliminarEmpresa: (id: string) => Promise<void>;
+  actualizarCanvas: (empresaId: string, canvas: Partial<CanvasData>) => Promise<void>;
+  agregarProducto: (empresaId: string, producto: Omit<Producto, "id" | "creadoEn">) => Promise<void>;
+  actualizarProducto: (empresaId: string, productoId: string, data: Partial<Omit<Producto, "id" | "creadoEn">>) => Promise<void>;
+  eliminarProducto: (empresaId: string, productoId: string) => Promise<void>;
+  agregarHipotesis: (empresaId: string, hipotesis: Omit<Hipotesis, "id">) => Promise<string>;
+  actualizarHipotesis: (empresaId: string, hipotesisId: string, data: Partial<Hipotesis>) => Promise<void>;
+  eliminarHipotesis: (empresaId: string, hipotesisId: string) => Promise<void>;
+  asignarMentor: (empresaId: string, mentorId: string) => Promise<void>;
+  asignarEvaluador: (empresaId: string, evaluadorId: string) => Promise<void>;
 }
 
 export const useEmpresasStore = create<EmpresasStore>()(
@@ -137,7 +250,29 @@ export const useEmpresasStore = create<EmpresasStore>()(
     (set, get) => ({
       empresas: [],
 
-      agregarEmpresa(data) {
+      async cargarEmpresas() {
+        if (modoDemo()) return;
+        const empresas = await apiFetch<Record<string, unknown>[]>("/empresas");
+        set({ empresas: empresas.map(mapEmpresaCompleta) });
+      },
+
+      async agregarEmpresa(data) {
+        if (!modoDemo()) {
+          const empresa = await apiFetch<Record<string, unknown>>("/empresas", {
+            method: "POST",
+            body: JSON.stringify({
+              nombre: data.nombre,
+              giro: data.giro,
+              descripcion: data.descripcion,
+              mercadoObjetivo: data.mercadoObjetivo,
+              logoUrl: data.logoUrl,
+            }),
+          });
+          const nueva = mapEmpresaCompleta(empresa);
+          set({ empresas: [nueva, ...get().empresas] });
+          return nueva.id;
+        }
+
         const id = crypto.randomUUID();
         const ahora = new Date().toLocaleDateString("es-MX", {
           day: "numeric",
@@ -165,7 +300,24 @@ export const useEmpresasStore = create<EmpresasStore>()(
         return id;
       },
 
-      actualizarEmpresa(id, data) {
+      async actualizarEmpresa(id, data) {
+        if (!modoDemo()) {
+          const soloEstado = Object.keys(data).length === 1 && "estado" in data;
+          const empresa = soloEstado
+            ? await apiFetch<Record<string, unknown>>(`/empresas/${id}/estado`, {
+                method: "PATCH",
+                body: JSON.stringify({ estado: data.estado }),
+              })
+            : await apiFetch<Record<string, unknown>>(`/empresas/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify(data),
+              });
+          set({
+            empresas: get().empresas.map((e) => (e.id === id ? mergeEmpresaParcial(e, empresa) : e)),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) =>
             e.id === id ? { ...e, ...data, updatedAt: "Justo ahora" } : e
@@ -173,26 +325,40 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      eliminarEmpresa(id) {
+      async eliminarEmpresa(id) {
+        if (!modoDemo()) {
+          await apiFetch(`/empresas/${id}`, { method: "DELETE" });
+        }
         set({ empresas: get().empresas.filter((e) => e.id !== id) });
       },
 
-      actualizarCanvas(empresaId, canvasUpdate) {
+      async actualizarCanvas(empresaId, canvasUpdate) {
+        if (!modoDemo()) {
+          const canvas = await apiFetch<Record<string, unknown>>(`/empresas/${empresaId}/canvas`, {
+            method: "PATCH",
+            body: JSON.stringify(canvasUpdate),
+          });
+          set({
+            empresas: get().empresas.map((e) => {
+              if (e.id !== empresaId) return e;
+              const newCanvas = mapCanvas(canvas);
+              const canvasBloques = contarBloques(newCanvas);
+              return {
+                ...e,
+                canvas: newCanvas,
+                canvasBloques,
+                progreso: { ...e.progreso, tieneCanvas: canvasBloques > 0 },
+              };
+            }),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) => {
             if (e.id !== empresaId) return e;
             const newCanvas = { ...(e.canvas ?? DEFAULT_CANVAS), ...canvasUpdate };
-            const completados = [
-              newCanvas.problema.some((v) => v.trim()),
-              !!newCanvas.solucion.trim(),
-              !!newCanvas.pvp.trim(),
-              !!newCanvas.ventajaInjusta.trim(),
-              newCanvas.segmentosClientes.some((v) => v.trim()),
-              newCanvas.metricasClave.some((v) => v.trim()),
-              newCanvas.canales.some((v) => v.trim()),
-              newCanvas.estructuraCostos.some((v) => v.trim()),
-              newCanvas.fuentesIngresos.some((v) => v.trim()),
-            ].filter(Boolean).length;
+            const completados = contarBloques(newCanvas);
             return {
               ...e,
               canvas: newCanvas,
@@ -204,7 +370,23 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      agregarProducto(empresaId, producto) {
+      async agregarProducto(empresaId, producto) {
+        if (!modoDemo()) {
+          const creado = await apiFetch<Record<string, unknown>>(`/empresas/${empresaId}/productos`, {
+            method: "POST",
+            body: JSON.stringify(producto),
+          });
+          const nuevo = mapProducto(creado);
+          set({
+            empresas: get().empresas.map((e) => {
+              if (e.id !== empresaId) return e;
+              const lista = [...(e.productosList ?? []), nuevo];
+              return { ...e, productosList: lista, progreso: { ...e.progreso, tieneProducto: true } };
+            }),
+          });
+          return;
+        }
+
         const id = crypto.randomUUID();
         const ahora = new Date().toLocaleDateString("es-MX", {
           day: "numeric", month: "short", year: "numeric",
@@ -223,7 +405,25 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      actualizarProducto(empresaId, productoId, data) {
+      async actualizarProducto(empresaId, productoId, data) {
+        if (!modoDemo()) {
+          const actualizado = await apiFetch<Record<string, unknown>>(
+            `/empresas/${empresaId}/productos/${productoId}`,
+            { method: "PATCH", body: JSON.stringify(data) }
+          );
+          const mapeado = mapProducto(actualizado);
+          set({
+            empresas: get().empresas.map((e) => {
+              if (e.id !== empresaId) return e;
+              return {
+                ...e,
+                productosList: (e.productosList ?? []).map((p) => (p.id === productoId ? mapeado : p)),
+              };
+            }),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) => {
             if (e.id !== empresaId) return e;
@@ -235,7 +435,10 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      eliminarProducto(empresaId, productoId) {
+      async eliminarProducto(empresaId, productoId) {
+        if (!modoDemo()) {
+          await apiFetch(`/empresas/${empresaId}/productos/${productoId}`, { method: "DELETE" });
+        }
         set({
           empresas: get().empresas.map((e) => {
             if (e.id !== empresaId) return e;
@@ -250,7 +453,44 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      agregarHipotesis(empresaId, hipotesis) {
+      async agregarHipotesis(empresaId, hipotesis) {
+        if (!modoDemo()) {
+          const empresaActual = get().empresas.find((e) => e.id === empresaId);
+          if ((empresaActual?.hipotesisList ?? []).length >= 3) return "";
+
+          let creada = await apiFetch<Record<string, unknown>>(`/empresas/${empresaId}/hipotesis`, {
+            method: "POST",
+            body: JSON.stringify({ titulo: hipotesis.titulo, descripcion: hipotesis.descripcion }),
+          });
+          const id = creada.id as string;
+
+          // El wizard siempre manda `experimento` (a veces con campos vacíos) y solo
+          // manda `resultados` en fase 3 — nos guiamos por `fase`, no por la sola
+          // presencia del objeto, para no avanzar de fase antes de tiempo.
+          if (hipotesis.fase >= 2 && hipotesis.experimento) {
+            creada = await apiFetch<Record<string, unknown>>(
+              `/empresas/${empresaId}/hipotesis/${id}/experimento`,
+              { method: "PATCH", body: JSON.stringify(hipotesis.experimento) }
+            );
+          }
+          if (hipotesis.fase >= 3 && hipotesis.resultados) {
+            creada = await apiFetch<Record<string, unknown>>(
+              `/empresas/${empresaId}/hipotesis/${id}/resultados`,
+              { method: "PATCH", body: JSON.stringify(hipotesis.resultados) }
+            );
+          }
+
+          const nueva = mapHipotesis(creada);
+          set({
+            empresas: get().empresas.map((e) => {
+              if (e.id !== empresaId) return e;
+              const nuevaLista = [...(e.hipotesisList ?? []), nueva];
+              return { ...e, hipotesisList: nuevaLista, progreso: { ...e.progreso, tieneHipotesis: true } };
+            }),
+          });
+          return id;
+        }
+
         const nuevoId = crypto.randomUUID();
         set({
           empresas: get().empresas.map((e) => {
@@ -268,22 +508,56 @@ export const useEmpresasStore = create<EmpresasStore>()(
         return nuevoId;
       },
 
-      eliminarHipotesis(empresaId, hipotesisId) {
-        set({
-          empresas: get().empresas.map((e) => {
-            if (e.id !== empresaId) return e;
-            const lista = (e.hipotesisList ?? []).filter((h) => h.id !== hipotesisId);
-            return {
-              ...e,
-              hipotesisList: lista,
-              progreso: { ...e.progreso, tieneHipotesis: lista.length > 0 },
-              updatedAt: "Justo ahora",
-            };
-          }),
-        });
-      },
+      async actualizarHipotesis(empresaId, hipotesisId, data) {
+        if (!modoDemo()) {
+          let actualizada: Record<string, unknown> | undefined;
+          const { experimento, resultados, fase, titulo, descripcion, estado } = data;
 
-      actualizarHipotesis(empresaId, hipotesisId, data) {
+          // El mentor valida/invalida mandando solo `{estado}` — tiene su propio endpoint,
+          // distinto del PATCH general (que no acepta `estado`).
+          const soloEstado = Object.keys(data).length === 1 && estado !== undefined;
+          if (soloEstado) {
+            actualizada = await apiFetch<Record<string, unknown>>(
+              `/empresas/${empresaId}/hipotesis/${hipotesisId}/validar`,
+              { method: "PATCH", body: JSON.stringify({ estado }) }
+            );
+          } else {
+            if (titulo !== undefined || descripcion !== undefined) {
+              actualizada = await apiFetch<Record<string, unknown>>(
+                `/empresas/${empresaId}/hipotesis/${hipotesisId}`,
+                { method: "PATCH", body: JSON.stringify({ titulo, descripcion }) }
+              );
+            }
+            // Igual que en `agregarHipotesis`: solo avanzamos de fase si el formulario
+            // realmente llegó a esa fase, no por la sola presencia del objeto.
+            if ((fase ?? 1) >= 2 && experimento) {
+              actualizada = await apiFetch<Record<string, unknown>>(
+                `/empresas/${empresaId}/hipotesis/${hipotesisId}/experimento`,
+                { method: "PATCH", body: JSON.stringify(experimento) }
+              );
+            }
+            if ((fase ?? 1) >= 3 && resultados) {
+              actualizada = await apiFetch<Record<string, unknown>>(
+                `/empresas/${empresaId}/hipotesis/${hipotesisId}/resultados`,
+                { method: "PATCH", body: JSON.stringify(resultados) }
+              );
+            }
+          }
+          if (!actualizada) return;
+
+          const mapeada = mapHipotesis(actualizada);
+          set({
+            empresas: get().empresas.map((e) => {
+              if (e.id !== empresaId) return e;
+              return {
+                ...e,
+                hipotesisList: (e.hipotesisList ?? []).map((h) => (h.id === hipotesisId ? mapeada : h)),
+              };
+            }),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) => {
             if (e.id !== empresaId) return e;
@@ -298,7 +572,36 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      asignarMentor(empresaId, mentorId) {
+      async eliminarHipotesis(empresaId, hipotesisId) {
+        if (!modoDemo()) {
+          await apiFetch(`/empresas/${empresaId}/hipotesis/${hipotesisId}`, { method: "DELETE" });
+        }
+        set({
+          empresas: get().empresas.map((e) => {
+            if (e.id !== empresaId) return e;
+            const lista = (e.hipotesisList ?? []).filter((h) => h.id !== hipotesisId);
+            return {
+              ...e,
+              hipotesisList: lista,
+              progreso: { ...e.progreso, tieneHipotesis: lista.length > 0 },
+              updatedAt: "Justo ahora",
+            };
+          }),
+        });
+      },
+
+      async asignarMentor(empresaId, mentorId) {
+        if (!modoDemo()) {
+          const empresa = await apiFetch<Record<string, unknown>>(`/empresas/${empresaId}/asignar-mentor`, {
+            method: "PATCH",
+            body: JSON.stringify({ userId: mentorId }),
+          });
+          set({
+            empresas: get().empresas.map((e) => (e.id === empresaId ? mergeEmpresaParcial(e, empresa) : e)),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) =>
             e.id === empresaId
@@ -308,7 +611,18 @@ export const useEmpresasStore = create<EmpresasStore>()(
         });
       },
 
-      asignarEvaluador(empresaId, evaluadorId) {
+      async asignarEvaluador(empresaId, evaluadorId) {
+        if (!modoDemo()) {
+          const empresa = await apiFetch<Record<string, unknown>>(`/empresas/${empresaId}/asignar-evaluador`, {
+            method: "PATCH",
+            body: JSON.stringify({ userId: evaluadorId }),
+          });
+          set({
+            empresas: get().empresas.map((e) => (e.id === empresaId ? mergeEmpresaParcial(e, empresa) : e)),
+          });
+          return;
+        }
+
         set({
           empresas: get().empresas.map((e) =>
             e.id === empresaId
@@ -348,3 +662,17 @@ export const useEmpresasStore = create<EmpresasStore>()(
     }
   )
 );
+
+function contarBloques(canvas: CanvasData): number {
+  return [
+    canvas.problema.some((v) => v.trim()),
+    !!canvas.solucion.trim(),
+    !!canvas.pvp.trim(),
+    !!canvas.ventajaInjusta.trim(),
+    canvas.segmentosClientes.some((v) => v.trim()),
+    canvas.metricasClave.some((v) => v.trim()),
+    canvas.canales.some((v) => v.trim()),
+    canvas.estructuraCostos.some((v) => v.trim()),
+    canvas.fuentesIngresos.some((v) => v.trim()),
+  ].filter(Boolean).length;
+}

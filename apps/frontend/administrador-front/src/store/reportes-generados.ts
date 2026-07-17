@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 
 export type TipoReporte = "boleta" | "canvas";
 
@@ -13,11 +14,22 @@ export interface ReporteGenerado {
 
 interface ReportesGeneradosStore {
   reportes: ReporteGenerado[];
-  registrarReporte: (data: { empresaId: string; empresaNombre: string; tipo: TipoReporte }) => void;
+  cargarReportesGenerados: () => Promise<void>;
+  registrarReporte: (data: { empresaId: string; empresaNombre: string; tipo: TipoReporte }) => Promise<void>;
 }
 
-function fecha(): string {
-  return new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+function fecha(iso?: string): string {
+  return new Date(iso ?? Date.now()).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function mapReporte(r: Record<string, unknown>): ReporteGenerado {
+  return {
+    id: r.id as string,
+    empresaId: r.empresaId as string,
+    empresaNombre: r.empresaNombre as string,
+    tipo: r.tipo as TipoReporte,
+    generadoEn: fecha(r.generadoEn as string),
+  };
 }
 
 export const useReportesGeneradosStore = create<ReportesGeneradosStore>()(
@@ -25,7 +37,22 @@ export const useReportesGeneradosStore = create<ReportesGeneradosStore>()(
     (set, get) => ({
       reportes: [],
 
-      registrarReporte(data) {
+      async cargarReportesGenerados() {
+        if (modoDemo()) return;
+        const reportes = await apiFetch<Record<string, unknown>[]>("/reportes-generados");
+        set({ reportes: reportes.map(mapReporte) });
+      },
+
+      async registrarReporte(data) {
+        if (!modoDemo()) {
+          const reporte = await apiFetch<Record<string, unknown>>("/reportes-generados", {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+          set({ reportes: [mapReporte(reporte), ...get().reportes] });
+          return;
+        }
+
         const nuevo: ReporteGenerado = {
           id: crypto.randomUUID(),
           ...data,

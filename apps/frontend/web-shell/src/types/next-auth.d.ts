@@ -13,12 +13,15 @@ declare module "next-auth" {
       rol: Role;
       privilegios: Privilegio[];
     } & DefaultSession["user"];
+    /** JWT del api-gateway — para llamadas autenticadas desde el frontend al backend real. */
+    accessToken: string;
   }
 
   interface User {
     id: string;
     rol: Role;
     privilegios: Privilegio[];
+    accessToken: string;
   }
 }
 
@@ -27,5 +30,6 @@ declare module "next-auth/jwt" {
     id: string;
     rol: Role;
     privilegios: Privilegio[];
+    accessToken: string;
   }
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TrendingUp, Plus, Minus, Pencil, Trash2, Check, GripVertical, ArrowRightLeft } from "lucide-react";
 import {
   Button,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-  Input,
+  Input, debounce,
 } from "@leanstart/commons";
 import { useViabilidadStore, type NivelViabilidad } from "../store/viabilidad";
 
@@ -45,7 +45,11 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
       <button
         type="button"
         disabled={disabled}
-        onClick={() => onChange(Math.max(min, value - step))}
+        onClick={() => {
+          const nuevo = Math.max(min, value - step);
+          setTexto(String(nuevo));
+          onChange(nuevo);
+        }}
         className="w-6 h-7 flex items-center justify-center transition-colors disabled:cursor-not-allowed"
         style={{ color: "#7E7C86" }}
         aria-label={`Disminuir ${label}`}
@@ -67,7 +71,11 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
       <button
         type="button"
         disabled={disabled}
-        onClick={() => onChange(Math.min(max, value + step))}
+        onClick={() => {
+          const nuevo = Math.min(max, value + step);
+          setTexto(String(nuevo));
+          onChange(nuevo);
+        }}
         className="w-6 h-7 flex items-center justify-center transition-colors disabled:cursor-not-allowed"
         style={{ color: "#7E7C86" }}
         aria-label={`Aumentar ${label}`}
@@ -92,6 +100,30 @@ export function ViabilidadView() {
 
   const pesoHipotesis = 100 - pesoEvaluacion;
 
+  // Valor local del slider: sigue el arrastre al instante aunque el guardado esté debounced.
+  const [umbralLocal, setUmbralLocal] = useState(umbralPublicacion);
+  useEffect(() => setUmbralLocal(umbralPublicacion), [umbralPublicacion]);
+
+  const guardarPesoEvaluacion = useMemo(
+    () => debounce((v: number) => actualizarPesoEvaluacion(v).catch(() => toast.error("No se pudo actualizar el peso.")), 400),
+    [actualizarPesoEvaluacion]
+  );
+  const guardarUmbral = useMemo(
+    () => debounce((v: number) => actualizarUmbralPublicacion(v).catch(() => toast.error("No se pudo actualizar el umbral.")), 400),
+    [actualizarUmbralPublicacion]
+  );
+  const debouncedHastaPorNivel = useRef<Map<string, (v: number) => void>>(new Map());
+  function guardarHastaNivel(id: string, v: number) {
+    let fn = debouncedHastaPorNivel.current.get(id);
+    if (!fn) {
+      fn = debounce((valor: number) => {
+        actualizarHastaNivel(id, valor).catch(() => toast.error("No se pudo actualizar el nivel."));
+      }, 400);
+      debouncedHastaPorNivel.current.set(id, fn);
+    }
+    fn(v);
+  }
+
   const [editTarget, setEditTarget] = useState<NivelViabilidad | null>(null);
   const [nombreDraft, setNombreDraft] = useState("");
   const [colorDraft, setColorDraft] = useState("");
@@ -113,7 +145,7 @@ export function ViabilidadView() {
 
   function handleDrop(i: number) {
     if (dragIndex !== null && dragIndex !== i) {
-      reordenarNivel(dragIndex, i);
+      reordenarNivel(dragIndex, i).catch(() => toast.error("No se pudo reordenar el nivel."));
     }
     setDragIndex(null);
     setOverIndex(null);
@@ -130,32 +162,44 @@ export function ViabilidadView() {
     setColorDraft(nivel.color);
   }
 
-  function guardarNivel() {
+  async function guardarNivel() {
     if (!editTarget) return;
     const nombre = nombreDraft.trim();
     if (nombre.length < 2) {
       toast.error("El nombre debe tener al menos 2 caracteres.");
       return;
     }
-    editarNivel(editTarget.id, { nombre, color: colorDraft });
-    toast.success(`Nivel "${nombre}" actualizado.`);
-    setEditTarget(null);
-  }
-
-  function handleAgregarNivel() {
-    const exito = agregarNivel();
-    if (!exito) {
-      toast.error("No hay espacio suficiente para otro nivel.");
+    try {
+      await editarNivel(editTarget.id, { nombre, color: colorDraft });
+      toast.success(`Nivel "${nombre}" actualizado.`);
+      setEditTarget(null);
+    } catch {
+      toast.error("No se pudo actualizar el nivel.");
     }
   }
 
-  function handleEliminarNivel(nivel: NivelViabilidad) {
+  async function handleAgregarNivel() {
+    try {
+      const exito = await agregarNivel();
+      if (!exito) {
+        toast.error("No hay espacio suficiente para otro nivel.");
+      }
+    } catch {
+      toast.error("No se pudo agregar el nivel.");
+    }
+  }
+
+  async function handleEliminarNivel(nivel: NivelViabilidad) {
     if (niveles.length <= 1) {
       toast.error("Debe existir al menos un nivel de viabilidad.");
       return;
     }
-    eliminarNivel(nivel.id);
-    toast.success(`Nivel "${nivel.nombre}" eliminado.`);
+    try {
+      await eliminarNivel(nivel.id);
+      toast.success(`Nivel "${nivel.nombre}" eliminado.`);
+    } catch {
+      toast.error("No se pudo eliminar el nivel.");
+    }
   }
 
   return (
@@ -189,7 +233,7 @@ export function ViabilidadView() {
               min={0}
               max={100}
               step={5}
-              onChange={actualizarPesoEvaluacion}
+              onChange={guardarPesoEvaluacion}
               label="peso de evaluación"
             />
           </div>
@@ -280,7 +324,7 @@ export function ViabilidadView() {
                       value={nivel.hasta}
                       min={min}
                       max={niveles[i + 1].hasta - 1}
-                      onChange={(v) => actualizarHastaNivel(nivel.id, v)}
+                      onChange={(v) => guardarHastaNivel(nivel.id, v)}
                       label={`límite superior de ${nivel.nombre}`}
                     />
                   )}
@@ -326,17 +370,21 @@ export function ViabilidadView() {
           <div className="relative" style={{ height: 26 }}>
             <div
               className="absolute -translate-x-1/2 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-              style={{ left: `${umbralPublicacion}%`, backgroundColor: "rgba(154,98,250,0.16)", color: "#C9A8FE" }}
+              style={{ left: `${umbralLocal}%`, backgroundColor: "rgba(154,98,250,0.16)", color: "#C9A8FE" }}
             >
-              {umbralPublicacion}%
+              {umbralLocal}%
             </div>
           </div>
           <input
             type="range"
             min={0}
             max={100}
-            value={umbralPublicacion}
-            onChange={(e) => actualizarUmbralPublicacion(Number(e.target.value))}
+            value={umbralLocal}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setUmbralLocal(v);
+              guardarUmbral(v);
+            }}
             className="w-full h-2 rounded-full appearance-none cursor-pointer outline-none
               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
@@ -345,7 +393,7 @@ export function ViabilidadView() {
               [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white
               [&::-moz-range-thumb]:shadow-[0_0_0_3px_rgba(154,98,250,0.4)] [&::-moz-range-thumb]:cursor-pointer"
             style={{
-              background: `linear-gradient(to right, #EF4444 0%, #EF4444 ${umbralPublicacion}%, #10B981 ${umbralPublicacion}%, #10B981 100%)`,
+              background: `linear-gradient(to right, #EF4444 0%, #EF4444 ${umbralLocal}%, #10B981 ${umbralLocal}%, #10B981 100%)`,
             }}
             aria-label="Calificación mínima para publicar"
           />

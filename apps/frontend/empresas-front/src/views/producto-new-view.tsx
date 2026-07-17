@@ -58,19 +58,25 @@ export function ProductoNewView() {
 
   if (!empresa) return null;
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     setLoading(true);
     const precio = values.precio ? parseFloat(values.precio) : undefined;
-    agregarProducto(id, {
-      nombre: values.nombre,
-      tipo: "producto",
-      descripcion: values.descripcion,
-      caracteristicas: values.caracteristicas || undefined,
-      precio: precio != null && !isNaN(precio) ? precio : undefined,
-      imagenes: imagenes.length > 0 ? imagenes : undefined,
-    });
-    toast.success(`"${values.nombre}" fue agregado correctamente.`);
-    router.push(`/emprendedor/empresas/${id}/productos`);
+    try {
+      await agregarProducto(id, {
+        nombre: values.nombre,
+        tipo: "producto",
+        descripcion: values.descripcion,
+        caracteristicas: values.caracteristicas || undefined,
+        precio: precio != null && !isNaN(precio) ? precio : undefined,
+        imagenes: imagenes.length > 0 ? imagenes : undefined,
+      });
+      toast.success(`"${values.nombre}" fue agregado correctamente.`);
+      router.push(`/emprendedor/empresas/${id}/productos`);
+    } catch {
+      toast.error("No se pudo agregar el producto.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

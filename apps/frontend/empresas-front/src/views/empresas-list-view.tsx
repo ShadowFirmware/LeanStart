@@ -141,10 +141,14 @@ export function EmpresasListView({
     return coincideDueno && coincideAsignacion && coincideAsignadoMio && coincideEstadoPermitido;
   });
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
-    eliminarEmpresa(deleteTarget.id);
-    toast.success(`"${deleteTarget.nombre}" fue eliminada.`);
+    try {
+      await eliminarEmpresa(deleteTarget.id);
+      toast.success(`"${deleteTarget.nombre}" fue eliminada.`);
+    } catch {
+      toast.error("No se pudo eliminar la empresa.");
+    }
     setDeleteTarget(null);
   }
 
@@ -153,16 +157,20 @@ export function EmpresasListView({
     setUsuarioSeleccionado(empresa[tipo === "mentor" ? "mentorId" : "evaluadorId"] ?? "");
   }
 
-  function confirmarAsignar() {
+  async function confirmarAsignar() {
     if (!asignarTarget || !usuarioSeleccionado) return;
     const { empresa, tipo } = asignarTarget;
     const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
-    if (tipo === "mentor") {
-      asignarMentor(empresa.id, usuarioSeleccionado);
-    } else {
-      asignarEvaluador(empresa.id, usuarioSeleccionado);
+    try {
+      if (tipo === "mentor") {
+        await asignarMentor(empresa.id, usuarioSeleccionado);
+      } else {
+        await asignarEvaluador(empresa.id, usuarioSeleccionado);
+      }
+      toast.success(`${tipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado a "${empresa.nombre}".`);
+    } catch {
+      toast.error("No se pudo completar la asignación.");
     }
-    toast.success(`${tipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado a "${empresa.nombre}".`);
     setAsignarTarget(null);
   }
 
@@ -448,11 +456,15 @@ export function EmpresasListView({
                   >
                     {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
-                          toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                          try {
+                            await actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
+                            toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+                          } catch {
+                            toast.error("No se pudo enviar la empresa a mentoría.");
+                          }
                         }}
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
                         style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}

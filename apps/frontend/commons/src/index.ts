@@ -45,6 +45,8 @@ export { fileToDataUrl } from "./lib/file-to-data-url";
 export { compressImageToDataUrl } from "./lib/compress-image";
 export type { CompressImageOptions } from "./lib/compress-image";
 export { createSafeLocalStorage } from "./lib/safe-storage";
+export { apiFetch, modoDemo, cerrarSesionBackend } from "./lib/api-client";
+export { debounce } from "./lib/debounce";
 
 // Shared domain types
 export type * from "./types";

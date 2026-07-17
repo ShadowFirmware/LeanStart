@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { Popover, PopoverTrigger, PopoverContent, Textarea, Button } from "@leanstart/commons";
+import { Popover, PopoverTrigger, PopoverContent, Textarea, Button, modoDemo } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useObservacionesStore, type TipoElementoObservacion } from "../store/observaciones";
@@ -61,20 +61,27 @@ export function ObservacionesButton({
   if (!puedeVer) return null;
   if (!puedeComentar && hilo.length === 0) return null;
 
-  function enviar() {
+  async function enviar() {
     if (!draft.trim()) return;
-    agregarObservacion({ empresaId, tipoElemento, elementoId, autorNombre, comentario: draft.trim() });
-    // Notifica al emprendedor en vivo (la sincronización entre pestañas la refleja al instante).
-    agregarNotificacion({
-      tipo: "comentario_mentor",
-      destinatario: "emprendedor",
-      titulo: "Nuevo comentario de tu mentor",
-      mensaje: `${autorNombre} dejó un comentario en "${empresaNombre}".`,
-      empresaNombre,
-      creadaEn: "Justo ahora",
-    });
-    setDraft("");
-    toast.success("Observación agregada.");
+    try {
+      await agregarObservacion({ empresaId, tipoElemento, elementoId, autorNombre, comentario: draft.trim() });
+      // En modo real el backend ya crea esta notificación al guardar la observación
+      // (ver ObservacionesService.crear); en demo la simulamos aquí, entre pestañas.
+      if (modoDemo()) {
+        agregarNotificacion({
+          tipo: "comentario_mentor",
+          destinatario: "emprendedor",
+          titulo: "Nuevo comentario de tu mentor",
+          mensaje: `${autorNombre} dejó un comentario en "${empresaNombre}".`,
+          empresaNombre,
+          creadaEn: "Justo ahora",
+        });
+      }
+      setDraft("");
+      toast.success("Observación agregada.");
+    } catch {
+      toast.error("No se pudo agregar la observación.");
+    }
   }
 
   return (
@@ -142,18 +149,25 @@ export function ObservacionesButton({
                     {puedeMarcarEnRevision && estadoMostrado === "pendiente" && (
                       <button
                         type="button"
-                        onClick={() => {
-                          actualizarEstadoObservacion(o.id, "en_revision");
-                          // Notifica al mentor en vivo que el emprendedor atendió un comentario.
-                          agregarNotificacion({
-                            tipo: "cambio_emprendedor",
-                            destinatario: "mentor",
-                            titulo: "El emprendedor atendió un comentario",
-                            mensaje: `Hay cambios pendientes de revisar en "${empresaNombre}".`,
-                            empresaNombre,
-                            creadaEn: "Justo ahora",
-                          });
-                          toast.success("Comentario marcado como listo.");
+                        onClick={async () => {
+                          try {
+                            await actualizarEstadoObservacion(o.id, "en_revision");
+                            // En modo real el backend ya notifica al mentor al marcar "en_revision"
+                            // (ver ObservacionesService.actualizarEstado); en demo la simulamos aquí.
+                            if (modoDemo()) {
+                              agregarNotificacion({
+                                tipo: "cambio_emprendedor",
+                                destinatario: "mentor",
+                                titulo: "El emprendedor atendió un comentario",
+                                mensaje: `Hay cambios pendientes de revisar en "${empresaNombre}".`,
+                                empresaNombre,
+                                creadaEn: "Justo ahora",
+                              });
+                            }
+                            toast.success("Comentario marcado como listo.");
+                          } catch {
+                            toast.error("No se pudo actualizar la observación.");
+                          }
                         }}
                         className="flex items-center gap-1.5 shrink-0"
                         style={{ color: "#10B981" }}
@@ -165,9 +179,13 @@ export function ObservacionesButton({
                     {puedeComentar && estadoMostrado === "en_revision" && (
                       <button
                         type="button"
-                        onClick={() => {
-                          actualizarEstadoObservacion(o.id, "atendida");
-                          toast.success("Comentario confirmado como atendido.");
+                        onClick={async () => {
+                          try {
+                            await actualizarEstadoObservacion(o.id, "atendida");
+                            toast.success("Comentario confirmado como atendido.");
+                          } catch {
+                            toast.error("No se pudo actualizar la observación.");
+                          }
                         }}
                         className="flex items-center gap-1.5 shrink-0"
                         style={{ color: "#10B981" }}

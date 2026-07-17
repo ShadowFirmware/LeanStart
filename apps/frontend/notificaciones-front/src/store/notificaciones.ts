@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiFetch, modoDemo } from "@leanstart/commons";
 
 export type TipoNotificacion =
   | "comentario_mentor"
@@ -26,9 +27,12 @@ export interface Notificacion {
 
 interface NotificacionesStore {
   notificaciones: Notificacion[];
+  /** Trae mis notificaciones reales (no-op en modo demo). */
+  cargarNotificaciones: () => Promise<void>;
+  /** Solo existe en modo demo — no hay endpoint público para crear notificaciones (ver docs/backend-architecture.md). */
   agregarNotificacion: (notif: Omit<Notificacion, "id" | "leida" | "ts">) => void;
-  marcarLeida: (id: string) => void;
-  marcarTodasLeidas: () => void;
+  marcarLeida: (id: string) => Promise<void>;
+  marcarTodasLeidas: () => Promise<void>;
 }
 
 const DEMO: Notificacion[] = [
@@ -78,10 +82,45 @@ const DEMO: Notificacion[] = [
   },
 ];
 
+/** El backend guarda `destinatarioUserId` (ya scoped a "mis" notificaciones); reconstruimos
+ *  el rol solo para que el filtro por `destinatario` que ya usan las vistas siga funcionando. */
+const ROL_POR_TIPO: Record<TipoNotificacion, DestinatarioNotificacion> = {
+  comentario_mentor: "emprendedor",
+  enviado_evaluacion: "emprendedor",
+  proyecto_publicado: "emprendedor",
+  proyecto_devuelto: "emprendedor",
+  cambio_emprendedor: "mentor",
+};
+
+function mapNotificacion(n: Record<string, unknown>): Notificacion {
+  const tipo = n.tipo as TipoNotificacion;
+  return {
+    id: n.id as string,
+    tipo,
+    destinatario: ROL_POR_TIPO[tipo] ?? "emprendedor",
+    titulo: n.titulo as string,
+    mensaje: n.mensaje as string,
+    empresaNombre: (n.empresaNombre as string) ?? undefined,
+    leida: n.leida as boolean,
+    creadaEn: new Date(n.createdAt as string).toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    ts: new Date(n.createdAt as string).getTime(),
+  };
+}
+
 export const useNotificacionesStore = create<NotificacionesStore>()(
   persist(
     (set, get) => ({
       notificaciones: DEMO,
+
+      async cargarNotificaciones() {
+        if (modoDemo()) return;
+        const notificaciones = await apiFetch<Record<string, unknown>[]>("/notificaciones");
+        set({ notificaciones: notificaciones.map(mapNotificacion) });
+      },
 
       agregarNotificacion(notif) {
         const nueva: Notificacion = {
@@ -93,7 +132,10 @@ export const useNotificacionesStore = create<NotificacionesStore>()(
         set({ notificaciones: [nueva, ...get().notificaciones] });
       },
 
-      marcarLeida(id) {
+      async marcarLeida(id) {
+        if (!modoDemo()) {
+          await apiFetch(`/notificaciones/${id}/leida`, { method: "PATCH" });
+        }
         set({
           notificaciones: get().notificaciones.map((n) =>
             n.id === id ? { ...n, leida: true } : n
@@ -101,7 +143,10 @@ export const useNotificacionesStore = create<NotificacionesStore>()(
         });
       },
 
-      marcarTodasLeidas() {
+      async marcarTodasLeidas() {
+        if (!modoDemo()) {
+          await apiFetch(`/notificaciones/leidas`, { method: "PATCH" });
+        }
         set({
           notificaciones: get().notificaciones.map((n) => ({ ...n, leida: true })),
         });

@@ -57,7 +57,7 @@ export function ServicioNewView() {
 
   if (!empresa) return null;
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     const err = validarServicioPrecio(precio);
     setPrecioError(err);
     if (err) {
@@ -65,15 +65,21 @@ export function ServicioNewView() {
       return;
     }
     setLoading(true);
-    agregarProducto(id, {
-      nombre: values.nombre,
-      tipo: "servicio",
-      descripcion: values.descripcion,
-      caracteristicas: values.caracteristicas || undefined,
-      ...servicioPrecioToStore(precio),
-    });
-    toast.success(`"${values.nombre}" fue agregado correctamente.`);
-    router.push(`/emprendedor/empresas/${id}/productos`);
+    try {
+      await agregarProducto(id, {
+        nombre: values.nombre,
+        tipo: "servicio",
+        descripcion: values.descripcion,
+        caracteristicas: values.caracteristicas || undefined,
+        ...servicioPrecioToStore(precio),
+      });
+      toast.success(`"${values.nombre}" fue agregado correctamente.`);
+      router.push(`/emprendedor/empresas/${id}/productos`);
+    } catch {
+      toast.error("No se pudo agregar el servicio.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

@@ -43,15 +43,20 @@ export default function RegistroPage() {
   async function onSubmit(values: RegistroFormValues) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/registro`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          nombre: values.nombre,
+          correo: values.email,
+          password: values.password,
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.message ?? "No se pudo crear la cuenta. Inténtalo de nuevo.");
+        const mensaje = Array.isArray(data.message) ? data.message.join(", ") : data.message;
+        toast.error(mensaje ?? "No se pudo crear la cuenta. Inténtalo de nuevo.");
         return;
       }
 

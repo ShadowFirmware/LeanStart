@@ -110,10 +110,14 @@ export function ProductosListView({
 
   if (!empresa) return null;
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
-    eliminarProducto(id, deleteTarget.id);
-    toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
+    try {
+      await eliminarProducto(id, deleteTarget.id);
+      toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
+    } catch {
+      toast.error("No se pudo eliminar el producto.");
+    }
     setDeleteTarget(null);
   }
 
