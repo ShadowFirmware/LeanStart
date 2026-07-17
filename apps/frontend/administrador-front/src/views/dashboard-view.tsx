@@ -4,20 +4,16 @@ import {
   Users, Building2, GraduationCap, ClipboardCheck,
   UserCog, Star, FileEdit, Activity, LayoutGrid, Rocket, UsersRound,
 } from "lucide-react";
+import { useUsuariosStore, useHasHydrated } from "@leanstart/commons";
+import { useEmpresasStore } from "@leanstart/empresas-front";
 
-// Métricas globales del sistema — vienen del backend, placeholder por ahora
-const mockStats = {
-  usuariosRegistrados: 150,
-  empresasRegistradas: 85,
-  proyectosEnMentoria: 20,
-  proyectosEnEvaluacion: 15,
-  empresasEnBorrador: 4,
-  mentoresActivos: 8,
-  evaluadoresActivos: 5,
-  empresariosActivos: 70,
-} as const;
+const ESTADOS_MENTORIA = ["pendiente_mentoria", "en_mentoria", "observaciones_pendientes", "observaciones_atendidas"];
+const ESTADOS_EVALUACION = ["pendiente_evaluacion", "en_evaluacion"];
 
-type StatKey = keyof typeof mockStats;
+type StatKey =
+  | "usuariosRegistrados" | "empresasRegistradas"
+  | "proyectosEnMentoria" | "proyectosEnEvaluacion" | "empresasEnBorrador"
+  | "mentoresActivos" | "evaluadoresActivos" | "empresariosActivos";
 
 function hexToRgb(hex: string) {
   const n = parseInt(hex.slice(1), 16);
@@ -97,7 +93,26 @@ const EQUIPO: { key: StatKey; label: string; icon: React.ElementType }[] = [
 ];
 
 export function AdminDashboardView() {
-  const totalProyectos = mockStats.proyectosEnMentoria + mockStats.proyectosEnEvaluacion + mockStats.empresasEnBorrador;
+  const hydrated = useHasHydrated();
+  const usuariosRaw = useUsuariosStore((s) => s.usuarios);
+  const empresasRaw = useEmpresasStore((s) => s.empresas);
+  const usuarios = hydrated ? usuariosRaw : [];
+  const empresas = hydrated ? empresasRaw : [];
+
+  const activosPorRol = (rol: string) => usuarios.filter((u) => u.rol === rol && u.estado === "activo").length;
+
+  const stats: Record<StatKey, number> = {
+    usuariosRegistrados: usuarios.length,
+    empresasRegistradas: empresas.length,
+    proyectosEnMentoria: empresas.filter((e) => ESTADOS_MENTORIA.includes(e.estado)).length,
+    proyectosEnEvaluacion: empresas.filter((e) => ESTADOS_EVALUACION.includes(e.estado)).length,
+    empresasEnBorrador: empresas.filter((e) => e.estado === "borrador").length,
+    mentoresActivos: activosPorRol("mentor"),
+    evaluadoresActivos: activosPorRol("evaluador"),
+    empresariosActivos: activosPorRol("emprendedor"),
+  };
+
+  const totalProyectos = stats.proyectosEnMentoria + stats.proyectosEnEvaluacion + stats.empresasEnBorrador;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -115,7 +130,7 @@ export function AdminDashboardView() {
       <SectionCard title="Plataforma" icon={LayoutGrid} color="#9A62FA">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {PLATAFORMA.map(({ key, label, icon }) => (
-            <StatItem key={key} label={label} value={mockStats[key]} icon={icon} color="#9A62FA" big />
+            <StatItem key={key} label={label} value={stats[key]} icon={icon} color="#9A62FA" big />
           ))}
         </div>
       </SectionCard>
@@ -124,28 +139,30 @@ export function AdminDashboardView() {
       <SectionCard title="Proyectos en curso" icon={Rocket} color="#3B82F6" meta={`${totalProyectos} en total`}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {PROYECTOS.map(({ key, label, icon, color }) => (
-            <StatItem key={key} label={label} value={mockStats[key]} icon={icon} color={color} />
+            <StatItem key={key} label={label} value={stats[key]} icon={icon} color={color} />
           ))}
         </div>
         {/* Barra de distribución */}
-        <div className="mt-5 h-1.5 rounded-full overflow-hidden flex" style={{ backgroundColor: "var(--border-subtle)" }}>
-          {PROYECTOS.map(({ key, color }) => (
-            <div
-              key={key}
-              style={{
-                width: `${(mockStats[key] / totalProyectos) * 100}%`,
-                backgroundColor: color,
-              }}
-            />
-          ))}
-        </div>
+        {totalProyectos > 0 && (
+          <div className="mt-5 h-1.5 rounded-full overflow-hidden flex" style={{ backgroundColor: "var(--border-subtle)" }}>
+            {PROYECTOS.map(({ key, color }) => (
+              <div
+                key={key}
+                style={{
+                  width: `${(stats[key] / totalProyectos) * 100}%`,
+                  backgroundColor: color,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </SectionCard>
 
       {/* Equipo activo */}
       <SectionCard title="Equipo activo" icon={UsersRound} color="#10B981">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {EQUIPO.map(({ key, label, icon }) => (
-            <StatItem key={key} label={label} value={mockStats[key]} icon={icon} color="#10B981" />
+            <StatItem key={key} label={label} value={stats[key]} icon={icon} color="#10B981" />
           ))}
         </div>
       </SectionCard>
