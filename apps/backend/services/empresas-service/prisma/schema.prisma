@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Empresa {
+  id               String   @id @default(uuid())
+  nombre           String
+  giro             String
+  descripcion      String
+  mercadoObjetivo  String
+  estado           String   @default("borrador")
+  logoUrl          String?
+  ownerId          String
+  mentorId         String?
+  evaluadorId      String?
+  scoreFinal       Int?
+  canvasBloques    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  canvas      Canvas?
+  productos   Producto[]
+  hipotesis   Hipotesis[]
+  observaciones Observacion[]
+
+  @@map("empresas")
+}
+
+model Canvas {
+  id                 String   @id @default(uuid())
+  empresaId          String   @unique
+  problema           String[]
+  solucion           String   @default("")
+  pvp                String   @default("")
+  ventajaInjusta     String   @default("")
+  segmentosClientes  String[]
+  metricasClave      String[]
+  canales            String[]
+  estructuraCostos   String[]
+  fuentesIngresos    String[]
+  updatedAt          DateTime @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("canvas")
+}
+
+model Producto {
+  id                    String   @id @default(uuid())
+  empresaId             String
+  nombre                String
+  tipo                  String
+  descripcion           String
+  caracteristicas       String?
+  precio                Float?
+  imagenes              String[]
+  modalidadPrecio       String?
+  precioMin             Float?
+  precioMax             Float?
+  precioPeriodo         Float?
+  unidadTiempo          String?
+  precioPersonalizado   String?
+  createdAt             DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("productos")
+}
+
+model Hipotesis {
+  id          String   @id @default(uuid())
+  empresaId   String
+  titulo      String
+  descripcion String
+  fase        Int      @default(1)
+  estado      String   @default("pendiente_validacion")
+  /// ExperimentoDiseno completo (tipo, descripcion, objetivo, criterioExito, fechaObjetivo?)
+  experimento Json?
+  /// ResultadosHipotesis completo (resultado, evidencia?, evidenciaNombre?, tipoEvidencia?, conclusion)
+  resultados  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("hipotesis")
+}
+
+model Observacion {
+  id            String   @id @default(uuid())
+  empresaId     String
+  tipoElemento  String
+  elementoId    String
+  autorId       String
+  autorNombre   String
+  comentario    String
+  estado        String   @default("pendiente")
+  createdAt     DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("observaciones")
+}

@@ -1,0 +1,9 @@
+{
+  "name": "leanstart-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:commons": "pnpm --filter @leanstart/backend-commons build",
+    "postinstall": "pnpm build:commons"
+  }
+}

@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Criterio {
+  id          String @id @default(uuid())
+  nombre      String
+  descripcion String
+  peso        Int
+
+  @@map("criterios")
+}
+
+/// Singleton (siempre una sola fila, id fijo "singleton").
+model ConfigViabilidad {
+  id                String @id @default("singleton")
+  pesoEvaluacion    Int    @default(80)
+  umbralPublicacion Int    @default(70)
+
+  @@map("config_viabilidad")
+}
+
+model NivelViabilidad {
+  id     String @id @default(uuid())
+  nombre String
+  hasta  Int
+  color  String
+  orden  Int
+
+  @@map("niveles_viabilidad")
+}
+
+model Evaluacion {
+  id                     String   @id @default(uuid())
+  empresaId              String   @unique
+  criteriosJson          Json     @default("{}")
+  comentariosCriteriosJson Json   @default("{}")
+  comentarioEvaluador    String   @default("")
+  finalizada             Boolean  @default(false)
+  scoreFinal             Int?
+  updatedAt              DateTime @updatedAt
+
+  @@map("evaluaciones")
+}
+
+model ReporteGenerado {
+  id            String   @id @default(uuid())
+  empresaId     String
+  empresaNombre String
+  tipo          String
+  generadoEn    DateTime @default(now())
+
+  @@map("reportes_generados")
+}

@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  nombre       String
+  correo       String   @unique
+  passwordHash String
+  rol          String
+  estado       String   @default("activo")
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+/// Matriz módulo+acción por rol. rolId = nombre literal del rol para los 4 roles
+/// base del sistema (coincide con Role); en el futuro podría ser el uuid de un
+/// rol personalizado, sin cambios de esquema.
+model Privilegio {
+  id     String @id @default(uuid())
+  rolId  String
+  modulo String
+  accion String
+
+  @@unique([rolId, modulo, accion])
+  @@map("privilegios")
+}
