@@ -9,13 +9,20 @@ export interface ReporteGenerado {
   empresaId: string;
   empresaNombre: string;
   tipo: TipoReporte;
+  /** Nombre de quien generó el reporte (administrador en sesión). */
+  generadoPor: string;
   generadoEn: string;
 }
 
 interface ReportesGeneradosStore {
   reportes: ReporteGenerado[];
   cargarReportesGenerados: () => Promise<void>;
-  registrarReporte: (data: { empresaId: string; empresaNombre: string; tipo: TipoReporte }) => Promise<void>;
+  registrarReporte: (data: {
+    empresaId: string;
+    empresaNombre: string;
+    tipo: TipoReporte;
+    generadoPor: string;
+  }) => Promise<void>;
 }
 
 function fecha(iso?: string): string {
@@ -28,6 +35,7 @@ function mapReporte(r: Record<string, unknown>): ReporteGenerado {
     empresaId: r.empresaId as string,
     empresaNombre: r.empresaNombre as string,
     tipo: r.tipo as TipoReporte,
+    generadoPor: (r.generadoPor as string) ?? "Administrador",
     generadoEn: fecha(r.generadoEn as string),
   };
 }

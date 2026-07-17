@@ -19,8 +19,8 @@ import {
 const MAX_COMENTARIO_CRITERIO = 300;
 const MAX_COMENTARIO_GENERAL = 600;
 
-const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
-const inputStyle = { backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" };
+const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" };
+const inputStyle = { backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" };
 
 interface EvaluacionFormProps {
   empresaId: string;
@@ -124,10 +124,10 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
       {/* Encabezado de criterios (fuera del grid para alinear la primera tarjeta con "Resultado") */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-4 h-4" style={{ color: "#9A62FA" }} />
-          <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Criterios de evaluación</span>
+          <ClipboardList className="w-4 h-4" style={{ color: "var(--brand)" }} />
+          <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Criterios de evaluación</span>
         </div>
-        <span className="text-xs" style={{ color: "#7E7C86" }}>Calificación por puntos</span>
+        <span className="text-xs" style={{ color: "var(--text-dim)" }}>Calificación por puntos</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
@@ -136,7 +136,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
           {/* Criterios */}
           {criterios.length === 0 ? (
             <div className="rounded-2xl p-4 md:p-6" style={cardStyle}>
-              <p className="text-sm" style={{ color: "#7E7C86" }}>El administrador aún no configuró criterios de evaluación.</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>El administrador aún no configuró criterios de evaluación.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -156,10 +156,10 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
           {/* Comentario general */}
           <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-2.5" style={cardStyle}>
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" style={{ color: "#9A62FA" }} />
-              <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Comentario general</span>
+              <MessageSquare className="w-4 h-4" style={{ color: "var(--brand)" }} />
+              <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Comentario general</span>
             </div>
-            <p className="text-[11px]" style={{ color: "#7E7C86" }}>Conclusión general sobre la viabilidad del proyecto.</p>
+            <p className="text-[11px]" style={{ color: "var(--text-dim)" }}>Conclusión general sobre la viabilidad del proyecto.</p>
             <Textarea
               value={comentarioLocal}
               maxLength={MAX_COMENTARIO_GENERAL}
@@ -171,21 +171,21 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
               className="min-h-28 resize-none text-sm focus-visible:ring-0"
               style={inputStyle}
             />
-            <span className="text-xs text-right" style={{ color: "#4A4850" }}>{comentarioLocal.length} / {MAX_COMENTARIO_GENERAL}</span>
+            <span className="text-xs text-right" style={{ color: "var(--text-faint)" }}>{comentarioLocal.length} / {MAX_COMENTARIO_GENERAL}</span>
           </div>
         </div>
 
         {/* Resultado + finalizar (sticky) */}
         <div className="flex flex-col gap-4 lg:sticky lg:top-6">
           <div className="rounded-2xl p-5 flex flex-col gap-4" style={cardStyle}>
-            <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Resultado</span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Resultado</span>
 
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-sm" style={{ color: "#C4C2CC" }}>Evaluación</span>
-                <span className="text-sm font-bold" style={{ color: "#F2F0F7" }}>{calculo.scoreEvaluacion}%</span>
+                <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>Evaluación</span>
+                <span className="text-sm font-bold" style={{ color: "var(--text-strong)" }}>{calculo.scoreEvaluacion}%</span>
               </div>
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
                 <div className="h-full rounded-full" style={{ width: `${calculo.scoreEvaluacion}%`, background: "linear-gradient(90deg,#9A62FA,#AE6CFD)" }} />
               </div>
             </div>
@@ -193,10 +193,10 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
             <ScoreRow label="Hipótesis" value={calculo.scoreHipotesis} sub={`${calculo.hipotesis.validadas}/${calculo.hipotesis.total} validadas`} />
 
             <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.22)" }}>
-              <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "#9A62FA" }}>Calificación final</p>
-              <p className="text-3xl font-bold mt-1" style={{ color: "#F2F0F7" }}>{calculo.scoreFinal}%</p>
+              <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "var(--brand)" }}>Calificación final</p>
+              <p className="text-3xl font-bold mt-1" style={{ color: "var(--text-strong)" }}>{calculo.scoreFinal}%</p>
               {calculo.nivel && (
-                <p className="text-[11px] mt-1" style={{ color: "#7E7C86" }}>
+                <p className="text-[11px] mt-1" style={{ color: "var(--text-dim)" }}>
                   Viabilidad {calculo.nivel.nombre} · Rango {rangoNivel(niveles, calculo.nivel)}
                 </p>
               )}
@@ -221,7 +221,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
               className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl text-sm font-semibold border-0 transition-opacity hover:opacity-90"
               style={
                 accionResultante === "publicado"
-                  ? { background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }
+                  ? { background: "var(--brand-gradient)", color: "var(--brand-fg)" }
                   : { background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#FBFBFC" }
               }
             >
@@ -253,7 +253,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
                 className="border-0"
                 style={
                   accionResultante === "publicado"
-                    ? { background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }
+                    ? { background: "var(--brand-gradient)", color: "var(--brand-fg)" }
                     : { background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#FBFBFC" }
                 }
               >
@@ -278,8 +278,8 @@ function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: {
     <div className="flex flex-col gap-5">
       {calculo.criterios.length > 0 && (
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-4 h-4" style={{ color: "#9A62FA" }} />
-          <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Criterios de evaluación</span>
+          <ClipboardList className="w-4 h-4" style={{ color: "var(--brand)" }} />
+          <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Criterios de evaluación</span>
         </div>
       )}
 
@@ -293,16 +293,16 @@ function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: {
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                        style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)", color: "#9A62FA" }}
+                        style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)", color: "var(--brand)" }}
                       >
                         {i + 1}
                       </div>
-                      <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{c.nombre}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{c.nombre}</p>
                     </div>
-                    <span className="text-sm font-bold shrink-0" style={{ color: "#C9A8FE" }}>{c.puntos} / {c.peso}</span>
+                    <span className="text-sm font-bold shrink-0" style={{ color: "var(--brand-accent)" }}>{c.puntos} / {c.peso}</span>
                   </div>
                   {c.comentario && (
-                    <p className="text-xs leading-relaxed pl-10" style={{ color: "#7E7C86" }}>{c.comentario}</p>
+                    <p className="text-xs leading-relaxed pl-10" style={{ color: "var(--text-dim)" }}>{c.comentario}</p>
                   )}
                 </div>
               ))}
@@ -310,10 +310,10 @@ function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: {
           )}
 
           <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-2" style={cardStyle}>
-            <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Comentario general</span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Comentario general</span>
             <p
               className="text-sm leading-relaxed whitespace-pre-wrap break-words"
-              style={{ color: comentarioGeneral.trim() ? "#C4C2CC" : "#4A4850", overflowWrap: "anywhere" }}
+              style={{ color: comentarioGeneral.trim() ? "var(--muted-foreground)" : "var(--text-faint)", overflowWrap: "anywhere" }}
             >
               {comentarioGeneral.trim() || "No se registró un comentario general."}
             </p>
@@ -322,14 +322,14 @@ function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: {
 
         <div className="flex flex-col gap-4 lg:sticky lg:top-6">
           <div className="rounded-2xl p-5 flex flex-col gap-4" style={cardStyle}>
-            <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Resultado</span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Resultado</span>
             <ScoreRow label="Evaluación" value={calculo.scoreEvaluacion} />
             <ScoreRow label="Hipótesis" value={calculo.scoreHipotesis} sub={`${calculo.hipotesis.validadas}/${calculo.hipotesis.total} validadas`} />
             <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.22)" }}>
-              <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "#9A62FA" }}>Calificación final</p>
-              <p className="text-3xl font-bold mt-1" style={{ color: "#F2F0F7" }}>{calculo.scoreFinal}%</p>
+              <p className="text-xs uppercase tracking-wider font-medium" style={{ color: "var(--brand)" }}>Calificación final</p>
+              <p className="text-3xl font-bold mt-1" style={{ color: "var(--text-strong)" }}>{calculo.scoreFinal}%</p>
               {calculo.nivel && (
-                <p className="text-[11px] mt-1" style={{ color: "#7E7C86" }}>
+                <p className="text-[11px] mt-1" style={{ color: "var(--text-dim)" }}>
                   Viabilidad {calculo.nivel.nombre} · Rango {rangoNivel(niveles, calculo.nivel)}
                 </p>
               )}
@@ -358,14 +358,14 @@ function CriterioRow({ numero, criterio, comentario, onChangePuntos, onChangeCom
       <div className="flex items-center gap-3">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-          style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)", color: "#9A62FA" }}
+          style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)", color: "var(--brand)" }}
         >
           {numero}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{criterio.nombre}</p>
+          <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{criterio.nombre}</p>
           {criterio.descripcion && (
-            <p className="text-xs mt-0.5 truncate" style={{ color: "#7E7C86" }}>{criterio.descripcion}</p>
+            <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-dim)" }}>{criterio.descripcion}</p>
           )}
         </div>
         <CalificacionInput
@@ -378,10 +378,10 @@ function CriterioRow({ numero, criterio, comentario, onChangePuntos, onChangeCom
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+          <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
             Comentario
           </label>
-          <span className="text-xs" style={{ color: "#4A4850" }}>
+          <span className="text-xs" style={{ color: "var(--text-faint)" }}>
             {valor.length} / {MAX_COMENTARIO_CRITERIO}
           </span>
         </div>
@@ -425,7 +425,7 @@ function CalificacionInput({ peso, valorGuardado, onChange, ariaLabel }: {
   return (
     <div
       className="flex items-center gap-1.5 rounded-lg px-2.5 h-8 shrink-0"
-      style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}
+      style={{ border: "1px solid var(--border-hair)", backgroundColor: "var(--hover-surface-2)" }}
     >
       <input
         type="number"
@@ -436,10 +436,10 @@ function CalificacionInput({ peso, valorGuardado, onChange, ariaLabel }: {
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
         className="w-8 text-center bg-transparent outline-none text-sm font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        style={{ color: "#F2F0F7" }}
+        style={{ color: "var(--text-strong)" }}
         aria-label={ariaLabel}
       />
-      <span className="text-xs" style={{ color: "#7E7C86" }}>/ {peso}</span>
+      <span className="text-xs" style={{ color: "var(--text-dim)" }}>/ {peso}</span>
     </div>
   );
 }
@@ -448,13 +448,13 @@ function ScoreRow({ label, value, sub }: { label: string; value: number; sub?: s
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm" style={{ color: "#C4C2CC" }}>{label}</span>
-        <span className="text-sm font-bold" style={{ color: "#F2F0F7" }}>{value}%</span>
+        <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>{label}</span>
+        <span className="text-sm font-bold" style={{ color: "var(--text-strong)" }}>{value}%</span>
       </div>
-      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
         <div className="h-full rounded-full" style={{ width: `${value}%`, background: "linear-gradient(90deg,#9A62FA,#AE6CFD)" }} />
       </div>
-      {sub && <span className="text-[11px]" style={{ color: "#7E7C86" }}>{sub}</span>}
+      {sub && <span className="text-[11px]" style={{ color: "var(--text-dim)" }}>{sub}</span>}
     </div>
   );
 }

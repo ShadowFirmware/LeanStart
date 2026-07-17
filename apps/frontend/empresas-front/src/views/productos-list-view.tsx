@@ -129,9 +129,9 @@ export function ProductosListView({
       <Link
         href={`${basePath}/${id}`}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="truncate max-w-[160px] md:max-w-none">{empresa.nombre}</span>
@@ -140,8 +140,8 @@ export function ProductosListView({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold" style={{ color: "#F2F0F7" }}>Productos y servicios</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <h1 className="text-xl font-bold" style={{ color: "var(--text-strong)" }}>Productos y servicios</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             {productos.length === 0
               ? "Sin registros"
               : `${productos.length} ${productos.length === 1 ? "registro" : "registros"}`}
@@ -152,7 +152,7 @@ export function ProductosListView({
             <Link
               href={`${basePath}/${id}/productos/nuevo`}
               className="inline-flex items-center justify-center gap-1.5 text-sm px-4 h-9 rounded-lg font-medium w-full sm:w-auto transition-colors"
-              style={{ color: "#F2F0F7", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
+              style={{ color: "var(--text-strong)", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(59,130,246,0.22)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(59,130,246,0.14)")}
             >
@@ -161,7 +161,7 @@ export function ProductosListView({
             <Link
               href={`${basePath}/${id}/productos/nuevo-servicio`}
               className="inline-flex items-center justify-center gap-1.5 text-sm px-4 h-9 rounded-lg font-medium w-full sm:w-auto transition-colors"
-              style={{ color: "#F2F0F7", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
+              style={{ color: "var(--text-strong)", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(16,185,129,0.22)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(16,185,129,0.14)")}
             >
@@ -175,23 +175,23 @@ export function ProductosListView({
       {productos.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#4A4850" }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
             <input
               type="text"
               placeholder="Buscar por nombre..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
 
           {/* Filtro por tipo */}
           <div
             className="flex items-center gap-1 rounded-lg p-1 shrink-0 overflow-x-auto no-scrollbar"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)" }}
           >
             {FILTROS_TIPO.map(({ value, label }) => {
               const isActive = filtroTipo === value;
@@ -202,7 +202,7 @@ export function ProductosListView({
                   className="px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0"
                   style={{
                     backgroundColor: isActive ? "rgba(154,98,250,0.18)" : "transparent",
-                    color: isActive ? "#F2F0F7" : "#7E7C86",
+                    color: isActive ? "var(--text-strong)" : "var(--text-dim)",
                   }}
                 >
                   {label}
@@ -215,7 +215,7 @@ export function ProductosListView({
           <Select value={orden} onValueChange={(v) => setOrden((v as Orden) ?? "az")}>
             <SelectTrigger
               className="w-full sm:w-44 h-9 text-sm shrink-0"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               <SelectValue placeholder="Ordenar" />
             </SelectTrigger>
@@ -232,16 +232,16 @@ export function ProductosListView({
       {productos.length === 0 ? (
         <div
           className="rounded-2xl p-8 md:p-16 flex flex-col items-center text-center"
-          style={{ backgroundColor: "#131219", border: "1px dashed rgba(255,255,255,0.08)" }}
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px dashed var(--border-hair)" }}
         >
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
             style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.14)" }}
           >
-            <Package className="w-5 h-5" style={{ color: "#9A62FA" }} />
+            <Package className="w-5 h-5" style={{ color: "var(--brand)" }} />
           </div>
-          <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>Sin productos ni servicios aún</p>
-          <p className="text-sm mb-6" style={{ color: "#7E7C86" }}>
+          <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>Sin productos ni servicios aún</p>
+          <p className="text-sm mb-6" style={{ color: "var(--text-dim)" }}>
             {puedeEditar ? `Agrega los productos o servicios que ofrece ${empresa.nombre}.` : `${empresa.nombre} no tiene registros.`}
           </p>
           {puedeEditar && (
@@ -249,14 +249,14 @@ export function ProductosListView({
               <Link
                 href={`${basePath}/${id}/productos/nuevo`}
                 className="inline-flex items-center justify-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
-                style={{ color: "#F2F0F7", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
+                style={{ color: "var(--text-strong)", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
               >
                 <Package className="w-3.5 h-3.5" /> Agregar producto
               </Link>
               <Link
                 href={`${basePath}/${id}/productos/nuevo-servicio`}
                 className="inline-flex items-center justify-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
-                style={{ color: "#F2F0F7", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
+                style={{ color: "var(--text-strong)", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
               >
                 <Wrench className="w-3.5 h-3.5" /> Agregar servicio
               </Link>
@@ -266,16 +266,16 @@ export function ProductosListView({
       ) : productosVisibles.length === 0 ? (
         <div
           className="rounded-2xl p-10 flex flex-col items-center text-center"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
         >
-          <Search className="w-8 h-8 mb-3" style={{ color: "#4A4850" }} />
-          <p className="text-sm" style={{ color: "#7E7C86" }}>Ningún registro coincide con los filtros.</p>
+          <Search className="w-8 h-8 mb-3" style={{ color: "var(--text-faint)" }} />
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>Ningún registro coincide con los filtros.</p>
           {hayFiltrosActivos && (
             <button
               type="button"
               onClick={() => { setBusqueda(""); setFiltroTipo(TODOS); }}
               className="mt-3 text-xs font-medium"
-              style={{ color: "#9A62FA" }}
+              style={{ color: "var(--brand)" }}
             >
               Limpiar filtros
             </button>
@@ -306,20 +306,20 @@ export function ProductosListView({
                 tabIndex={0}
                 className="relative rounded-2xl p-5 flex flex-col cursor-pointer transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#9A62FA]"
                 style={{
-                  backgroundColor: "#131219",
-                  border: `1px solid ${tieneComentario ? "rgba(154,98,250,0.5)" : "rgba(255,255,255,0.06)"}`,
+                  backgroundColor: "var(--surface-profile)",
+                  border: `1px solid ${tieneComentario ? "rgba(154,98,250,0.5)" : "var(--border-subtle)"}`,
                   boxShadow: tieneComentario ? "0 0 0 1px rgba(154,98,250,0.25), 0 8px 28px rgba(154,98,250,0.12)" : "none",
                 }}
                 onMouseEnter={(e) => { if (!tieneComentario) e.currentTarget.style.borderColor = "rgba(154,98,250,0.25)"; }}
-                onMouseLeave={(e) => { if (!tieneComentario) e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}
+                onMouseLeave={(e) => { if (!tieneComentario) e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
               >
                 {/* Distintivo de comentario del mentor (estilo notificación) */}
                 {tieneComentario && (
                   <span className="absolute -top-2 -right-2 z-10 flex items-center justify-center pointer-events-none">
-                    <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ backgroundColor: "#9A62FA" }} />
+                    <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ backgroundColor: "var(--brand)" }} />
                     <span
                       className="relative inline-flex items-center justify-center gap-1 min-w-[24px] h-6 px-2 rounded-full text-[11px] font-bold leading-none"
-                      style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC", border: "2px solid #131219", boxShadow: "0 4px 12px rgba(154,98,250,0.5)" }}
+                      style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)", border: "2px solid var(--surface-profile)", boxShadow: "0 4px 12px rgba(154,98,250,0.5)" }}
                     >
                       <MessageSquare className="w-3 h-3" />
                       {pendientes}
@@ -366,7 +366,7 @@ export function ProductosListView({
                 </div>
 
                 {/* Nombre */}
-                <p className="text-sm font-semibold leading-snug line-clamp-2 break-words" style={{ color: "#F2F0F7" }}>
+                <p className="text-sm font-semibold leading-snug line-clamp-2 break-words" style={{ color: "var(--text-strong)" }}>
                   {p.nombre}
                 </p>
 
@@ -374,7 +374,7 @@ export function ProductosListView({
                 {tieneComentario && (
                   <span
                     className="inline-flex items-center gap-1.5 text-[11px] font-medium mt-2 px-2 py-1 rounded-full w-fit"
-                    style={{ color: "#C9A8FE", backgroundColor: "rgba(154,98,250,0.14)" }}
+                    style={{ color: "var(--brand-accent)", backgroundColor: "rgba(154,98,250,0.14)" }}
                   >
                     <MessageSquare className="w-3 h-3" />
                     {pendientes === 1 ? "Comentario del mentor" : `${pendientes} comentarios del mentor`}
@@ -382,7 +382,7 @@ export function ProductosListView({
                 )}
 
                 {/* Descripción */}
-                <p className="text-xs mt-2 leading-relaxed line-clamp-2 flex-1 break-words" style={{ color: "#7E7C86" }}>
+                <p className="text-xs mt-2 leading-relaxed line-clamp-2 flex-1 break-words" style={{ color: "var(--text-dim)" }}>
                   {p.descripcion}
                 </p>
 
@@ -393,13 +393,13 @@ export function ProductosListView({
                       <span
                         key={i}
                         className="text-[11px] px-2 py-0.5 rounded-full truncate max-w-[140px]"
-                        style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "#7E7C86" }}
+                        style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
                       >
                         {c}
                       </span>
                     ))}
                     {caracteristicas.length > 3 && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.05)", color: "#4A4850" }}>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-faint)" }}>
                         +{caracteristicas.length - 3}
                       </span>
                     )}
@@ -409,11 +409,11 @@ export function ProductosListView({
                 {/* Footer: precio + acciones */}
                 <div
                   className="flex items-center justify-between gap-2 mt-4 pt-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                  style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <div className="flex items-center gap-1 min-w-0">
-                    <Tag className="w-3 h-3 shrink-0" style={{ color: "#4A4850" }} />
-                    <span className="text-xs font-medium truncate" style={{ color: "#F2F0F7" }}>
+                    <Tag className="w-3 h-3 shrink-0" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-xs font-medium truncate" style={{ color: "var(--text-strong)" }}>
                       {resumenPrecio(p)}
                     </span>
                   </div>
@@ -423,9 +423,9 @@ export function ProductosListView({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); router.push(editHref); }}
                         className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                        style={{ color: "#7E7C86" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = "#9A62FA"; e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.1)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
+                        style={{ color: "var(--text-dim)" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--brand)"; e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.1)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dim)"; e.currentTarget.style.backgroundColor = "transparent"; }}
                         title="Editar"
                         aria-label="Editar"
                       >
@@ -435,9 +435,9 @@ export function ProductosListView({
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: p.id, nombre: p.nombre }); }}
                         className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                        style={{ color: "#7E7C86" }}
+                        style={{ color: "var(--text-dim)" }}
                         onMouseEnter={(e) => { e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = "#7E7C86"; e.currentTarget.style.backgroundColor = "transparent"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dim)"; e.currentTarget.style.backgroundColor = "transparent"; }}
                         title="Eliminar"
                         aria-label="Eliminar"
                       >

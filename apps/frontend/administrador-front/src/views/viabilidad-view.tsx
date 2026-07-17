@@ -37,8 +37,8 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
     <div
       className="flex items-center rounded-lg overflow-hidden shrink-0"
       style={{
-        border: "1px solid rgba(255,255,255,0.08)",
-        backgroundColor: disabled ? "transparent" : "rgba(255,255,255,0.03)",
+        border: "1px solid var(--border-hair)",
+        backgroundColor: disabled ? "transparent" : "var(--hover-surface-2)",
         opacity: disabled ? 0.5 : 1,
       }}
     >
@@ -51,7 +51,7 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
           onChange(nuevo);
         }}
         className="w-6 h-7 flex items-center justify-center transition-colors disabled:cursor-not-allowed"
-        style={{ color: "#7E7C86" }}
+        style={{ color: "var(--text-dim)" }}
         aria-label={`Disminuir ${label}`}
       >
         <Minus className="w-3 h-3" />
@@ -64,10 +64,10 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
         className="w-10 text-center bg-transparent outline-none text-sm font-bold disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        style={{ color: "#F2F0F7" }}
+        style={{ color: "var(--text-strong)" }}
         aria-label={label}
       />
-      <span className="text-xs pr-2" style={{ color: "#7E7C86" }}>%</span>
+      <span className="text-xs pr-2" style={{ color: "var(--text-dim)" }}>%</span>
       <button
         type="button"
         disabled={disabled}
@@ -77,7 +77,7 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
           onChange(nuevo);
         }}
         className="w-6 h-7 flex items-center justify-center transition-colors disabled:cursor-not-allowed"
-        style={{ color: "#7E7C86" }}
+        style={{ color: "var(--text-dim)" }}
         aria-label={`Aumentar ${label}`}
       >
         <Plus className="w-3 h-3" />
@@ -206,8 +206,8 @@ export function ViabilidadView() {
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Viabilidad</h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Viabilidad</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Configura los pesos del Score de Viabilidad y los niveles de clasificación.
         </p>
       </div>
@@ -215,19 +215,19 @@ export function ViabilidadView() {
       {/* Pesos del score */}
       <div
         className="rounded-xl p-5"
-        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp className="w-4 h-4" style={{ color: "#9A62FA" }} />
-          <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Pesos del Score de Viabilidad</p>
+          <TrendingUp className="w-4 h-4" style={{ color: "var(--brand)" }} />
+          <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Pesos del Score de Viabilidad</p>
         </div>
-        <p className="text-xs mb-4" style={{ color: "#7E7C86" }}>
+        <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>
           Deben sumar 100%.
         </p>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
           <div className="flex items-center justify-between sm:justify-start gap-3 flex-1">
-            <span className="text-sm" style={{ color: "#C4C2CC" }}>Evaluación</span>
+            <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>Evaluación</span>
             <Stepper
               value={pesoEvaluacion}
               min={0}
@@ -238,10 +238,10 @@ export function ViabilidadView() {
             />
           </div>
           <div className="flex items-center justify-between sm:justify-start gap-3 flex-1">
-            <span className="text-sm" style={{ color: "#C4C2CC" }}>Hipótesis validadas</span>
+            <span className="text-sm" style={{ color: "var(--muted-foreground)" }}>Hipótesis validadas</span>
             <span
               className="inline-flex items-center justify-center h-7 px-3 rounded-lg text-sm font-bold"
-              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--hover-surface-2)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               {pesoHipotesis}%
             </span>
@@ -252,24 +252,24 @@ export function ViabilidadView() {
       {/* Niveles de viabilidad */}
       <div
         className="rounded-xl p-5"
-        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-start justify-between gap-3 mb-1">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" style={{ color: "#9A62FA" }} />
-            <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Niveles de Viabilidad</p>
+            <TrendingUp className="w-4 h-4" style={{ color: "var(--brand)" }} />
+            <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Niveles de Viabilidad</p>
           </div>
           <Button
             onClick={handleAgregarNivel}
             size="sm"
             className="h-8 px-3 text-xs font-medium border-0 shrink-0"
-            style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar nivel
           </Button>
         </div>
-        <p className="text-xs mb-4" style={{ color: "#7E7C86" }}>
+        <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>
           Rango de 0% a 100%.
         </p>
 
@@ -285,8 +285,8 @@ export function ViabilidadView() {
                 onDrop={() => handleDrop(i)}
                 className="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 transition-colors"
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  border: `1px solid ${overIndex === i && dragIndex !== null && dragIndex !== i ? "rgba(154,98,250,0.4)" : "rgba(255,255,255,0.05)"}`,
+                  backgroundColor: "var(--hover-surface-2)",
+                  border: `1px solid ${overIndex === i && dragIndex !== null && dragIndex !== i ? "rgba(154,98,250,0.4)" : "var(--border-subtle)"}`,
                   opacity: dragIndex === i ? 0.4 : 1,
                 }}
               >
@@ -296,7 +296,7 @@ export function ViabilidadView() {
                   onDragStart={(e) => handleDragStart(e, i)}
                   onDragEnd={handleDragEnd}
                   className="flex items-center justify-center w-6 h-7 shrink-0 cursor-grab active:cursor-grabbing"
-                  style={{ color: "#4A4850" }}
+                  style={{ color: "var(--text-faint)" }}
                   aria-label={`Reordenar ${nivel.nombre}`}
                   title="Arrastrar para reordenar"
                 >
@@ -309,16 +309,16 @@ export function ViabilidadView() {
                   aria-label={`Editar nivel ${nivel.nombre}`}
                 >
                   <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: nivel.color }} />
-                  <span className="text-sm font-medium" style={{ color: "#F2F0F7" }}>{nivel.nombre}</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{nivel.nombre}</span>
                 </button>
 
-                <span className="text-xs shrink-0" style={{ color: "#7E7C86" }}>
+                <span className="text-xs shrink-0" style={{ color: "var(--text-dim)" }}>
                   {min}% – {nivel.hasta}%
                 </span>
 
                 <div className="flex items-center gap-2 ml-auto shrink-0">
                   {esUltimo ? (
-                    <span className="text-xs px-2" style={{ color: "#4A4850" }}>Hasta 100% (fijo)</span>
+                    <span className="text-xs px-2" style={{ color: "var(--text-faint)" }}>Hasta 100% (fijo)</span>
                   ) : (
                     <Stepper
                       value={nivel.hasta}
@@ -332,7 +332,7 @@ export function ViabilidadView() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => abrirEditar(nivel)}
-                    style={{ color: "#7E7C86" }}
+                    style={{ color: "var(--text-dim)" }}
                     aria-label={`Editar ${nivel.nombre}`}
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -341,7 +341,7 @@ export function ViabilidadView() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => handleEliminarNivel(nivel)}
-                    style={{ color: "#7E7C86" }}
+                    style={{ color: "var(--text-dim)" }}
                     aria-label={`Eliminar ${nivel.nombre}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -356,13 +356,13 @@ export function ViabilidadView() {
       {/* Resultado según viabilidad */}
       <div
         className="rounded-xl p-5"
-        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-center gap-2 mb-1">
-          <ArrowRightLeft className="w-4 h-4" style={{ color: "#9A62FA" }} />
-          <p className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>Resultado según viabilidad</p>
+          <ArrowRightLeft className="w-4 h-4" style={{ color: "var(--brand)" }} />
+          <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Resultado según viabilidad</p>
         </div>
-        <p className="text-xs mb-6" style={{ color: "#7E7C86" }}>
+        <p className="text-xs mb-6" style={{ color: "var(--text-dim)" }}>
           Calificación mínima para publicar.
         </p>
 
@@ -370,7 +370,7 @@ export function ViabilidadView() {
           <div className="relative" style={{ height: 26 }}>
             <div
               className="absolute -translate-x-1/2 text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-              style={{ left: `${umbralLocal}%`, backgroundColor: "rgba(154,98,250,0.16)", color: "#C9A8FE" }}
+              style={{ left: `${umbralLocal}%`, backgroundColor: "rgba(154,98,250,0.16)", color: "var(--brand-accent)" }}
             >
               {umbralLocal}%
             </div>
@@ -413,17 +413,17 @@ export function ViabilidadView() {
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Nombre</label>
+              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Nombre</label>
               <Input
                 value={nombreDraft}
                 maxLength={MAX_NOMBRE}
                 placeholder="Ej. Media"
                 onChange={(e) => setNombreDraft(e.target.value)}
-                style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+                style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>Color</label>
+              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Color</label>
               <div className="flex flex-wrap gap-2">
                 {PALETA_COLORES.map((color) => (
                   <button
@@ -434,7 +434,7 @@ export function ViabilidadView() {
                     style={{ backgroundColor: color }}
                     aria-label={`Elegir color ${color}`}
                   >
-                    {colorDraft === color && <Check className="w-3.5 h-3.5" style={{ color: "#FBFBFC" }} />}
+                    {colorDraft === color && <Check className="w-3.5 h-3.5" style={{ color: "var(--brand-fg)" }} />}
                   </button>
                 ))}
               </div>
@@ -448,7 +448,7 @@ export function ViabilidadView() {
               type="button"
               onClick={guardarNivel}
               className="border-0"
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
               Guardar
             </Button>

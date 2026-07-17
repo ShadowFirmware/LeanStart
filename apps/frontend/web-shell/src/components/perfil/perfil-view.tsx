@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Camera, Trash2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Camera, Trash2, ShieldCheck, Palette } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { ControllerRenderProps } from "react-hook-form";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
@@ -59,7 +60,7 @@ export function PerfilView() {
 
   if (!currentUser) {
     return (
-      <div className="p-8 text-sm" style={{ color: "#7E7C86" }}>
+      <div className="p-8 text-sm" style={{ color: "var(--text-dim)" }}>
         No hay una sesión activa.
       </div>
     );
@@ -106,9 +107,9 @@ export function PerfilView() {
   }
 
   const inputStyle = {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    color: "#F2F0F7",
+    backgroundColor: "var(--input-surface)",
+    border: "1px solid var(--border-hair)",
+    color: "var(--text-strong)",
   } as const;
 
   return (
@@ -116,32 +117,32 @@ export function PerfilView() {
       <Link
         href={`/${rol}/dashboard`}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" /> Volver al inicio
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "#F2F0F7" }}>
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-strong)" }}>
           Mi perfil
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Consulta y actualiza la información de tu cuenta.
         </p>
       </div>
 
       <div
         className="rounded-2xl p-6 flex flex-col gap-6"
-        style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-card)" }}
       >
         {/* Avatar + rol */}
         <div className="flex items-center gap-4">
           <div className="relative">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-semibold overflow-hidden shrink-0"
-              style={{ backgroundColor: "rgba(154,98,250,0.2)", color: "#9A62FA" }}
+              style={{ backgroundColor: "var(--brand-tint-strong)", color: "var(--brand)" }}
             >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -155,7 +156,7 @@ export function PerfilView() {
               onClick={() => fileInputRef.current?.click()}
               disabled={subiendoAvatar}
               className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC", border: "2px solid #131219" }}
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)", border: "2px solid var(--surface-profile)" }}
               aria-label="Cambiar foto"
             >
               <Camera className="w-4 h-4" />
@@ -175,7 +176,7 @@ export function PerfilView() {
           <div className="flex flex-col gap-1.5 min-w-0">
             <span
               className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full w-fit"
-              style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#C687F5" }}
+              style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand-accent)" }}
             >
               <ShieldCheck className="w-3.5 h-3.5" /> {ROL_LABEL[rol]}
             </span>
@@ -184,7 +185,7 @@ export function PerfilView() {
                 type="button"
                 onClick={() => setAvatarUrl(undefined)}
                 className="inline-flex items-center gap-1 text-xs w-fit transition-colors"
-                style={{ color: "#EF4444" }}
+                style={{ color: "var(--destructive)" }}
               >
                 <Trash2 className="w-3 h-3" /> Quitar foto
               </button>
@@ -192,7 +193,7 @@ export function PerfilView() {
           </div>
         </div>
 
-        <div className="h-px w-full" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-px w-full" style={{ background: "var(--border-subtle)" }} />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
@@ -201,7 +202,7 @@ export function PerfilView() {
               name="nombre"
               render={({ field }: { field: ControllerRenderProps<PerfilFormValues, "nombre"> }) => (
                 <FormItem className="gap-1.5">
-                  <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#9B9A9F" }}>
+                  <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
                     Nombre completo
                   </FormLabel>
                   <FormControl>
@@ -217,7 +218,7 @@ export function PerfilView() {
               name="correo"
               render={({ field }: { field: ControllerRenderProps<PerfilFormValues, "correo"> }) => (
                 <FormItem className="gap-1.5">
-                  <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#9B9A9F" }}>
+                  <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
                     Correo electrónico
                   </FormLabel>
                   <FormControl>
@@ -233,7 +234,7 @@ export function PerfilView() {
                 type="submit"
                 disabled={subiendoAvatar}
                 className="h-10 rounded-xl font-semibold text-sm border-0"
-                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
               >
                 Guardar cambios
               </Button>
@@ -251,6 +252,30 @@ export function PerfilView() {
             </div>
           </form>
         </Form>
+      </div>
+
+      {/* Apariencia — selector de tema claro / oscuro / sistema */}
+      <div
+        className="rounded-2xl p-6 flex flex-col gap-4"
+        style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-card)" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
+          >
+            <Palette className="w-4 h-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>
+              Apariencia
+            </h2>
+            <p className="text-xs" style={{ color: "var(--text-dim)" }}>
+              Elige el tema de la interfaz. &quot;Sistema&quot; sigue la configuración de tu dispositivo.
+            </p>
+          </div>
+        </div>
+        <ThemeToggle />
       </div>
     </div>
   );

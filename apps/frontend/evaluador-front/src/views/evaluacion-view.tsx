@@ -27,10 +27,10 @@ export function EvaluadorEvaluacionView() {
   if (!empresa) {
     return (
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
-        <Link href={enHistorial ? "/evaluador/historial" : "/evaluador/empresas"} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "#7E7C86" }}>
+        <Link href={enHistorial ? "/evaluador/historial" : "/evaluador/empresas"} className="inline-flex items-center gap-2 text-sm mb-8" style={{ color: "var(--text-dim)" }}>
           <ArrowLeft className="w-4 h-4" /> {enHistorial ? "Historial" : "Empresas"}
         </Link>
-        <p className="text-sm" style={{ color: "#7E7C86" }}>Esta empresa no existe o fue eliminada.</p>
+        <p className="text-sm" style={{ color: "var(--text-dim)" }}>Esta empresa no existe o fue eliminada.</p>
       </div>
     );
   }
@@ -42,9 +42,9 @@ export function EvaluadorEvaluacionView() {
       <Link
         href={backHref}
         className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="truncate max-w-[180px] md:max-w-none">{backLabel}</span>
@@ -52,8 +52,8 @@ export function EvaluadorEvaluacionView() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold break-words" style={{ color: "#F2F0F7" }}>Evaluación del Proyecto</h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <h1 className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>Evaluación del Proyecto</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             {empresa.nombre} · {REPORTE_GIRO_LABELS[empresa.giro]}
           </p>
         </div>

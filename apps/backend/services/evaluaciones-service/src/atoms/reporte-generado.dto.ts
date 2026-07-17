@@ -13,4 +13,8 @@ export class RegistrarReporteDto {
   @ApiProperty({ enum: ["boleta", "canvas"] })
   @IsIn(["boleta", "canvas"])
   tipo!: "boleta" | "canvas";
+
+  @ApiProperty({ description: "Nombre de quien generó el reporte (administrador en sesión)" })
+  @IsString()
+  generadoPor!: string;
 }

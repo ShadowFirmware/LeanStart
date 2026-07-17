@@ -31,7 +31,7 @@ function EmpresaLogo({ empresa }: { empresa: Empresa }) {
         style={{
           width: 88, height: 88, padding: 10,
           backgroundColor: "rgba(154,98,250,0.10)",
-          border: "1px solid rgba(154,98,250,0.2)",
+          border: "1px solid var(--brand-tint-strong)",
         }}
       />
     );
@@ -41,8 +41,8 @@ function EmpresaLogo({ empresa }: { empresa: Empresa }) {
       className="rounded-2xl flex items-center justify-center font-bold shrink-0"
       style={{
         width: 88, height: 88, fontSize: 34,
-        backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA",
-        border: "1px solid rgba(154,98,250,0.2)",
+        backgroundColor: "var(--brand-tint)", color: "var(--brand)",
+        border: "1px solid var(--brand-tint-strong)",
       }}
     >
       {empresa.nombre.charAt(0).toUpperCase()}
@@ -93,15 +93,15 @@ export function PublicGallery() {
         <div className="text-center mb-14">
           <div
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
-            style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.18)", color: "#9A62FA" }}
+            style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.18)", color: "var(--brand)" }}
           >
             <BadgeCheck className="w-3.5 h-3.5" />
             Proyectos publicados
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: "#F2F0F7" }}>
+          <h2 className="text-2xl md:text-3xl font-bold" style={{ color: "var(--text-strong)" }}>
             Ideas que ya validaron su viabilidad
           </h2>
-          <p className="text-sm mt-3 max-w-lg mx-auto" style={{ color: "#7E7C86" }}>
+          <p className="text-sm mt-3 max-w-lg mx-auto" style={{ color: "var(--text-dim)" }}>
             Empresas que pasaron por todo el proceso de LeanStart y fueron aprobadas por un evaluador.
           </p>
         </div>
@@ -124,9 +124,9 @@ export function PublicGallery() {
                   <div
                     className="rounded-3xl p-8 md:p-10 flex flex-col items-center text-center gap-5 transition-all duration-500"
                     style={{
-                      backgroundColor: "#131219",
-                      border: `1px solid ${isActive ? "rgba(154,98,250,0.4)" : "rgba(255,255,255,0.06)"}`,
-                      boxShadow: isActive ? "0 30px 80px rgba(154,98,250,0.22)" : "0 10px 30px rgba(0,0,0,0.3)",
+                      backgroundColor: "var(--surface-profile)",
+                      border: `1px solid ${isActive ? "rgba(154,98,250,0.4)" : "var(--border-subtle)"}`,
+                      boxShadow: isActive ? "0 30px 80px rgba(154,98,250,0.22)" : "var(--shadow-card)",
                       opacity: isActive ? 1 : 0.4,
                       transform: isActive ? "scale(1)" : "scale(0.92)",
                       minHeight: 340,
@@ -134,17 +134,17 @@ export function PublicGallery() {
                   >
                     <EmpresaLogo empresa={empresa} />
                     <div>
-                      <p className="text-2xl md:text-3xl font-bold break-words" style={{ color: "#F2F0F7" }}>{empresa.nombre}</p>
+                      <p className="text-2xl md:text-3xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
                       <span
                         className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full mt-3"
-                        style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#C9A8FE" }}
+                        style={{ backgroundColor: "var(--brand-tint)", color: "#C9A8FE" }}
                       >
                         {GIRO_LABELS[empresa.giro]}
                       </span>
                     </div>
                     <p
                       className="text-sm md:text-base leading-relaxed line-clamp-2 break-words max-w-md"
-                      style={{ color: "#7E7C86" }}
+                      style={{ color: "var(--text-dim)" }}
                     >
                       {empresa.descripcion}
                     </p>
@@ -161,7 +161,7 @@ export function PublicGallery() {
             type="button"
             onClick={() => emblaApi?.scrollPrev()}
             className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
-            style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
             aria-label="Anterior"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -179,14 +179,14 @@ export function PublicGallery() {
                 aria-label={`Ir a ${empresa.nombre}`}
               >
                 {i < selectedIndex && (
-                  <span className="absolute inset-0" style={{ backgroundColor: "#9A62FA" }} />
+                  <span className="absolute inset-0" style={{ backgroundColor: "var(--brand)" }} />
                 )}
                 {i === selectedIndex && (
                   <span
                     key={`${selectedIndex}-${paused}`}
                     className="absolute inset-y-0 left-0"
                     style={{
-                      backgroundColor: "#9A62FA",
+                      backgroundColor: "var(--brand)",
                       animation: `lp-story-fill ${AUTOPLAY_MS}ms linear forwards`,
                       animationPlayState: paused ? "paused" : "running",
                     }}
@@ -200,7 +200,7 @@ export function PublicGallery() {
             type="button"
             onClick={() => emblaApi?.scrollNext()}
             className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
-            style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
             aria-label="Siguiente"
           >
             <ChevronRight className="w-4 h-4" />

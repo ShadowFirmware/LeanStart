@@ -34,12 +34,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const inputStyle = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
-const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
+const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" };
 
 export function ServicioNewView() {
   const { id } = useParams<{ id: string }>();
@@ -89,9 +89,9 @@ export function ServicioNewView() {
       <Link
         href={`/emprendedor/empresas/${id}/productos`}
         className="inline-flex items-center gap-2 text-sm mb-8 transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" /> Productos
       </Link>
@@ -105,9 +105,9 @@ export function ServicioNewView() {
           <Wrench className="w-5 h-5" style={{ color: "#10B981" }} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Nuevo servicio</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
-            Un servicio que ofrece <span style={{ color: "#F2F0F7" }}>{empresa.nombre}</span>.
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Nuevo servicio</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
+            Un servicio que ofrece <span style={{ color: "var(--text-strong)" }}>{empresa.nombre}</span>.
           </p>
         </div>
       </div>
@@ -123,10 +123,10 @@ export function ServicioNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "nombre"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Nombre del servicio
                     </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       {field.value?.length ?? 0} / {MAX_NOMBRE}
                     </span>
                   </div>
@@ -153,10 +153,10 @@ export function ServicioNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "descripcion"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Descripción
                     </FormLabel>
-                    <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "#4A4850" : "#7E7C86" }}>
+                    <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "var(--text-faint)" : "var(--text-dim)" }}>
                       {field.value?.length ?? 0} / {MAX_DESCRIPCION} (mín. 10)
                     </span>
                   </div>
@@ -178,8 +178,8 @@ export function ServicioNewView() {
           {/* Modalidad de precio */}
           <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-4" style={cardStyle}>
             <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4" style={{ color: "#9A62FA" }} />
-              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+              <DollarSign className="w-4 h-4" style={{ color: "var(--brand)" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                 Modalidad de precio
               </span>
             </div>
@@ -198,10 +198,10 @@ export function ServicioNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "caracteristicas"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Características
                     </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       Opcional · {field.value?.length ?? 0} / {MAX_CARACTERISTICAS}
                     </span>
                   </div>
@@ -226,7 +226,7 @@ export function ServicioNewView() {
               type="button"
               nativeButton={false}
               className="h-9 px-5 text-sm"
-              style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
               render={<Link href={`/emprendedor/empresas/${id}/productos`} />}
             >
               Cancelar
@@ -235,7 +235,7 @@ export function ServicioNewView() {
               type="submit"
               disabled={loading}
               className="h-9 px-6 text-sm font-semibold border-0"
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
               {loading ? "Guardando..." : "Guardar servicio"}
             </Button>

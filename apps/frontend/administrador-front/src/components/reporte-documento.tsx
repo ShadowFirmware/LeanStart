@@ -1,7 +1,7 @@
 "use client";
 
 import { Printer, X } from "lucide-react";
-import type { Empresa, CanvasData } from "@leanstart/empresas-front";
+import type { Empresa, CanvasData, Observacion } from "@leanstart/empresas-front";
 import { GIRO_LABELS, type ReporteCalculo } from "../lib/reporte";
 
 const CANVAS_BLOCKS: { key: keyof CanvasData; label: string }[] = [
@@ -22,6 +22,15 @@ const MUTED = "#6B6580";
 const LINE = "#E4E0EC";
 const ACCENT = "#7C3AED";
 
+const SUBLABEL: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: MUTED,
+  textTransform: "uppercase",
+  letterSpacing: 0.4,
+  marginBottom: 6,
+};
+
 function canvasValor(v: string | string[] | undefined): string[] {
   if (Array.isArray(v)) return v.map((s) => s.trim()).filter(Boolean);
   const t = (v ?? "").trim();
@@ -33,16 +42,18 @@ interface ReporteDocumentoProps {
   empresa: Empresa;
   calculo: ReporteCalculo;
   comentarioEvaluador: string;
+  /** Observaciones del mentor sobre la empresa (bloques del canvas, productos, hipótesis…). */
+  observaciones: Observacion[];
   onClose: () => void;
 }
 
-export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, onClose }: ReporteDocumentoProps) {
+export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, observaciones, onClose }: ReporteDocumentoProps) {
   const esBoleta = tipo === "boleta";
 
   return (
     <div
       className="fixed inset-0 z-[100] overflow-y-auto"
-      style={{ backgroundColor: "rgba(8,7,12,0.85)", backdropFilter: "blur(4px)" }}
+      style={{ backgroundColor: "var(--shell-header)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -50,10 +61,10 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
       {/* Toolbar (no se imprime) */}
       <div
         className="no-print sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-3"
-        style={{ backgroundColor: "#131219", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ backgroundColor: "var(--surface-profile)", borderBottom: "1px solid var(--border-hair)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-sm font-medium" style={{ color: "#F2F0F7" }}>
+        <span className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>
           {esBoleta ? "Boleta de evaluación" : "Reporte Lean Canvas"} · {empresa.nombre}
         </span>
         <div className="flex items-center gap-2">
@@ -61,7 +72,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             type="button"
             onClick={() => window.print()}
             className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg border-0"
-            style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
             <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
           </button>
@@ -69,7 +80,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             type="button"
             onClick={onClose}
             className="inline-flex items-center justify-center w-9 h-9 rounded-lg"
-            style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.06)" }}
+            style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)" }}
             aria-label="Cerrar"
           >
             <X className="w-4 h-4" />
@@ -118,7 +129,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
           {esBoleta ? (
             <BoletaBody empresa={empresa} calculo={calculo} />
           ) : (
-            <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} />
+            <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} observaciones={observaciones} />
           )}
 
           {/* Pie */}
@@ -218,8 +229,32 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
 }
 
 /* ─────────────────────────── LEAN CANVAS ─────────────────────────── */
-function CanvasBody({ empresa, comentarioEvaluador, calculo }: { empresa: Empresa; comentarioEvaluador: string; calculo: ReporteCalculo }) {
+function CanvasBody({ empresa, comentarioEvaluador, calculo, observaciones }: {
+  empresa: Empresa;
+  comentarioEvaluador: string;
+  calculo: ReporteCalculo;
+  observaciones: Observacion[];
+}) {
   const canvas = empresa.canvas;
+  const comentariosPorCriterio = calculo.criterios.filter((c) => c.comentario.trim());
+
+  // Etiqueta legible del elemento sobre el que el mentor dejó cada observación.
+  const canvasLabels = Object.fromEntries(CANVAS_BLOCKS.map((b) => [b.key, b.label]));
+  function etiquetaElemento(o: Observacion): string {
+    switch (o.tipoElemento) {
+      case "canvas":
+        return `Lean Canvas · ${canvasLabels[o.elementoId] ?? o.elementoId}`;
+      case "producto":
+        return `Producto · ${empresa.productosList.find((p) => p.id === o.elementoId)?.nombre ?? "—"}`;
+      case "hipotesis":
+        return `Hipótesis · ${empresa.hipotesisList.find((h) => h.id === o.elementoId)?.titulo ?? "—"}`;
+      case "general":
+        return "Información general";
+      default:
+        return "Comentario";
+    }
+  }
+
   return (
     <>
       {/* Datos base */}
@@ -255,23 +290,55 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: { empresa: Empres
         })}
       </div>
 
-      {/* Comentarios del evaluador */}
-      <SectionTitle>Comentarios del evaluador</SectionTitle>
+      {/* Comentarios: todos los comentarios dejados sobre la empresa */}
+      <SectionTitle>Comentarios</SectionTitle>
+
+      {/* Comentario general del evaluador */}
+      <p style={SUBLABEL}>Comentario general del evaluador</p>
       <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, background: "#FAF8FF", breakInside: "avoid" }}>
         {comentarioEvaluador.trim() ? (
           <p style={{ fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5 }}>{comentarioEvaluador}</p>
         ) : (
-          <p style={{ fontSize: 13, color: MUTED }}>El evaluador no dejó comentarios.</p>
+          <p style={{ fontSize: 13, color: MUTED }}>El evaluador no dejó un comentario general.</p>
         )}
       </div>
 
-      {/* Resumen de calificación */}
-      <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10, fontSize: 12 }}>
-        <ResumenChip label="Evaluación" value={`${calculo.scoreEvaluacion}%`} />
-        <ResumenChip label="Hipótesis" value={`${calculo.scoreHipotesis}%`} />
-        <ResumenChip label="Final" value={`${calculo.scoreFinal}%`} destacado />
-        {calculo.nivel && <ResumenChip label="Viabilidad" value={calculo.nivel.nombre} color={calculo.nivel.color} />}
-      </div>
+      {/* Comentarios por criterio del evaluador */}
+      {comentariosPorCriterio.length > 0 && (
+        <>
+          <p style={{ ...SUBLABEL, marginTop: 16 }}>Comentarios por criterio del evaluador</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {comentariosPorCriterio.map((c) => (
+              <div key={c.id} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: INK, wordBreak: "break-word" }}>{c.nombre}</p>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, whiteSpace: "nowrap" }}>{c.puntos} / {c.peso}</span>
+                </div>
+                <p style={{ fontSize: 12.5, color: "#43405A", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5 }}>{c.comentario}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Observaciones del mentor sobre la empresa */}
+      <p style={{ ...SUBLABEL, marginTop: 16 }}>Observaciones del mentor</p>
+      {observaciones.length === 0 ? (
+        <p style={{ fontSize: 13, color: MUTED }}>No se registraron observaciones del mentor.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {observaciones.map((o) => (
+            <div key={o.id} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: ACCENT, wordBreak: "break-word" }}>{etiquetaElemento(o)}</p>
+                <span style={{ fontSize: 11, color: MUTED, whiteSpace: "nowrap" }}>{o.creadaEn}</span>
+              </div>
+              <p style={{ fontSize: 12.5, color: "#43405A", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5 }}>{o.comentario}</p>
+              <p style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>— {o.autorNombre}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -281,14 +348,5 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#1A1626", margin: "26px 0 12px", paddingBottom: 4, borderBottom: "1px solid #E4E0EC" }}>
       {children}
     </h2>
-  );
-}
-
-function ResumenChip({ label, value, destacado, color }: { label: string; value: string; destacado?: boolean; color?: string }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, border: `1px solid ${destacado ? "#7C3AED" : "#E4E0EC"}`, background: destacado ? "#F5F0FE" : "#FFF" }}>
-      <span style={{ color: "#6B6580", fontWeight: 600 }}>{label}</span>
-      <span style={{ fontWeight: 700, color: color ?? (destacado ? "#7C3AED" : "#1A1626") }}>{value}</span>
-    </span>
   );
 }

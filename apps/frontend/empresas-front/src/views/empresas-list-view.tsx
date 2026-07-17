@@ -17,7 +17,7 @@ import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 import { useEmpresasStore, type Empresa, type Progreso } from "../store/empresas";
 
 const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
-  borrador: { label: "Borrador", color: "#9A62FA", bg: "rgba(154,98,250,0.12)" },
+  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
   pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   observaciones_pendientes: { label: "Observaciones pendientes", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
@@ -62,17 +62,17 @@ function ProgressoBorrador({ progreso }: { progreso: Progreso }) {
     <div className="flex items-center gap-2 mt-2.5">
       <div
         className="flex-1 h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
+        style={{ backgroundColor: "var(--border-hair)" }}
       >
         <div
           className="h-full rounded-full"
           style={{
             width: `${pct}%`,
-            backgroundColor: pct === 100 ? "#10B981" : "#9A62FA",
+            backgroundColor: pct === 100 ? "#10B981" : "var(--brand)",
           }}
         />
       </div>
-      <span className="text-[11px] font-medium shrink-0" style={{ color: pct === 100 ? "#10B981" : "#7E7C86" }}>
+      <span className="text-[11px] font-medium shrink-0" style={{ color: pct === 100 ? "#10B981" : "var(--text-dim)" }}>
         {pct}%
       </span>
     </div>
@@ -199,15 +199,15 @@ export function EmpresasListView({
     return (
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="mb-8">
-          <div className="h-7 w-40 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
-          <div className="h-4 w-28 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+          <div className="h-7 w-40 rounded-md animate-pulse" style={{ backgroundColor: "var(--border-subtle)" }} />
+          <div className="h-4 w-28 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "var(--hover-surface)" }} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="h-40 rounded-xl animate-pulse"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)" }}
             />
           ))}
         </div>
@@ -220,10 +220,10 @@ export function EmpresasListView({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>
             {title}
           </h1>
-          <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
             {empresas.length} {empresas.length === 1 ? "empresa registrada" : "empresas registradas"}
           </p>
         </div>
@@ -233,8 +233,8 @@ export function EmpresasListView({
             nativeButton={false}
             className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
             style={{
-              background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-              color: "#FBFBFC",
+              background: "var(--brand-gradient)",
+              color: "var(--brand-fg)",
             }}
             render={<Link href={`${basePath}/nueva`} />}
           >
@@ -250,7 +250,7 @@ export function EmpresasListView({
         <div className="relative flex-1">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-            style={{ color: "#4A4850" }}
+            style={{ color: "var(--text-faint)" }}
           />
           <input
             type="text"
@@ -259,12 +259,12 @@ export function EmpresasListView({
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
             style={{
-              backgroundColor: "#131219",
-              border: "1px solid rgba(255,255,255,0.07)",
-              color: "#F2F0F7",
+              backgroundColor: "var(--surface-profile)",
+              border: "1px solid var(--border-hair)",
+              color: "var(--text-strong)",
             }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
           />
         </div>
 
@@ -273,7 +273,7 @@ export function EmpresasListView({
           <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}>
             <SelectTrigger
               className="w-full sm:w-56 h-9 text-sm shrink-0"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
@@ -289,7 +289,7 @@ export function EmpresasListView({
         ) : (
           <div
             className="flex items-center gap-1 rounded-lg p-1 shrink-0"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)" }}
           >
             {FILTROS_ESTADO.map(({ value, label }) => {
               const isActive = filtroEstado === value;
@@ -300,7 +300,7 @@ export function EmpresasListView({
                   className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
                   style={{
                     backgroundColor: isActive ? "rgba(154,98,250,0.18)" : "transparent",
-                    color: isActive ? "#F2F0F7" : "#7E7C86",
+                    color: isActive ? "var(--text-strong)" : "var(--text-dim)",
                   }}
                 >
                   {label}
@@ -315,7 +315,7 @@ export function EmpresasListView({
           <Select value={filtroGiro} onValueChange={(v) => setFiltroGiro(v ?? TODOS_LOS_GIROS)}>
             <SelectTrigger
               className="w-full sm:w-44 h-9 text-sm shrink-0"
-              style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.07)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               <SelectValue placeholder="Filtrar por giro" />
             </SelectTrigger>
@@ -333,15 +333,15 @@ export function EmpresasListView({
       {empresasFiltradas.length === 0 ? (
         <div
           className="rounded-xl p-14 text-center"
-          style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
         >
-          <Building2 className="w-9 h-9 mx-auto mb-3" style={{ color: "#4A4850" }} />
-          <p className="text-sm font-medium mb-1" style={{ color: "#F2F0F7" }}>
+          <Building2 className="w-9 h-9 mx-auto mb-3" style={{ color: "var(--text-faint)" }} />
+          <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>
             {hayFiltrosActivos
               ? "Sin resultados"
               : readOnly ? "Aún no hay empresas registradas" : "Aún no tienes empresas"}
           </p>
-          <p className="text-sm" style={{ color: "#7E7C86" }}>
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>
             {hayFiltrosActivos
               ? "Prueba con otros términos o filtros."
               : readOnly ? "Cuando se registren empresas aparecerán aquí." : "Crea tu primera empresa para comenzar."}
@@ -352,8 +352,8 @@ export function EmpresasListView({
               nativeButton={false}
               className="mt-5 h-8 px-4 text-xs font-medium border-0"
               style={{
-                background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)",
-                color: "#FBFBFC",
+                background: "var(--brand-gradient)",
+                color: "var(--brand-fg)",
               }}
               render={<Link href={`${basePath}/nueva`} />}
             >
@@ -378,21 +378,22 @@ export function EmpresasListView({
                 href={`${basePath}/${empresa.id}`}
                 className="flex flex-col rounded-xl p-5 transition-[border-color]"
                 style={{
-                  backgroundColor: "#131219",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  backgroundColor: "var(--surface-profile)",
+                  boxShadow: "var(--shadow-card)",
+                  border: "1px solid var(--border-subtle)",
                 }}
                 onMouseEnter={(e) =>
                   ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")
                 }
                 onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")
+                  ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")
                 }
               >
                 {/* Header: logo + nombre/giro + estado */}
                 <div className="flex items-start gap-3 mb-4">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden"
-                    style={{ backgroundColor: "rgba(154,98,250,0.12)", color: "#9A62FA" }}
+                    style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
                   >
                     {empresa.logoUrl ? (
                       <Image src={empresa.logoUrl} alt={empresa.nombre} width={48} height={48} className="object-contain w-full h-full p-1.5" unoptimized />
@@ -401,12 +402,12 @@ export function EmpresasListView({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "#F2F0F7" }}>
+                    <p className="text-sm font-semibold leading-snug truncate" style={{ color: "var(--text-strong)" }}>
                       {empresa.nombre}
                     </p>
                     <span
                       className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
-                      style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "#7E7C86" }}
+                      style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
                     >
                       {GIRO_LABELS[empresa.giro]}
                     </span>
@@ -422,24 +423,24 @@ export function EmpresasListView({
                 {/* Stats */}
                 <div
                   className="flex items-center gap-4 pt-3.5"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                  style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Package className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
-                    <span className="text-xs" style={{ color: "#7E7C86" }}>
+                    <Package className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>
                       {empresa.productosList?.length ?? 0} {(empresa.productosList?.length ?? 0) === 1 ? "producto" : "productos"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Lightbulb className="w-3.5 h-3.5" style={{ color: "#4A4850" }} />
-                    <span className="text-xs" style={{ color: "#7E7C86" }}>
+                    <Lightbulb className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>
                       {(empresa.hipotesisList ?? []).length} hipótesis
                     </span>
                   </div>
                 </div>
 
                 {/* Fecha */}
-                <span className="text-[11px] mt-2" style={{ color: "#4A4850" }}>
+                <span className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>
                   Creada el {empresa.creadaEn}
                 </span>
 
@@ -452,7 +453,7 @@ export function EmpresasListView({
                 {!readOnly && (
                   <div
                     className="flex items-center justify-between mt-3 pt-3"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                    style={{ borderTop: "1px solid var(--border-subtle)" }}
                   >
                     {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
                       <button
@@ -467,7 +468,7 @@ export function EmpresasListView({
                           }
                         }}
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
-                        style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "#FBFBFC" }}
+                        style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                       >
                         <Send className="w-3 h-3" />
                         Enviar a mentoría
@@ -485,13 +486,13 @@ export function EmpresasListView({
                           setDeleteTarget({ id: empresa.id, nombre: empresa.nombre });
                         }}
                         className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-                        style={{ color: "#7E7C86" }}
+                        style={{ color: "var(--text-dim)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.color = "#EF4444";
                           e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "#7E7C86";
+                          e.currentTarget.style.color = "var(--text-dim)";
                           e.currentTarget.style.backgroundColor = "transparent";
                         }}
                         title="Eliminar empresa"
@@ -507,7 +508,7 @@ export function EmpresasListView({
 
                 {/* Asignación de mentor/evaluador (solo administrador) */}
                 {permitirAsignaciones && (empresa.estado === "pendiente_mentoria" || empresa.estado === "pendiente_evaluacion") && (
-                  <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -515,7 +516,7 @@ export function EmpresasListView({
                         abrirAsignar(empresa, empresa.estado === "pendiente_mentoria" ? "mentor" : "evaluador");
                       }}
                       className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85 w-full justify-center"
-                      style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                      style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
                       <UserCog className="w-3 h-3" />
                       {empresa.estado === "pendiente_mentoria" ? "Asignar mentor" : "Asignar evaluador"}
@@ -570,12 +571,12 @@ export function EmpresasListView({
               onValueChange={(v) => setUsuarioSeleccionado(v ?? "")}
               items={usuarios.map((u) => ({ value: u.id, label: u.nombre }))}
             >
-              <SelectTrigger className="w-full" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}>
+              <SelectTrigger className="w-full" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}>
                 <SelectValue placeholder={`Selecciona un ${asignarTarget?.tipo ?? ""}`} />
               </SelectTrigger>
               <SelectContent>
                 {opcionesAsignables.length === 0 ? (
-                  <div className="px-2 py-4 text-sm text-center" style={{ color: "#7E7C86" }}>
+                  <div className="px-2 py-4 text-sm text-center" style={{ color: "var(--text-dim)" }}>
                     No hay {asignarTarget?.tipo === "mentor" ? "mentores" : "evaluadores"} activos.
                   </div>
                 ) : (
@@ -594,7 +595,7 @@ export function EmpresasListView({
                 disabled={!usuarioSeleccionado}
                 onClick={confirmarAsignar}
                 className="border-0"
-                style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+                style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
               >
                 Asignar
               </Button>

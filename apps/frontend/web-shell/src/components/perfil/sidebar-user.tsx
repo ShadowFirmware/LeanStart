@@ -30,11 +30,11 @@ export function SidebarUser({ rol, userName, userEmail, onNavigate }: SidebarUse
       href={`/${rol}/perfil`}
       onClick={onNavigate}
       className="flex items-center gap-3 px-2 py-2 rounded-lg mb-1 transition-colors hover:brightness-125"
-      style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+      style={{ backgroundColor: "var(--hover-surface-2)" }}
     >
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 overflow-hidden"
-        style={{ backgroundColor: "rgba(154,98,250,0.2)", color: "#9A62FA" }}
+        style={{ backgroundColor: "var(--brand-tint-strong)", color: "var(--brand)" }}
       >
         {displayAvatar ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -44,8 +44,8 @@ export function SidebarUser({ rol, userName, userEmail, onNavigate }: SidebarUse
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>{displayName}</p>
-        <p className="text-xs truncate" style={{ color: "#7E7C86" }}>{displayEmail}</p>
+        <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{displayName}</p>
+        <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{displayEmail}</p>
       </div>
     </Link>
   );

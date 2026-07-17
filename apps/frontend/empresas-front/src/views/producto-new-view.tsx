@@ -36,12 +36,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const inputStyle = {
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#F2F0F7",
+  backgroundColor: "var(--hover-surface)",
+  border: "1px solid var(--border-hair)",
+  color: "var(--text-strong)",
 };
 
-const cardStyle = { backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" };
+const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid rgba(255,255,255,0.06)" };
 
 export function ProductoNewView() {
   const { id } = useParams<{ id: string }>();
@@ -86,9 +86,9 @@ export function ProductoNewView() {
       <Link
         href={`/emprendedor/empresas/${id}/productos`}
         className="inline-flex items-center gap-2 text-sm mb-8 transition-colors"
-        style={{ color: "#7E7C86" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+        style={{ color: "var(--text-dim)" }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
       >
         <ArrowLeft className="w-4 h-4" /> Productos
       </Link>
@@ -102,9 +102,9 @@ export function ProductoNewView() {
           <Package className="w-5 h-5" style={{ color: "#3B82F6" }} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Nuevo producto</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
-            Un bien tangible de <span style={{ color: "#F2F0F7" }}>{empresa.nombre}</span>.
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Nuevo producto</h1>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
+            Un bien tangible de <span style={{ color: "var(--text-strong)" }}>{empresa.nombre}</span>.
           </p>
         </div>
       </div>
@@ -120,10 +120,10 @@ export function ProductoNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "nombre"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Nombre del producto
                     </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       {field.value?.length ?? 0} / {MAX_NOMBRE}
                     </span>
                   </div>
@@ -145,8 +145,8 @@ export function ProductoNewView() {
           {/* Imágenes */}
           <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-3" style={cardStyle}>
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" style={{ color: "#9A62FA" }} />
-              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+              <ImageIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                 Imágenes del producto
               </span>
             </div>
@@ -161,10 +161,10 @@ export function ProductoNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "descripcion"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Descripción
                     </FormLabel>
-                    <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "#4A4850" : "#7E7C86" }}>
+                    <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "var(--text-faint)" : "var(--text-dim)" }}>
                       {field.value?.length ?? 0} / {MAX_DESCRIPCION} (mín. 10)
                     </span>
                   </div>
@@ -191,10 +191,10 @@ export function ProductoNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "caracteristicas"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Características
                     </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       Opcional · {field.value?.length ?? 0} / {MAX_CARACTERISTICAS}
                     </span>
                   </div>
@@ -221,14 +221,14 @@ export function ProductoNewView() {
               render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
                 <FormItem className="gap-1.5">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "#7E7C86" }}>
+                    <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
                       Precio
                     </FormLabel>
-                    <span className="text-xs" style={{ color: "#4A4850" }}>Opcional</span>
+                    <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
                   </div>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#4A4850" }}>$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-faint)" }}>$</span>
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -260,7 +260,7 @@ export function ProductoNewView() {
               type="button"
               nativeButton={false}
               className="h-9 px-5 text-sm"
-              style={{ backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#F2F0F7" }}
+              style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
               render={<Link href={`/emprendedor/empresas/${id}/productos`} />}
             >
               Cancelar
@@ -269,7 +269,7 @@ export function ProductoNewView() {
               type="submit"
               disabled={loading}
               className="h-9 px-6 text-sm font-semibold border-0"
-              style={{ background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", color: "#FBFBFC" }}
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
               {loading ? "Guardando..." : "Guardar producto"}
             </Button>

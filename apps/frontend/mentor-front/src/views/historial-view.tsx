@@ -13,7 +13,7 @@ const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: strin
   pendiente: { label: "Pendiente", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_revision: { label: "En revisión", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   atendida: { label: "Atendida", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
-  cerrada: { label: "Cerrada", color: "#7E7C86", bg: "rgba(255,255,255,0.08)" },
+  cerrada: { label: "Cerrada", color: "var(--text-dim)", bg: "var(--border-hair)" },
 };
 
 const MODULO_CONFIG: Record<Observacion["tipoElemento"], { label: string; icon: React.ElementType }> = {
@@ -83,8 +83,8 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>Historial de Mentorías</h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Historial de Mentorías</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Consulta todas las observaciones que has realizado anteriormente.
         </p>
       </div>
@@ -99,17 +99,17 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
           <div
             key={label}
             className="rounded-xl p-5 flex items-center gap-4"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
               style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.15)" }}
             >
-              <Icon className="w-5 h-5" style={{ color: "#9A62FA" }} />
+              <Icon className="w-5 h-5" style={{ color: "var(--brand)" }} />
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: "#7E7C86" }}>{label}</p>
-              <p className="text-2xl font-bold mt-0.5" style={{ color: "#F2F0F7" }}>{value}</p>
+              <p className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>{label}</p>
+              <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--text-strong)" }}>{value}</p>
             </div>
           </div>
         ))}
@@ -117,17 +117,17 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
 
       {/* Lista de observaciones */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#7E7C86" }}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-dim)" }}>
           Observaciones realizadas
         </p>
 
         {registros.length === 0 ? (
           <div
             className="rounded-xl p-10 text-center"
-            style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
           >
-            <MessageSquare className="w-8 h-8 mx-auto mb-3" style={{ color: "#7E7C86" }} />
-            <p className="text-sm" style={{ color: "#7E7C86" }}>
+            <MessageSquare className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-dim)" }} />
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>
               Aún no has dejado observaciones. Cuando comentes en un proyecto, aparecerán aquí.
             </p>
           </div>
@@ -141,24 +141,24 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
                   key={r.id}
                   href={`/mentor/empresas/${r.empresaId}`}
                   className="flex items-start gap-4 rounded-xl px-5 py-4 transition-[border-color]"
-                  style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+                  style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
                     style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
                   >
-                    <moduloCfg.icon className="w-4.5 h-4.5" style={{ color: "#9A62FA" }} />
+                    <moduloCfg.icon className="w-4.5 h-4.5" style={{ color: "var(--brand)" }} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: "#F2F0F7" }}>
+                        <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>
                           {r.empresaNombre}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                           {moduloCfg.label} · {r.elemento}
                         </p>
                       </div>
@@ -169,14 +169,14 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
                         >
                           {cfg.label}
                         </span>
-                        <span className="text-[11px] whitespace-nowrap" style={{ color: "#4A4850" }}>
+                        <span className="text-[11px] whitespace-nowrap" style={{ color: "var(--text-faint)" }}>
                           {r.fecha}
                         </span>
                       </div>
                     </div>
                     <p
                       className="text-sm mt-2 leading-relaxed break-words"
-                      style={{ color: "#C4C2CC", overflowWrap: "anywhere" }}
+                      style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}
                     >
                       {r.comentario}
                     </p>

@@ -45,9 +45,9 @@ export function EvidenciaViewerButton({
         }
         style={
           style ?? {
-            color: "#C687F5",
+            color: "var(--brand-accent)",
             backgroundColor: "rgba(154,98,250,0.1)",
-            border: "1px solid rgba(154,98,250,0.2)",
+            border: "1px solid var(--brand-tint-strong)",
           }
         }
       >
@@ -58,13 +58,13 @@ export function EvidenciaViewerButton({
         <DialogContent className="max-w-[95vw] sm:max-w-[900px] p-0 overflow-hidden">
           <div
             className="flex items-center justify-between gap-3 px-5 py-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ borderBottom: "1px solid var(--border-hair)" }}
           >
             <div className="min-w-0">
-              <DialogTitle className="text-sm font-medium truncate" style={{ color: "#F2F0F7" }}>
+              <DialogTitle className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>
                 {titulo}
               </DialogTitle>
-              <DialogDescription className="text-xs mt-0.5" style={{ color: "#7E7C86" }}>
+              <DialogDescription className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                 {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
               </DialogDescription>
             </div>
@@ -72,7 +72,7 @@ export function EvidenciaViewerButton({
               href={evidencia}
               download={evidenciaNombre || true}
               className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors shrink-0 mr-8"
-              style={{ color: "#C687F5", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid rgba(154,98,250,0.2)" }}
+              style={{ color: "var(--brand-accent)", backgroundColor: "rgba(154,98,250,0.1)", border: "1px solid var(--brand-tint-strong)" }}
             >
               <Download className="w-3 h-3" /> Descargar
             </a>
@@ -84,7 +84,7 @@ export function EvidenciaViewerButton({
                 className="flex items-center justify-center rounded-lg overflow-hidden"
                 style={{
                   height: "80vh",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid var(--border-hair)",
                   backgroundColor: "rgba(0,0,0,0.35)",
                 }}
               >
@@ -100,13 +100,13 @@ export function EvidenciaViewerButton({
                 src={evidencia}
                 title={titulo}
                 className="w-full rounded-lg"
-                style={{ height: "80vh", border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "#fff" }}
+                style={{ height: "80vh", border: "1px solid var(--border-hair)", backgroundColor: "#fff" }}
               />
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <FileText className="w-12 h-12" style={{ color: "#C687F5" }} />
-                <p className="text-sm" style={{ color: "#F2F0F7" }}>{titulo}</p>
-                <p className="text-xs max-w-sm" style={{ color: "#7E7C86" }}>
+                <FileText className="w-12 h-12" style={{ color: "var(--brand-accent)" }} />
+                <p className="text-sm" style={{ color: "var(--text-strong)" }}>{titulo}</p>
+                <p className="text-xs max-w-sm" style={{ color: "var(--text-dim)" }}>
                   Este tipo de documento no se puede previsualizar. Descárgalo para abrirlo.
                 </p>
               </div>

@@ -35,11 +35,11 @@ function SectionCard({ title, icon: Icon, color, meta, children }: {
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ backgroundColor: "#131219", border: "1px solid rgba(255,255,255,0.06)" }}
+      style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
     >
       <div
         className="flex items-center justify-between gap-3 px-5 md:px-6 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -48,9 +48,9 @@ function SectionCard({ title, icon: Icon, color, meta, children }: {
           >
             <Icon className="w-3.5 h-3.5" style={{ color }} />
           </div>
-          <span className="text-sm font-semibold" style={{ color: "#F2F0F7" }}>{title}</span>
+          <span className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>{title}</span>
         </div>
-        {meta && <span className="text-xs" style={{ color: "#4A4850" }}>{meta}</span>}
+        {meta && <span className="text-xs" style={{ color: "var(--text-faint)" }}>{meta}</span>}
       </div>
       <div className="p-5 md:p-6">{children}</div>
     </div>
@@ -70,8 +70,8 @@ function StatItem({ label, value, icon: Icon, color, big }: {
         <Icon className={big ? "w-6 h-6" : "w-5 h-5"} style={{ color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-medium" style={{ color: "#7E7C86" }}>{label}</p>
-        <p className={`font-bold mt-0.5 ${big ? "text-3xl" : "text-2xl"}`} style={{ color: "#F2F0F7" }}>
+        <p className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>{label}</p>
+        <p className={`font-bold mt-0.5 ${big ? "text-3xl" : "text-2xl"}`} style={{ color: "var(--text-strong)" }}>
           {value}
         </p>
       </div>
@@ -103,10 +103,10 @@ export function AdminDashboardView() {
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "#F2F0F7" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>
           Dashboard Administrativo
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#7E7C86" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
           Métricas generales de la plataforma.
         </p>
       </div>
@@ -128,7 +128,7 @@ export function AdminDashboardView() {
           ))}
         </div>
         {/* Barra de distribución */}
-        <div className="mt-5 h-1.5 rounded-full overflow-hidden flex" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+        <div className="mt-5 h-1.5 rounded-full overflow-hidden flex" style={{ backgroundColor: "var(--border-subtle)" }}>
           {PROYECTOS.map(({ key, color }) => (
             <div
               key={key}

@@ -116,7 +116,7 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
     const value = canvas[blockKey] as string;
     if (!value.trim()) return null;
     return (
-      <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.6, marginTop: 2, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8, overflowWrap: "anywhere", wordBreak: "break-word" }}>
+      <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.6, marginTop: 2, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 8, overflowWrap: "anywhere", wordBreak: "break-word" }}>
         {value.length > 150 ? value.slice(0, 150) + "…" : value}
       </p>
     );
@@ -124,7 +124,7 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
   const items = (canvas[blockKey] as string[]).filter(Boolean);
   if (items.length === 0) return null;
   return (
-    <ul style={{ margin: "2px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 8 }}>
+    <ul style={{ margin: "2px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 8 }}>
       {items.map((item, i) => (
         <li key={i} style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.4, display: "flex", gap: 5, alignItems: "flex-start", minWidth: 0 }}>
           <span style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>·</span>
@@ -227,28 +227,28 @@ export function CanvasView({
         <Link
           href={`${basePath}/${id}`}
           className="inline-flex items-center gap-2 text-sm mb-5 transition-colors"
-          style={{ color: "#7E7C86" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+          style={{ color: "var(--text-dim)" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
         >
           <ArrowLeft className="w-4 h-4" /> {empresa.nombre}
         </Link>
 
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: "#F2F0F7" }}>Lean Canvas</h1>
+            <h1 className="text-xl font-bold" style={{ color: "var(--text-strong)" }}>Lean Canvas</h1>
             {empresa.estado === "borrador" && (
-              <p className="text-sm mt-0.5" style={{ color: "#7E7C86" }}>
+              <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
                 {canvasBloques} de 9 bloques completados
               </p>
             )}
           </div>
           {empresa.estado === "borrador" && (
             <div className="flex items-center gap-3">
-              <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#9A62FA" }} />
+              <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--brand)" }} />
               </div>
-              <span className="text-xs font-medium" style={{ color: "#7E7C86" }}>{pct}%</span>
+              <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>{pct}%</span>
             </div>
           )}
         </div>
@@ -322,7 +322,7 @@ export function CanvasView({
           style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
           onClick={(e) => { if (e.target === e.currentTarget) setOpenBlock(null); }}
         >
-          <div style={{ backgroundColor: "#1A1921", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-hair)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, display: "flex", flexDirection: "column", gap: 20 }}>
 
             {/* Modal header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -331,8 +331,8 @@ export function CanvasView({
                   <openMeta.icon size={17} color="rgba(255,255,255,0.9)" />
                 </div>
                 <div>
-                  <p style={{ color: "#F2F0F7", fontWeight: 700, fontSize: 14 }}>{openMeta.title}</p>
-                  <p style={{ color: "#7E7C86", fontSize: 11, marginTop: 2 }}>{openMeta.hint}</p>
+                  <p style={{ color: "var(--text-strong)", fontWeight: 700, fontSize: 14 }}>{openMeta.title}</p>
+                  <p style={{ color: "var(--text-dim)", fontSize: 11, marginTop: 2 }}>{openMeta.hint}</p>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -348,9 +348,9 @@ export function CanvasView({
                 />
                 <button
                   onClick={() => setOpenBlock(null)}
-                  style={{ color: "#4A4850", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F0F7")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#4A4850")}
+                  style={{ color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-strong)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-faint)")}
                 >
                   <X size={18} />
                 </button>
@@ -361,23 +361,23 @@ export function CanvasView({
             {!puedeEditar ? (
               openMeta.type === "single" ? (
                 (draft as string).trim() ? (
-                  <p style={{ color: "#C4C2CC", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                  <p style={{ color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
                     {draft as string}
                   </p>
                 ) : (
-                  <p style={{ color: "#4A4850", fontSize: 13 }}>Sin información registrada.</p>
+                  <p style={{ color: "var(--text-faint)", fontSize: 13 }}>Sin información registrada.</p>
                 )
               ) : (draft as string[]).filter((v) => v.trim()).length > 0 ? (
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
                   {(draft as string[]).filter((v) => v.trim()).map((item, i) => (
-                    <li key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "#C4C2CC", fontSize: 13, lineHeight: 1.5 }}>
-                      <span style={{ color: "#4A4850", flexShrink: 0 }}>·</span>
+                    <li key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "var(--muted-foreground)", fontSize: 13, lineHeight: 1.5 }}>
+                      <span style={{ color: "var(--text-faint)", flexShrink: 0 }}>·</span>
                       <span style={{ overflowWrap: "anywhere" }}>{item}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p style={{ color: "#4A4850", fontSize: 13 }}>Sin información registrada.</p>
+                <p style={{ color: "var(--text-faint)", fontSize: 13 }}>Sin información registrada.</p>
               )
             ) : openMeta.type === "single" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -387,11 +387,11 @@ export function CanvasView({
                   placeholder={openMeta.placeholder}
                   rows={6}
                   maxLength={MAX_SINGLE}
-                  style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#F2F0F7", fontSize: 13, lineHeight: 1.6, resize: "vertical", outline: "none", width: "100%", fontFamily: "inherit", boxSizing: "border-box" }}
+                  style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", borderRadius: 12, padding: "12px 14px", color: "var(--text-strong)", fontSize: 13, lineHeight: 1.6, resize: "vertical", outline: "none", width: "100%", fontFamily: "inherit", boxSizing: "border-box" }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.45)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                 />
-                <p style={{ color: "#4A4850", fontSize: 11, textAlign: "right" }}>
+                <p style={{ color: "var(--text-faint)", fontSize: 11, textAlign: "right" }}>
                   {(draft as string).length} / {MAX_SINGLE}
                 </p>
               </div>
@@ -405,16 +405,16 @@ export function CanvasView({
                       maxLength={MAX_LIST_ITEM}
                       onChange={(e) => setDraft((prev) => (prev as string[]).map((v, idx) => idx === i ? e.target.value : v))}
                       placeholder={openMeta.placeholder}
-                      style={{ flex: 1, minWidth: 0, backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "9px 12px", color: "#F2F0F7", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+                      style={{ flex: 1, minWidth: 0, backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", borderRadius: 10, padding: "9px 12px", color: "var(--text-strong)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
                       onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.45)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                     />
                     {(draft as string[]).length > 1 && (
                       <button
                         onClick={() => setDraft((prev) => (prev as string[]).filter((_, idx) => idx !== i))}
-                        style={{ color: "#4A4850", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", flexShrink: 0 }}
+                        style={{ color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", flexShrink: 0 }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#4A4850")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-faint)")}
                       >
                         <X size={14} />
                       </button>
@@ -424,13 +424,13 @@ export function CanvasView({
                 {openMeta.max && (draft as string[]).length < openMeta.max ? (
                   <button
                     onClick={() => setDraft((prev) => [...(prev as string[]), ""])}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "#9A62FA", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "var(--brand)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
                   >
                     <Plus size={13} /> Agregar
-                    <span style={{ color: "#4A4850", marginLeft: "auto" }}>{(draft as string[]).length}/{openMeta.max}</span>
+                    <span style={{ color: "var(--text-faint)", marginLeft: "auto" }}>{(draft as string[]).length}/{openMeta.max}</span>
                   </button>
                 ) : (
-                  <p style={{ color: "#4A4850", fontSize: 11, textAlign: "center" }}>
+                  <p style={{ color: "var(--text-faint)", fontSize: 11, textAlign: "center" }}>
                     Límite de {openMeta.max} elementos alcanzado
                   </p>
                 )}
@@ -442,7 +442,7 @@ export function CanvasView({
               {!puedeEditar ? (
                 <button
                   onClick={() => setOpenBlock(null)}
-                  style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ padding: "8px 18px", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", borderRadius: 10, color: "var(--text-strong)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
                 >
                   Cerrar
                 </button>
@@ -450,13 +450,13 @@ export function CanvasView({
                 <>
                   <button
                     onClick={() => setOpenBlock(null)}
-                    style={{ padding: "8px 18px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F2F0F7", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ padding: "8px 18px", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", borderRadius: 10, color: "var(--text-strong)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleSave}
-                    style={{ padding: "8px 20px", background: "linear-gradient(135deg, #9A62FA 0%, #AE6CFD 100%)", border: "none", borderRadius: 10, color: "#FBFBFC", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ padding: "8px 20px", background: "var(--brand-gradient)", border: "none", borderRadius: 10, color: "var(--brand-fg)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                   >
                     Guardar
                   </button>

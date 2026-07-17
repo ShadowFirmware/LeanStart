@@ -53,6 +53,7 @@ model ReporteGenerado {
   empresaId     String
   empresaNombre String
   tipo          String
+  generadoPor   String   @default("Administrador")
   generadoEn    DateTime @default(now())
 
   @@map("reportes_generados")

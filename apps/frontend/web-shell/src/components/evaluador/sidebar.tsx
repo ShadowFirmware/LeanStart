@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { cerrarSesionBackend } from "@leanstart/commons";
 import { LayoutDashboard, Building2, History, LogOut, Menu, X } from "lucide-react";
 import { SidebarUser } from "@/components/perfil/sidebar-user";
+import { Logo } from "@/components/logo";
 
 interface EvaluadorSidebarProps {
   userName: string;
@@ -42,16 +42,16 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
       {/* Logo + close (solo mobile) */}
       <div
         className="h-16 flex items-center justify-between px-5 border-b shrink-0"
-        style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        style={{ borderColor: "var(--border-subtle)" }}
       >
         <Link href="/evaluador/dashboard" onClick={() => setOpen(false)}>
-          <Image src="/logo.png" alt="LeanStart" width={110} height={110} style={{ height: "auto" }} unoptimized />
+          <Logo height={26} />
         </Link>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg"
-          style={{ color: "#7E7C86", backgroundColor: "rgba(255,255,255,0.04)" }}
+          style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)" }}
           aria-label="Cerrar menú"
         >
           <X className="w-4 h-4" />
@@ -68,11 +68,11 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
               href={href}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
               style={{
-                color: isActive ? "#F2F0F7" : "#7E7C86",
-                backgroundColor: isActive ? "rgba(154,98,250,0.12)" : "transparent",
+                color: isActive ? "var(--text-strong)" : "var(--text-dim)",
+                backgroundColor: isActive ? "var(--brand-tint)" : "transparent",
               }}
             >
-              <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "#9A62FA" : "currentColor" }} />
+              <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--brand)" : "currentColor" }} />
               <span className="flex-1 truncate">{label}</span>
             </Link>
           );
@@ -82,16 +82,16 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
       {/* User section */}
       <div
         className="px-3 pb-4 border-t pt-3 shrink-0"
-        style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        style={{ borderColor: "var(--border-subtle)" }}
       >
         <SidebarUser rol="evaluador" userName={userName} userEmail={userEmail} onNavigate={() => setOpen(false)} />
         <button
           type="button"
           onClick={() => { cerrarSesionBackend().finally(() => signOut({ callbackUrl: "/login" })); }}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full transition-colors"
-          style={{ color: "#7E7C86" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#F2F0F7")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#7E7C86")}
+          style={{ color: "var(--text-dim)" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Cerrar sesión
@@ -106,21 +106,21 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
       <header
         className="md:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center justify-between px-4 border-b backdrop-blur-md"
         style={{
-          backgroundColor: "rgba(13,12,16,0.85)",
-          borderColor: "rgba(255,255,255,0.06)",
+          backgroundColor: "var(--shell-header)",
+          borderColor: "var(--border-subtle)",
         }}
       >
         <button
           type="button"
           onClick={() => setOpen(true)}
           className="flex items-center justify-center w-9 h-9 rounded-lg"
-          style={{ color: "#F2F0F7", backgroundColor: "rgba(255,255,255,0.04)" }}
+          style={{ color: "var(--text-strong)", backgroundColor: "var(--hover-surface)" }}
           aria-label="Abrir menú"
         >
           <Menu className="w-4 h-4" />
         </button>
         <Link href="/evaluador/dashboard" className="flex items-center">
-          <Image src="/logo.png" alt="LeanStart" width={90} height={90} style={{ height: "auto" }} unoptimized />
+          <Logo height={22} />
         </Link>
         <div className="w-9 h-9" />
       </header>
@@ -129,8 +129,9 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
       <aside
         className="hidden md:flex flex-col w-60 h-full border-r shrink-0"
         style={{
-          backgroundColor: "#0D0C10",
-          borderColor: "rgba(255,255,255,0.06)",
+          backgroundColor: "var(--shell)",
+          borderColor: "var(--border-subtle)",
+          boxShadow: "var(--shadow-sidebar)",
         }}
       >
         {SidebarInner}
@@ -147,8 +148,8 @@ export function EvaluadorSidebar({ userName, userEmail }: EvaluadorSidebarProps)
           <aside
             className="md:hidden fixed top-0 left-0 z-50 flex flex-col w-64 h-full border-r"
             style={{
-              backgroundColor: "#0D0C10",
-              borderColor: "rgba(255,255,255,0.06)",
+              backgroundColor: "var(--shell)",
+              borderColor: "var(--border-subtle)",
             }}
             role="dialog"
             aria-modal="true"
