@@ -16,6 +16,5 @@ RUN pnpm --filter @leanstart/backend-commons build
 
 WORKDIR /app/services/auth-service
 RUN pnpm build
-RUN echo "--- contenido de dist tras el build ---" && ls -la dist
 
-CMD ["sh", "-c", "echo '--- contenido de dist al arrancar ---' && ls -la dist; pnpm exec prisma migrate deploy && pnpm start:prod"]
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm start:prod"]
