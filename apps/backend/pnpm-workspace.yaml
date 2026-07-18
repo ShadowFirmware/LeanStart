@@ -5,3 +5,5 @@ packages:
   - "dev-cli"
 allowBuilds:
   '@scarf/scarf': false
+  '@prisma/engines': true
+  'prisma': true

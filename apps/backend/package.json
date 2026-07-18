@@ -9,8 +9,5 @@
   "scripts": {
     "build:commons": "pnpm --filter @leanstart/backend-commons build",
     "postinstall": "pnpm build:commons"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/engines", "prisma"]
   }
 }
