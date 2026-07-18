@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@11.13.0 --activate",
+  "pnpm install --frozen-lockfile --ignore-scripts"
+]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @leanstart/backend-commons build",
+  "pnpm --filter @leanstart/notificaciones-service exec prisma generate",
+  "pnpm --filter @leanstart/notificaciones-service build"
+]
