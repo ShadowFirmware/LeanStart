@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "corepack enable && corepack prepare pnpm@11.13.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @leanstart/backend-commons build && pnpm --filter @leanstart/empresas-service build"
+    "buildCommand": "corepack enable && corepack prepare pnpm@11.13.0 --activate && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @leanstart/backend-commons build && pnpm --filter @leanstart/empresas-service exec prisma generate && pnpm --filter @leanstart/empresas-service build"
   },
   "deploy": {
     "startCommand": "pnpm --filter @leanstart/empresas-service exec prisma migrate deploy && pnpm --filter @leanstart/empresas-service start:prod",

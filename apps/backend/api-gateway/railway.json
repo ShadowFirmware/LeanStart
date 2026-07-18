@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "corepack enable && corepack prepare pnpm@11.13.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @leanstart/api-gateway build"
+    "buildCommand": "corepack enable && corepack prepare pnpm@11.13.0 --activate && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @leanstart/api-gateway build"
   },
   "deploy": {
     "startCommand": "pnpm --filter @leanstart/api-gateway start:prod",
