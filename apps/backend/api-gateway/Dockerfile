@@ -6,7 +6,9 @@ WORKDIR /app
 COPY . .
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
-RUN pnpm --filter @leanstart/api-gateway build
+RUN pnpm --filter @leanstart/backend-commons build
 
 WORKDIR /app/api-gateway
+RUN pnpm build
+
 CMD ["sh", "-c", "pnpm start:prod"]

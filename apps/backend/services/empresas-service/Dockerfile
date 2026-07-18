@@ -7,8 +7,9 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm --filter @leanstart/backend-commons build
-RUN pnpm --filter @leanstart/empresas-service exec prisma generate
-RUN pnpm --filter @leanstart/empresas-service build
 
 WORKDIR /app/services/empresas-service
+RUN pnpm exec prisma generate
+RUN pnpm build
+
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm start:prod"]
