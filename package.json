@@ -1,6 +1,9 @@
 {
   "name": "leanstart",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "workspaces": [
     "apps/frontend/web-shell",
     "apps/frontend/commons",

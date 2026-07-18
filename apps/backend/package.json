@@ -2,6 +2,10 @@
   "name": "leanstart-backend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@11.13.0",
   "scripts": {
     "build:commons": "pnpm --filter @leanstart/backend-commons build",
     "postinstall": "pnpm build:commons"
