@@ -20,6 +20,11 @@ async function bootstrap() {
   if (process.env.ENFORCE_HTTPS === "true") {
     app.set("trust proxy", 1);
     app.use((req: import("express").Request, res: import("express").Response, next: () => void) => {
+      // El healthcheck de la plataforma (Railway, etc.) le pega directo al
+      // contenedor por HTTP interno, sin pasar por el proxy que añade este
+      // header — si no lo exceptuamos, el propio healthcheck queda bloqueado
+      // y el servicio nunca se marca como saludable.
+      if (req.path === "/health") return next();
       if (req.header("x-forwarded-proto") !== "https") {
         res.status(403).json({ statusCode: 403, message: "Se requiere HTTPS." });
         return;
