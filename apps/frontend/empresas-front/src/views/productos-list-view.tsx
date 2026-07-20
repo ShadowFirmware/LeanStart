@@ -212,7 +212,7 @@ export function ProductosListView({
           </div>
 
           {/* Orden */}
-          <Select value={orden} onValueChange={(v) => setOrden((v as Orden) ?? "az")}>
+          <Select value={orden} onValueChange={(v) => setOrden((v as Orden) ?? "az")} items={ORDENES}>
             <SelectTrigger
               className="w-full sm:w-44 h-9 text-sm shrink-0"
               style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}

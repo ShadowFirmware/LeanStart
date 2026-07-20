@@ -209,7 +209,14 @@ export function ReportesView() {
               onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
             />
           </div>
-          <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v ?? TODOS_LOS_TIPOS)}>
+          <Select
+            value={filtroTipo}
+            onValueChange={(v) => setFiltroTipo(v ?? TODOS_LOS_TIPOS)}
+            items={[
+              { value: TODOS_LOS_TIPOS, label: "Todos los tipos" },
+              ...(Object.entries(TIPO_CONFIG) as [TipoReporte, typeof TIPO_CONFIG[TipoReporte]][]).map(([tipo, cfg]) => ({ value: tipo, label: cfg.label })),
+            ]}
+          >
             <SelectTrigger
               className="w-full sm:w-56 h-9 text-sm shrink-0"
               style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}

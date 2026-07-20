@@ -548,7 +548,7 @@ export function EmpresaDetailView({
                       control={form.control}
                       name="giro"
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select value={field.value} onValueChange={field.onChange} items={GIROS}>
                           <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}>
                             <SelectValue placeholder="Selecciona un giro" />
                           </SelectTrigger>

@@ -238,17 +238,6 @@ export function PerfilView() {
               >
                 Guardar cambios
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 rounded-xl text-sm"
-                onClick={() => {
-                  form.reset({ nombre: nombreBase, correo: correoBase });
-                  setAvatarUrl(overrides?.avatarUrl);
-                }}
-              >
-                Descartar
-              </Button>
             </div>
           </form>
         </Form>

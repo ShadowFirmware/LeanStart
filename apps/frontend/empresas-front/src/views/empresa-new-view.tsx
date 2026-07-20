@@ -265,7 +265,7 @@ export function EmpresaNewView() {
                   control={form.control}
                   name="giro"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} items={GIROS}>
                       <SelectTrigger
                         className="w-full h-9 text-sm focus-visible:ring-0"
                         style={{

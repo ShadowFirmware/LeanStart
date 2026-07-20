@@ -1,10 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import type { Role } from "@leanstart/backend-commons";
-import { IsEmail, IsIn, IsString, MinLength } from "class-validator";
+import { IsEmail, IsIn, IsOptional, IsString, MinLength } from "class-validator";
 
 const ROLES: Role[] = ["administrador", "emprendedor", "mentor", "evaluador"];
 
-export class CreateUsuarioDto {
+class UsuarioBaseDto {
   @ApiProperty({ example: "María Fernández" })
   @IsString()
   @MinLength(2)
@@ -19,4 +19,17 @@ export class CreateUsuarioDto {
   rol!: Role;
 }
 
-export class UpdateUsuarioDto extends CreateUsuarioDto {}
+export class CreateUsuarioDto extends UsuarioBaseDto {
+  @ApiProperty({ example: "Sup3rSegura!", minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
+export class UpdateUsuarioDto extends UsuarioBaseDto {
+  @ApiPropertyOptional({ example: "Sup3rSegura!", minLength: 8, description: "Si se omite, la contraseña no cambia." })
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  password?: string;
+}

@@ -270,7 +270,16 @@ export function EmpresasListView({
 
         {/* Filtros de estado */}
         {readOnly ? (
-          <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}>
+          <Select
+            value={filtroEstado}
+            onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}
+            items={[
+              { value: TODOS_LOS_ESTADOS, label: "Todos los estados" },
+              ...(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][])
+                .filter(([value]) => !estadosPermitidos || estadosPermitidos.includes(value))
+                .map(([value, cfg]) => ({ value, label: cfg.label })),
+            ]}
+          >
             <SelectTrigger
               className="w-full sm:w-56 h-9 text-sm shrink-0"
               style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
@@ -312,7 +321,14 @@ export function EmpresasListView({
 
         {/* Filtro de giro */}
         {mostrarFiltroGiro && (
-          <Select value={filtroGiro} onValueChange={(v) => setFiltroGiro(v ?? TODOS_LOS_GIROS)}>
+          <Select
+            value={filtroGiro}
+            onValueChange={(v) => setFiltroGiro(v ?? TODOS_LOS_GIROS)}
+            items={[
+              { value: TODOS_LOS_GIROS, label: "Todos los giros" },
+              ...(Object.entries(GIRO_LABELS) as [GiroEmpresa, string][]).map(([value, label]) => ({ value, label })),
+            ]}
+          >
             <SelectTrigger
               className="w-full sm:w-44 h-9 text-sm shrink-0"
               style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}

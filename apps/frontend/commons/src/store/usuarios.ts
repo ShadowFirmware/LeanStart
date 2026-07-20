@@ -17,8 +17,11 @@ export interface Usuario {
 interface UsuariosStore {
   usuarios: Usuario[];
   cargarUsuarios: () => Promise<void>;
-  crearUsuario: (data: { nombre: string; correo: string; rol: Role }) => Promise<void>;
-  editarUsuario: (id: string, data: { nombre: string; correo: string; rol: Role }) => Promise<void>;
+  crearUsuario: (data: { nombre: string; correo: string; rol: Role; password: string }) => Promise<void>;
+  editarUsuario: (
+    id: string,
+    data: { nombre: string; correo: string; rol: Role; password?: string }
+  ) => Promise<void>;
   activarUsuario: (id: string) => Promise<void>;
   desactivarUsuario: (id: string) => Promise<void>;
 }
@@ -67,13 +70,14 @@ export const useUsuariosStore = create<UsuariosStore>()(
           return;
         }
 
+        const { password: _password, ...resto } = data;
         const id = crypto.randomUUID();
         const ahora = new Date().toLocaleDateString("es-MX", {
           day: "numeric",
           month: "short",
           year: "numeric",
         });
-        const nuevo: Usuario = { id, ...data, estado: "activo", creadoEn: ahora };
+        const nuevo: Usuario = { id, ...resto, estado: "activo", creadoEn: ahora };
         set({ usuarios: [nuevo, ...get().usuarios] });
       },
 
@@ -87,8 +91,9 @@ export const useUsuariosStore = create<UsuariosStore>()(
           return;
         }
 
+        const { password: _password, ...resto } = data;
         set({
-          usuarios: get().usuarios.map((u) => (u.id === id ? { ...u, ...data } : u)),
+          usuarios: get().usuarios.map((u) => (u.id === id ? { ...u, ...resto } : u)),
         });
       },
 

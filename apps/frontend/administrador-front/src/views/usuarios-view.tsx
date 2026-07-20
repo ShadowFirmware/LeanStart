@@ -47,6 +47,9 @@ const schema = z.object({
   rol: z.enum(["administrador", "emprendedor", "mentor", "evaluador"], {
     error: "Selecciona un rol",
   }),
+  // Obligatoria al crear, opcional al editar (vacía = no cambiarla) — la validación
+  // de "obligatoria al crear" se hace a mano en onSubmit porque depende del modo.
+  password: z.union([z.string().min(8, "Mínimo 8 caracteres"), z.literal("")]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -71,7 +74,7 @@ export function UsuariosView() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nombre: "", correo: "", rol: "" as Role },
+    defaultValues: { nombre: "", correo: "", rol: "" as Role, password: "" },
   });
 
   const usuariosFiltrados = useMemo(() => {
@@ -86,23 +89,28 @@ export function UsuariosView() {
 
   function abrirCrear() {
     setEditTarget(null);
-    form.reset({ nombre: "", correo: "", rol: "" as Role });
+    form.reset({ nombre: "", correo: "", rol: "" as Role, password: "" });
     setDialogOpen(true);
   }
 
   function abrirEditar(usuario: Usuario) {
     setEditTarget(usuario);
-    form.reset({ nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol });
+    form.reset({ nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol, password: "" });
     setDialogOpen(true);
   }
 
   async function onSubmit(values: FormValues) {
+    if (!editTarget && !values.password) {
+      form.setError("password", { message: "La contraseña es obligatoria" });
+      return;
+    }
     try {
       if (editTarget) {
-        await editarUsuario(editTarget.id, values);
+        const { password, ...resto } = values;
+        await editarUsuario(editTarget.id, password ? { ...resto, password } : resto);
         toast.success(`"${values.nombre}" fue actualizado.`);
       } else {
-        await crearUsuario(values);
+        await crearUsuario(values as FormValues & { password: string });
         toast.success(`"${values.nombre}" fue creado correctamente.`);
       }
       setDialogOpen(false);
@@ -321,7 +329,11 @@ export function UsuariosView() {
                   control={form.control}
                   name="rol"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      items={Object.entries(ROL_CONFIG).map(([value, { label }]) => ({ value, label }))}
+                    >
                       <SelectTrigger className="w-full" style={inputStyle}>
                         <SelectValue placeholder="Selecciona un rol" />
                       </SelectTrigger>
@@ -337,6 +349,25 @@ export function UsuariosView() {
                   <p className="text-xs text-destructive">{form.formState.errors.rol.message}</p>
                 )}
               </FormItem>
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }: { field: ControllerRenderProps<FormValues, "password"> }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={editTarget ? "Dejar en blanco para no cambiarla" : "Mínimo 8 caracteres"}
+                        style={inputStyle}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

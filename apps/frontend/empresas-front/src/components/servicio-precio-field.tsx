@@ -135,7 +135,11 @@ export function ServicioPrecioField({ value, onChange, error }: ServicioPrecioFi
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Por</label>
-            <Select value={value.unidadTiempo || undefined} onValueChange={(v) => set({ unidadTiempo: (v as UnidadTiempoServicio) ?? "" })}>
+            <Select
+              value={value.unidadTiempo || undefined}
+              onValueChange={(v) => set({ unidadTiempo: (v as UnidadTiempoServicio) ?? "" })}
+              items={UNIDAD_TIEMPO_OPCIONES}
+            >
               <SelectTrigger className="w-full h-9 text-sm focus-visible:ring-0" style={inputStyle}>
                 <SelectValue placeholder="Selecciona la unidad" />
               </SelectTrigger>

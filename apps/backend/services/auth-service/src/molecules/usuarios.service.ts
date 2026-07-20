@@ -3,8 +3,6 @@ import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import type { CreateUsuarioDto, UpdateUsuarioDto } from "../atoms/usuario.dto";
 
-const PASSWORD_TEMPORAL = "Leanstart123!";
-
 @Injectable()
 export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -24,7 +22,7 @@ export class UsuariosService {
     if (existente) {
       throw new ConflictException("Ya existe una cuenta con ese correo.");
     }
-    const passwordHash = await bcrypt.hash(PASSWORD_TEMPORAL, 10);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
       data: { nombre: dto.nombre, correo: dto.correo, rol: dto.rol, passwordHash },
     });
@@ -32,9 +30,10 @@ export class UsuariosService {
   }
 
   async editar(id: string, dto: UpdateUsuarioDto) {
+    const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : undefined;
     const user = await this.prisma.user.update({
       where: { id },
-      data: { nombre: dto.nombre, correo: dto.correo, rol: dto.rol },
+      data: { nombre: dto.nombre, correo: dto.correo, rol: dto.rol, ...(passwordHash ? { passwordHash } : {}) },
     });
     return this.sinPassword(user);
   }
