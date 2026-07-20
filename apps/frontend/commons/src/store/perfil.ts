@@ -21,12 +21,28 @@ interface PerfilStore {
   /** Overrides por id de usuario. */
   perfiles: Record<string, PerfilData>;
   actualizarPerfil: (userId: string, data: PerfilData) => Promise<void>;
+  cargarPerfil: (userId: string) => Promise<void>;
 }
 
 export const usePerfilStore = create<PerfilStore>()(
   persist(
     (set, get) => ({
       perfiles: {},
+      /**
+       * Trae el perfil real desde el backend y sobreescribe el override local.
+       * Sin esto, un cambio de nombre/avatar hecho en OTRO dispositivo nunca se
+       * refleja aquí (el override es puramente local, solo se escribe al editar).
+       */
+      async cargarPerfil(userId) {
+        if (modoDemo()) return;
+        const usuario = await apiFetch<{ nombre: string; email: string; avatarUrl?: string }>("/auth/me");
+        set({
+          perfiles: {
+            ...get().perfiles,
+            [userId]: { nombre: usuario.nombre, correo: usuario.email, avatarUrl: usuario.avatarUrl },
+          },
+        });
+      },
       async actualizarPerfil(userId, data) {
         if (!modoDemo()) {
           const usuario = await apiFetch<{ nombre: string; email: string; avatarUrl?: string }>("/auth/me", {

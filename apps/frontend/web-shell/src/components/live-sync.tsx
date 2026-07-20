@@ -38,6 +38,7 @@ const STORES = [
 export function LiveSync() {
   const { data: session, status } = useSession();
   const rol = session?.user?.rol;
+  const userId = session?.user?.id;
 
   // Rehidratación inicial (una vez, tras montar en el cliente).
   useEffect(() => {
@@ -51,6 +52,7 @@ export function LiveSync() {
 
     useEmpresasStore.getState().cargarEmpresas().catch(() => {});
     useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
+    if (userId) usePerfilStore.getState().cargarPerfil(userId).catch(() => {});
 
     if (rol === "administrador") {
       useUsuariosStore.getState().cargarUsuarios().catch(() => {});
@@ -60,17 +62,19 @@ export function LiveSync() {
       useViabilidadStore.getState().cargarViabilidad().catch(() => {});
       useReportesGeneradosStore.getState().cargarReportesGenerados().catch(() => {});
     }
-  }, [status, rol]);
+  }, [status, rol, userId]);
 
-  // El backend no empuja notificaciones en tiempo real: si otra persona genera una
-  // mientras esta pestaña ya está abierta, solo la vemos volviendo a pedirla.
+  // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
+  // persona genera una notificación, o el usuario edita su perfil desde otro
+  // dispositivo, esta pestaña solo se entera volviendo a pedirlos.
   useEffect(() => {
     if (modoDemo() || status !== "authenticated") return;
     const interval = setInterval(() => {
       useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
+      if (userId) usePerfilStore.getState().cargarPerfil(userId).catch(() => {});
     }, 20000);
     return () => clearInterval(interval);
-  }, [status]);
+  }, [status, userId]);
 
   // Sincronización entre pestañas.
   useEffect(() => {
