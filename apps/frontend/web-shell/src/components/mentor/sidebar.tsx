@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { cerrarSesionBackend } from "@leanstart/commons";
-import { LayoutDashboard, Building2, History, LogOut, Menu, X } from "lucide-react";
+import { cerrarSesionBackend, useHasHydrated } from "@leanstart/commons";
+import { useNotificacionesStore } from "@leanstart/notificaciones-front";
+import { LayoutDashboard, Building2, History, Bell, LogOut, Menu, X } from "lucide-react";
 import { SidebarUser } from "@/components/perfil/sidebar-user";
 import { Logo } from "@/components/logo";
 
@@ -14,15 +15,20 @@ interface MentorSidebarProps {
   userEmail: string;
 }
 
-const NAV_ITEMS = [
-  { href: "/mentor/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mentor/empresas", label: "Empresas", icon: Building2 },
-  { href: "/mentor/historial", label: "Historial", icon: History },
-];
-
 export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
   const pathname = usePathname();
+  const hydrated = useHasHydrated();
+  const noLeidasStore = useNotificacionesStore((s) => s.notificaciones.filter((n) => n.destinatario === "mentor" && !n.leida).length);
+  // Neutro (0) hasta hidratar, para no romper el render del servidor.
+  const noLeidas = hydrated ? noLeidasStore : 0;
   const [open, setOpen] = useState(false);
+
+  const navItems = [
+    { href: "/mentor/dashboard",       label: "Dashboard",      icon: LayoutDashboard, badge: 0 },
+    { href: "/mentor/empresas",        label: "Empresas",       icon: Building2,       badge: 0 },
+    { href: "/mentor/historial",       label: "Historial",      icon: History,         badge: 0 },
+    { href: "/mentor/notificaciones",  label: "Notificaciones", icon: Bell,            badge: noLeidas },
+  ];
 
   // Cierra el drawer al cambiar de ruta
   useEffect(() => {
@@ -60,7 +66,7 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto no-scrollbar">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, badge }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
@@ -74,6 +80,14 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
             >
               <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--brand)" : "currentColor" }} />
               <span className="flex-1 truncate">{label}</span>
+              {badge > 0 && (
+                <span
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0"
+                  style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+                >
+                  {badge}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -122,7 +136,24 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
         <Link href="/mentor/dashboard" className="flex items-center">
           <Logo height={22} />
         </Link>
-        <div className="w-9 h-9" />
+        {noLeidas > 0 ? (
+          <Link
+            href="/mentor/notificaciones"
+            className="relative flex items-center justify-center w-9 h-9 rounded-lg"
+            style={{ color: "var(--text-strong)", backgroundColor: "var(--hover-surface)" }}
+            aria-label="Notificaciones"
+          >
+            <Bell className="w-4 h-4" />
+            <span
+              className="absolute -top-0.5 -right-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none"
+              style={{ backgroundColor: "var(--brand)", color: "var(--brand-fg)" }}
+            >
+              {noLeidas}
+            </span>
+          </Link>
+        ) : (
+          <div className="w-9 h-9" />
+        )}
       </header>
 
       {/* Sidebar desktop (md+) */}
