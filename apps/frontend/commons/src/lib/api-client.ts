@@ -15,6 +15,13 @@ interface ApiError {
   error?: string;
 }
 
+// LiveSync dispara varias llamadas en paralelo (empresas, notificaciones, perfil,
+// heartbeat, y según el rol más); si el token ya no sirve, TODAS devuelven 401 casi
+// al mismo tiempo. Sin este guard, cada una llamaría a signOut() por su cuenta —
+// varias peticiones de csrf/signout de NextAuth compitiendo entre sí, lo que en la
+// práctica dejaba la cookie a medio limpiar y producía un ciclo login↔dashboard.
+let cerrandoSesionPorTokenInvalido = false;
+
 /**
  * Llama al api-gateway adjuntando el Bearer token de la sesión activa (si existe).
  * Lanza un Error con el mensaje real del backend cuando la respuesta no es ok,
@@ -42,7 +49,8 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     // su sesión de cliente decodifica el JWT localmente y lo sigue viendo "válido"
     // hasta su expiración de 30 días. Sin esto, la UI seguiría mostrándose como
     // logueada (aunque cada llamada real falle en silencio) hasta recargar.
-    if (res.status === 401 && !modoDemo()) {
+    if (res.status === 401 && !modoDemo() && !cerrandoSesionPorTokenInvalido) {
+      cerrandoSesionPorTokenInvalido = true;
       void signOut({ callbackUrl: "/login" });
     }
 
