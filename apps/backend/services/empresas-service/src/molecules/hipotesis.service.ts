@@ -52,6 +52,14 @@ export class HipotesisService {
     await this.empresas.obtener(user, empresaId);
     await this.assertPertenece(empresaId, id);
     await this.prisma.hipotesis.delete({ where: { id } });
+
+    // Misma razón que en productos: sin esto, una observación sobre una hipótesis
+    // eliminada queda huérfana e imposible de marcar como atendida.
+    await this.prisma.observacion.updateMany({
+      where: { empresaId, tipoElemento: "hipotesis", elementoId: id, estado: { not: "cerrada" } },
+      data: { estado: "cerrada" },
+    });
+
     return { ok: true };
   }
 

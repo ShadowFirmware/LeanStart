@@ -26,6 +26,15 @@ export class ProductosService {
     await this.empresas.obtener(user, empresaId);
     await this.assertPertenece(empresaId, productoId);
     await this.prisma.producto.delete({ where: { id: productoId } });
+
+    // El producto ya no existe: si quedaran observaciones apuntando a él, serían
+    // huérfanas (no hay ninguna tarjeta donde abrir ese hilo para marcarlas como
+    // atendidas), bloqueando para siempre "todos los comentarios resueltos".
+    await this.prisma.observacion.updateMany({
+      where: { empresaId, tipoElemento: "producto", elementoId: productoId, estado: { not: "cerrada" } },
+      data: { estado: "cerrada" },
+    });
+
     return { ok: true };
   }
 
