@@ -32,11 +32,19 @@ export function mentorPuedeComentarEnEstado(estado: EstadoEmpresa): boolean {
 }
 
 /**
- * Estados en los que el emprendedor puede editar su proyecto. Con la colaboración en vivo
- * también puede corregir durante la mentoría (sin esperar a que el mentor se lo devuelva).
+ * Estados en los que el emprendedor puede editar/agregar en su proyecto. Bloqueado en
+ * "en_mentoria" (el mentor todavía está escribiendo su retroalimentación, sin enviarla
+ * — no hay nada concreto que corregir todavía) y en cuanto se manda a evaluación o se
+ * publica. Sigue editable en "observaciones_pendientes"/"observaciones_atendidas": es
+ * justo el turno del emprendedor para corregir lo que el mentor ya le señaló.
  */
 export function emprendedorPuedeEditar(estado: EstadoEmpresa): boolean {
-  return estado === "borrador" || estado === "devuelto" || ESTADOS_MENTORIA.includes(estado);
+  return (
+    estado === "borrador" ||
+    estado === "devuelto" ||
+    estado === "observaciones_pendientes" ||
+    estado === "observaciones_atendidas"
+  );
 }
 
 /** A qué tipo de elemento de la empresa está vinculada la observación.
