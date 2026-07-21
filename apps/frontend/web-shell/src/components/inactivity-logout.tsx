@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { toast } from "sonner";
 import { cerrarSesionBackend, modoDemo } from "@leanstart/commons";
 
-const LIMITE_INACTIVIDAD_MS = 5 * 60 * 1000;
+const LIMITE_INACTIVIDAD_MS = 2 * 60 * 1000;
 const EVENTOS_ACTIVIDAD = ["mousemove", "keydown", "click", "scroll", "touchstart"] as const;
 
 /**
- * Cierra la sesión automáticamente tras 5 minutos sin interacción del usuario,
+ * Cierra la sesión automáticamente tras 2 minutos sin interacción del usuario,
  * para no dejar una sesión autenticada abierta indefinidamente en un equipo
  * compartido o abandonado. El JWT en sí no expira por inactividad, solo por
  * su duración absoluta, así que esto se resuelve del lado del cliente.
@@ -21,6 +22,7 @@ export function InactivityLogout() {
     if (modoDemo() || status !== "authenticated") return;
 
     function cerrarPorInactividad() {
+      toast.info("Tu sesión se cerró por inactividad.");
       cerrarSesionBackend().finally(() => signOut({ callbackUrl: "/login" }));
     }
 
