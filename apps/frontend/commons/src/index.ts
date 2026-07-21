@@ -38,7 +38,6 @@ export { useUsuariosStore } from "./store/usuarios";
 export type { Usuario, EstadoUsuario } from "./store/usuarios";
 export { usePerfilStore } from "./store/perfil";
 export type { PerfilData } from "./store/perfil";
-export { useCargaInicialStore } from "./store/carga-inicial";
 
 // Utils
 export { cn } from "./lib/utils";
