@@ -10,6 +10,7 @@ import { useObservacionesStore, type TipoElementoObservacion } from "../store/ob
 import { useEmpresasStore } from "../store/empresas";
 
 const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: string; bg: string }> = {
+  borrador: { label: "Borrador — sin enviar", color: "var(--text-dim)", bg: "var(--border-hair)" },
   pendiente: { label: "Pendiente", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
   en_revision: { label: "En revisión", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   atendida: { label: "Atendida", color: "#10B981", bg: "rgba(16,185,129,0.12)" },

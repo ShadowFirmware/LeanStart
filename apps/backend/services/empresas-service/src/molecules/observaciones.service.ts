@@ -20,32 +20,59 @@ export class ObservacionesService {
 
   async listarDeEmpresa(user: AuthUser, empresaId: string) {
     await this.empresas.obtener(user, empresaId);
-    return this.prisma.observacion.findMany({ where: { empresaId }, orderBy: { createdAt: "desc" } });
+    const observaciones = await this.prisma.observacion.findMany({
+      where: { empresaId },
+      orderBy: { createdAt: "desc" },
+    });
+    // Un borrador es invisible para todos salvo su propio autor (el mentor que
+    // todavía no envía su retroalimentación) — así el emprendedor nunca ve
+    // comentarios a medio escribir.
+    return observaciones.filter((o) => o.estado !== "borrador" || o.autorId === user.id);
   }
 
+  /**
+   * El mentor deja la observación como "borrador": no la ve el emprendedor, no
+   * mueve el estado del proyecto ni notifica todavía — eso pasa recién cuando
+   * el mentor llama a `enviarRetroalimentacion`, para que pueda dejar varios
+   * comentarios sueltos (en distintos bloques/productos) y mandarlos juntos.
+   */
   async crear(user: AuthUser, empresaId: string, autorNombre: string, dto: CreateObservacionDto) {
+    await this.empresas.obtener(user, empresaId);
+    const esBorrador = user.rol === "mentor";
+
+    return this.prisma.observacion.create({
+      data: { ...dto, empresaId, autorId: user.id, autorNombre, estado: esBorrador ? "borrador" : "pendiente" },
+    });
+  }
+
+  /** El mentor envía todos sus borradores de esta empresa de una vez: recién ahí se hacen visibles, se avanza el estado del proyecto y se notifica al emprendedor. */
+  async enviarRetroalimentacion(user: AuthUser, empresaId: string) {
     const empresa = await this.empresas.obtener(user, empresaId);
 
-    const observacion = await this.prisma.observacion.create({
-      data: { ...dto, empresaId, autorId: user.id, autorNombre, estado: "pendiente" },
+    const { count } = await this.prisma.observacion.updateMany({
+      where: { empresaId, autorId: user.id, estado: "borrador" },
+      data: { estado: "pendiente" },
     });
+    if (count === 0) return { ok: true, enviadas: 0 };
 
-    // El mentor comentando mueve el proyecto a "observaciones_pendientes" para que el
-    // emprendedor sepa que tiene correcciones por revisar (colaboración en vivo).
-    if (user.rol === "mentor" && ESTADOS_MENTORIA.includes(empresa.estado)) {
-      if (empresa.estado !== "observaciones_pendientes") {
+    // Efecto secundario best-effort: la retroalimentación ya quedó visible arriba,
+    // que falle mover el estado o notificar no debe reportarse como error al mentor.
+    try {
+      if (ESTADOS_MENTORIA.includes(empresa.estado) && empresa.estado !== "observaciones_pendientes") {
         this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "observaciones_pendientes");
         await this.prisma.empresa.update({ where: { id: empresaId }, data: { estado: "observaciones_pendientes" } });
       }
       await this.notificar(empresa.ownerId, {
         tipo: "comentario_mentor",
         titulo: "Nuevo comentario de tu mentor",
-        mensaje: `Tu mentor dejó un comentario en "${empresa.nombre}".`,
+        mensaje: `Tu mentor dejó retroalimentación en "${empresa.nombre}".`,
         empresaNombre: empresa.nombre,
       });
+    } catch {
+      // best-effort
     }
 
-    return observacion;
+    return { ok: true, enviadas: count };
   }
 
   async actualizarEstado(user: AuthUser, empresaId: string, id: string, estado: EstadoObservacion) {

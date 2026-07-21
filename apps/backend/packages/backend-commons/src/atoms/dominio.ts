@@ -13,7 +13,9 @@ export type EstadoEmpresa =
 
 export type EstadoHipotesis = "pendiente_validacion" | "validada" | "invalidada";
 
-export type EstadoObservacion = "pendiente" | "en_revision" | "atendida" | "cerrada";
+// "borrador": el mentor la dejó pero no ha enviado su retroalimentación todavía —
+// invisible para el emprendedor hasta que el mentor la envíe (ver "enviar" más abajo).
+export type EstadoObservacion = "borrador" | "pendiente" | "en_revision" | "atendida" | "cerrada";
 
 export type GiroEmpresa =
   | "tecnologia"
@@ -47,7 +49,8 @@ export type TipoNotificacion =
   | "cambio_emprendedor"
   | "enviado_evaluacion"
   | "proyecto_publicado"
-  | "proyecto_devuelto";
+  | "proyecto_devuelto"
+  | "proyecto_asignado";
 
 export type TipoReporte = "boleta" | "canvas";
 

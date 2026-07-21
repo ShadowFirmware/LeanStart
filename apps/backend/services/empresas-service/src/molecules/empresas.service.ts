@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { AuthUser, EstadoEmpresa } from "@leanstart/backend-commons";
+import { ConfigService } from "@nestjs/config";
+import { InternalHttpClient, type AuthUser, type EstadoEmpresa } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
 import { EstadoEmpresaService } from "./estado-empresa.service";
 import { puedeVerEmpresa, whereScope } from "./scope";
@@ -27,7 +28,9 @@ const INCLUDE_DETALLE = {
 export class EmpresasService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly estadoService: EstadoEmpresaService
+    private readonly estadoService: EstadoEmpresaService,
+    private readonly http: InternalHttpClient,
+    private readonly config: ConfigService
   ) {}
 
   async listar(user: AuthUser) {
@@ -102,12 +105,26 @@ export class EmpresasService {
   async asignarMentor(user: AuthUser, id: string, mentorId: string) {
     const empresa = await this.obtener(user, id);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "en_mentoria");
-    return this.prisma.empresa.update({ where: { id }, data: { mentorId, estado: "en_mentoria" } });
+    const actualizada = await this.prisma.empresa.update({ where: { id }, data: { mentorId, estado: "en_mentoria" } });
+
+    await this.notificar(mentorId, {
+      tipo: "proyecto_asignado",
+      titulo: "Te asignaron un nuevo proyecto",
+      mensaje: `"${empresa.nombre}" ahora está bajo tu mentoría.`,
+      empresaNombre: empresa.nombre,
+    });
+
+    return actualizada;
   }
 
   async asignarEvaluador(user: AuthUser, id: string, evaluadorId: string) {
     const empresa = await this.obtener(user, id);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "en_evaluacion");
     return this.prisma.empresa.update({ where: { id }, data: { evaluadorId, estado: "en_evaluacion" } });
+  }
+
+  private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string }) {
+    const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
+    await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data }).catch(() => undefined);
   }
 }

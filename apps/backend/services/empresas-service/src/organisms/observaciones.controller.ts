@@ -50,6 +50,13 @@ export class ObservacionesController {
     return this.observaciones.actualizarEstado(user, empresaId, id, dto.estado);
   }
 
+  @Post("enviar")
+  @ApiOperation({ summary: "El mentor envía sus borradores de retroalimentación (los hace visibles al emprendedor)" })
+  @ApiParam({ name: "empresaId" })
+  enviar(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
+    return this.observaciones.enviarRetroalimentacion(user, empresaId);
+  }
+
   @Post("marcar-atendidas")
   @ApiOperation({ summary: "El emprendedor marca que ya corrigió — notifica al mentor" })
   @ApiParam({ name: "empresaId" })

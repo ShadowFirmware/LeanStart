@@ -50,6 +50,7 @@ export function ProductoNewView() {
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const [loading, setLoading] = useState(false);
   const [imagenes, setImagenes] = useState<string[]>([]);
+  const [imagenesError, setImagenesError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -59,6 +60,11 @@ export function ProductoNewView() {
   if (!empresa) return null;
 
   async function onSubmit(values: FormValues) {
+    if (imagenes.length === 0) {
+      setImagenesError("Agrega al menos una imagen del producto.");
+      return;
+    }
+    setImagenesError(null);
     setLoading(true);
     const precio = values.precio ? parseFloat(values.precio) : undefined;
     try {
@@ -144,13 +150,20 @@ export function ProductoNewView() {
 
           {/* Imágenes */}
           <div className="rounded-2xl p-4 md:p-6 flex flex-col gap-3" style={cardStyle}>
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
-              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
-                Imágenes del producto
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
+                  Imágenes del producto
+                </span>
+              </div>
+              <span className="text-xs" style={{ color: "var(--text-faint)" }}>Obligatorio</span>
             </div>
-            <ProductoImagenesField value={imagenes} onChange={setImagenes} />
+            <ProductoImagenesField
+              value={imagenes}
+              onChange={(v) => { setImagenes(v); if (imagenesError && v.length > 0) setImagenesError(null); }}
+            />
+            {imagenesError && <p className="text-xs text-destructive">{imagenesError}</p>}
           </div>
 
           {/* Descripción */}

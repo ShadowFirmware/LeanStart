@@ -15,6 +15,7 @@ import { CriteriosController } from "./criterios.controller";
 import { ViabilidadController } from "./viabilidad.controller";
 import { EvaluacionesController } from "./evaluaciones.controller";
 import { ReportesGeneradosController } from "./reportes-generados.controller";
+import { ReportesEmpresaController } from "./reportes-empresa.controller";
 import { NotificacionesController } from "./notificaciones.controller";
 import { HealthController } from "./health.controller";
 import { ProxyService } from "../molecules/proxy.service";
@@ -48,6 +49,7 @@ const jwtModule = JwtModule.registerAsync({
     ViabilidadController,
     EvaluacionesController,
     ReportesGeneradosController,
+    ReportesEmpresaController,
     NotificacionesController,
     HealthController,
   ],

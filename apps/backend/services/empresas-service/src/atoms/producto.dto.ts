@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsIn, IsNumber, IsOptional, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { ArrayMinSize, IsArray, IsIn, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
 
 const TIPOS = ["producto", "servicio"] as const;
 const MODALIDADES = ["rango", "periodo", "personalizado"] as const;
@@ -28,9 +28,13 @@ export class CreateProductoDto {
   @IsNumber()
   precio?: number;
 
-  @ApiPropertyOptional({ type: [String], description: "Data URLs comprimidas" })
-  @IsOptional()
+  // Solo se exige en la creación (tipo viene siempre en el body ahí); en PATCH
+  // `tipo` normalmente no se manda, así que ValidateIf no dispara y no bloquea
+  // ediciones que no tocan las imágenes.
+  @ApiPropertyOptional({ type: [String], description: "Data URLs comprimidas — obligatorio al crear un producto (no servicio)" })
+  @ValidateIf((o) => o.tipo === "producto")
   @IsArray()
+  @ArrayMinSize(1, { message: "Agrega al menos una imagen del producto." })
   @IsString({ each: true })
   imagenes?: string[];
 
@@ -65,4 +69,8 @@ export class CreateProductoDto {
   precioPersonalizado?: string;
 }
 
-export class UpdateProductoDto extends CreateProductoDto {}
+// PATCH real: todos los campos opcionales. `UpdateProductoDto extends CreateProductoDto`
+// heredaba `nombre`/`tipo`/`descripcion` como REQUERIDOS, así que cualquier edición
+// (que solo manda el subconjunto de campos que cambiaron, nunca `tipo`) era rechazada
+// con 400 por el ValidationPipe — por eso "no se puede actualizar" ni productos ni servicios.
+export class UpdateProductoDto extends PartialType(CreateProductoDto) {}

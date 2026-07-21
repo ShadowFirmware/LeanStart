@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine } from "lucide-react";
+import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useHasHydrated } from "@leanstart/commons";
 import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotificacion } from "../store/notificaciones";
@@ -11,6 +11,7 @@ const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: st
   enviado_evaluacion:  { icon: ClipboardCheck, color: "#F59E0B", bg: "rgba(245,158,11,0.12)",   label: "Enviado a evaluación" },
   proyecto_publicado:  { icon: CheckCircle2,   color: "#10B981", bg: "rgba(16,185,129,0.12)",   label: "Publicado" },
   proyecto_devuelto:   { icon: RotateCcw,      color: "#EF4444", bg: "rgba(239,68,68,0.12)",    label: "Devuelto" },
+  proyecto_asignado:   { icon: UserPlus,       color: "#3B82F6", bg: "rgba(59,130,246,0.12)",   label: "Proyecto asignado" },
 };
 
 interface NotificacionesViewProps {

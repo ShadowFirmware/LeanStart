@@ -40,6 +40,13 @@ export class ObservacionesController {
     return this.proxy.patch(this.baseUrl, `/empresas/${empresaId}/observaciones/${id}/estado`, body, user);
   }
 
+  @Post("enviar")
+  @ApiOperation({ summary: "El mentor envía sus borradores de retroalimentación" })
+  @ApiParam({ name: "empresaId" })
+  enviar(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
+    return this.proxy.post(this.baseUrl, `/empresas/${empresaId}/observaciones/enviar`, {}, user);
+  }
+
   @Post("marcar-atendidas")
   @ApiOperation({ summary: "El emprendedor marca que ya corrigió" })
   @ApiParam({ name: "empresaId" })

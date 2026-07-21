@@ -7,7 +7,8 @@ export type TipoNotificacion =
   | "cambio_emprendedor"
   | "enviado_evaluacion"
   | "proyecto_publicado"
-  | "proyecto_devuelto";
+  | "proyecto_devuelto"
+  | "proyecto_asignado";
 
 /** Rol al que va dirigida la notificación. */
 export type DestinatarioNotificacion = "emprendedor" | "mentor";
@@ -90,6 +91,7 @@ const ROL_POR_TIPO: Record<TipoNotificacion, DestinatarioNotificacion> = {
   proyecto_publicado: "emprendedor",
   proyecto_devuelto: "emprendedor",
   cambio_emprendedor: "mentor",
+  proyecto_asignado: "mentor",
 };
 
 function mapNotificacion(n: Record<string, unknown>): Notificacion {

@@ -25,6 +25,8 @@ export type {
 export { DEFAULT_CANVAS } from "./store/empresas";
 export { useObservacionesStore } from "./store/observaciones";
 export type { Observacion, TipoElementoObservacion } from "./store/observaciones";
+export { useReportesEmpresaStore } from "./store/reportes-empresa";
+export type { ReporteEmpresa } from "./store/reportes-empresa";
 
 // Componentes compartidos
 export { ObservacionesButton } from "./components/observaciones-button";

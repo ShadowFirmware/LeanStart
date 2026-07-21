@@ -4,10 +4,12 @@ import { apiFetch, modoDemo } from "@leanstart/commons";
 import type { EstadoEmpresa, EstadoObservacion } from "@leanstart/commons";
 
 /**
- * Colaboración en vivo (estilo Google Docs): las observaciones son SIEMPRE visibles para
- * cualquiera con acceso al proyecto. El emprendedor ve los comentarios del mentor en tiempo
- * real, sin esperar a que el mentor "envíe" las correcciones; y el mentor ve las respuestas
- * del emprendedor al instante. La sincronización entre pestañas mantiene todo actualizado.
+ * Colaboración en vivo entre mentor y emprendedor, con una excepción: los comentarios
+ * nuevos del MENTOR quedan como "borrador" (invisibles para el emprendedor) hasta que el
+ * mentor llama a `enviarRetroalimentacion` — así puede dejar varios comentarios sueltos
+ * en distintos bloques/productos y mandarlos juntos, en vez de que cada uno aparezca
+ * a medio escribir. Las respuestas del emprendedor (marcar "en revisión"/atendida) sí
+ * siguen siendo instantáneas. La sincronización entre pestañas mantiene todo actualizado.
  */
 export function puedeVerObservaciones(
   _estado: EstadoEmpresa,
@@ -68,6 +70,8 @@ interface ObservacionesStore {
   actualizarEstadoObservacion: (id: string, estado: EstadoObservacion) => Promise<void>;
   eliminarObservacion: (id: string) => Promise<void>;
   cerrarObservacionesDeEmpresa: (empresaId: string) => Promise<void>;
+  /** El mentor envía todos sus borradores de esta empresa: recién ahí se hacen visibles al emprendedor. */
+  enviarRetroalimentacion: (empresaId: string) => Promise<void>;
 }
 
 function mapObservacion(o: Record<string, unknown>): Observacion {
@@ -146,6 +150,16 @@ export const useObservacionesStore = create<ObservacionesStore>()(
           if (empresaId) await apiFetch(`/empresas/${empresaId}/observaciones/${id}`, { method: "DELETE" });
         }
         set({ observaciones: get().observaciones.filter((o) => o.id !== id) });
+      },
+
+      async enviarRetroalimentacion(empresaId) {
+        if (modoDemo()) return;
+        await apiFetch(`/empresas/${empresaId}/observaciones/enviar`, { method: "POST" });
+        set({
+          observaciones: get().observaciones.map((o) =>
+            o.empresaId === empresaId && o.estado === "borrador" ? { ...o, estado: "pendiente" } : o
+          ),
+        });
       },
 
       async cerrarObservacionesDeEmpresa(empresaId) {

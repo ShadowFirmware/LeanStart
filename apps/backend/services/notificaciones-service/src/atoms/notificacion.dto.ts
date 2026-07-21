@@ -7,6 +7,7 @@ const TIPOS = [
   "enviado_evaluacion",
   "proyecto_publicado",
   "proyecto_devuelto",
+  "proyecto_asignado",
 ] as const;
 
 export class CreateNotificacionDto {

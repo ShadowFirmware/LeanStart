@@ -11,7 +11,7 @@ import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
   Plus, AlertCircle, ChevronRight, Trash2, Send, UserCog,
-  CheckCircle2, MessageSquare,
+  CheckCircle2, MessageSquare, Flag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
@@ -35,6 +35,7 @@ import { compressImageToDataUrl, modoDemo } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
+import { useReportesEmpresaStore } from "../store/reportes-empresa";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
   { value: "tecnologia", label: "Tecnología" },
@@ -313,6 +314,8 @@ export function EmpresaDetailView({
   const observaciones = useObservacionesStore((s) => s.observaciones);
   const cerrarObservacionesDeEmpresa = useObservacionesStore((s) => s.cerrarObservacionesDeEmpresa);
   const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
+  const enviarRetroalimentacion = useObservacionesStore((s) => s.enviarRetroalimentacion);
+  const reportarEmpresa = useReportesEmpresaStore((s) => s.reportarEmpresa);
   const empresa = empresas.find((e) => e.id === id);
 
   useEffect(() => {
@@ -324,6 +327,9 @@ export function EmpresaDetailView({
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoLightboxOpen, setLogoLightboxOpen] = useState(false);
   const [asignarTipo, setAsignarTipo] = useState<TipoAsignacion | null>(null);
+  const [reportarOpen, setReportarOpen] = useState(false);
+  const [motivoReporte, setMotivoReporte] = useState("");
+  const [enviandoReporte, setEnviandoReporte] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -358,7 +364,10 @@ export function EmpresaDetailView({
   const hipotesisList = empresa.hipotesisList ?? [];
   const todasHipotesisRevisadas = hipotesisList.length > 0 && hipotesisList.every((h) => h.estado === "validada" || h.estado === "invalidada");
   const observacionesEmpresa = observaciones.filter((o) => o.empresaId === id);
-  const hayObservacionesPendientes = observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "en_revision");
+  // Un borrador sin enviar cuenta como "pendiente" para efectos de bloquear el avance:
+  // no tendría sentido dejar pasar a evaluación con retroalimentación que el emprendedor
+  // nunca llegó a ver.
+  const hayObservacionesPendientes = observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "en_revision" || o.estado === "borrador");
   const listoParaEvaluacion = todasHipotesisRevisadas && !hayObservacionesPendientes;
 
   // El emprendedor solo puede editar/agregar/eliminar mientras el proyecto está en captura
@@ -380,7 +389,7 @@ export function EmpresaDetailView({
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
   const productosTienenPendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "producto" && esPendienteParaMiRol(o));
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
-  const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente");
+  const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "borrador");
 
   async function enviarAEvaluacion() {
     try {
@@ -394,7 +403,10 @@ export function EmpresaDetailView({
 
   async function enviarComentariosEmprendedor() {
     try {
-      await actualizarEmpresa(id, { estado: "observaciones_pendientes" });
+      // Libera los borradores del mentor (recién ahí el emprendedor los ve) y de paso
+      // mueve el estado del proyecto — antes esto solo hacía lo segundo, porque los
+      // comentarios ya eran visibles al instante desde que se creaban.
+      await enviarRetroalimentacion(id);
       toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
     } catch {
       toast.error("No se pudieron enviar los comentarios.");
@@ -407,6 +419,24 @@ export function EmpresaDetailView({
       toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
     } catch {
       toast.error("No se pudo enviar al mentor.");
+    }
+  }
+
+  async function enviarReporte() {
+    if (motivoReporte.trim().length < 10) {
+      toast.error("Describe el motivo con al menos 10 caracteres.");
+      return;
+    }
+    setEnviandoReporte(true);
+    try {
+      await reportarEmpresa(id, autorNombre ?? "Usuario", motivoReporte.trim());
+      toast.success("Reporte enviado. El administrador lo revisará.");
+      setReportarOpen(false);
+      setMotivoReporte("");
+    } catch {
+      toast.error("No se pudo enviar el reporte.");
+    } finally {
+      setEnviandoReporte(false);
     }
   }
 
@@ -481,18 +511,35 @@ export function EmpresaDetailView({
     ? usuarios.filter((u) => u.rol === asignarTipo && u.estado === "activo")
     : [];
 
+  // Cualquiera con acceso pero que no sea el dueño ni el administrador puede reportar
+  // (mentor/evaluador revisando un proyecto ajeno) — el admin ya tiene control directo.
+  const puedeReportar = readOnly && !permitirAsignaciones;
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Back */}
-      <Link
-        href={basePath}
-        className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
-        style={{ color: "var(--text-dim)" }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
-      >
-        <ArrowLeft className="w-4 h-4" /> {backLabel}
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={basePath}
+          className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
+          style={{ color: "var(--text-dim)" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+        >
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
+        </Link>
+        {puedeReportar && (
+          <button
+            type="button"
+            onClick={() => setReportarOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg transition-colors shrink-0"
+            style={{ color: "#EF4444", backgroundColor: "rgba(239,68,68,0.1)" }}
+          >
+            <Flag className="w-3.5 h-3.5" />
+            Reportar empresa
+          </button>
+        )}
+      </div>
 
       {/* ── Información general ── */}
       <div
@@ -992,6 +1039,41 @@ export function EmpresaDetailView({
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={reportarOpen} onOpenChange={(open) => { setReportarOpen(open); if (!open) setMotivoReporte(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reportar empresa</DialogTitle>
+            <DialogDescription>
+              Cuéntale al administrador por qué &quot;{empresa.nombre}&quot; necesita revisión.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={motivoReporte}
+            onChange={(e) => setMotivoReporte(e.target.value)}
+            placeholder="Describe el motivo del reporte (mínimo 10 caracteres)..."
+            rows={4}
+            maxLength={500}
+            className="resize-none text-sm"
+            style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+          />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReportarOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={enviandoReporte || motivoReporte.trim().length < 10}
+              onClick={enviarReporte}
+              className="border-0"
+              style={{ background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#fff" }}
+            >
+              <Flag className="w-3.5 h-3.5" />
+              {enviandoReporte ? "Enviando..." : "Enviar reporte"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

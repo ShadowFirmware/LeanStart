@@ -19,8 +19,10 @@ export type EstadoHipotesis =
   | 'validada'
   | 'invalidada';
 
-// Estados de observación
+// Estados de observación. "borrador": el mentor la dejó pero no ha enviado su
+// retroalimentación todavía — invisible para el emprendedor hasta que la envíe.
 export type EstadoObservacion =
+  | 'borrador'
   | 'pendiente'
   | 'en_revision'
   | 'atendida'

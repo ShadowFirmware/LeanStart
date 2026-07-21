@@ -27,6 +27,7 @@ model Empresa {
   productos   Producto[]
   hipotesis   Hipotesis[]
   observaciones Observacion[]
+  reportes    ReporteEmpresa[]
 
   @@map("empresas")
 }
@@ -89,6 +90,20 @@ model Hipotesis {
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@map("hipotesis")
+}
+
+model ReporteEmpresa {
+  id          String   @id @default(uuid())
+  empresaId   String
+  autorId     String
+  autorNombre String
+  motivo      String
+  estado      String   @default("pendiente")
+  createdAt   DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("reportes_empresa")
 }
 
 model Observacion {
