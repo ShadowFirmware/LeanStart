@@ -1,4 +1,4 @@
-import { getSession, signOut } from "next-auth/react";
+import { getSession } from "next-auth/react";
 
 /**
  * Interruptor de modo demo (mismo flag que `DEMO_MODE` en `./demo.ts`, expuesto
@@ -36,16 +36,6 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   if (!res.ok) {
     const body: ApiError = await res.json().catch(() => ({}));
     const mensaje = Array.isArray(body.message) ? body.message.join(", ") : body.message;
-
-    // 401 = JwtAuthGuard rechazó el token (revocado, o su presencia por heartbeat
-    // expiró porque se cerraron todas las pestañas). NextAuth no se entera solo:
-    // su sesión de cliente decodifica el JWT localmente y lo sigue viendo "válido"
-    // hasta su expiración de 30 días. Sin esto, la UI seguiría mostrándose como
-    // logueada (aunque cada llamada real falle en silencio) hasta recargar.
-    if (res.status === 401 && !modoDemo()) {
-      void signOut({ callbackUrl: "/login" });
-    }
-
     throw new Error(mensaje ?? `Error ${res.status} al llamar a ${path}`);
   }
 
