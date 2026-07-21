@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InternalHttpClient, type AuthUser, type EstadoEmpresa, type EstadoObservacion } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
@@ -10,6 +10,8 @@ const ESTADOS_MENTORIA = ["en_mentoria", "observaciones_pendientes", "observacio
 
 @Injectable()
 export class ObservacionesService {
+  private readonly logger = new Logger(ObservacionesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly empresas: EmpresasService,
@@ -143,6 +145,8 @@ export class ObservacionesService {
 
   private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string }) {
     const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
-    await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data }).catch(() => undefined);
+    await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data }).catch((err) => {
+      this.logger.warn(`No se pudo notificar a ${destinatarioUserId} (tipo=${data.tipo}): ${err instanceof Error ? err.message : err}`);
+    });
   }
 }
