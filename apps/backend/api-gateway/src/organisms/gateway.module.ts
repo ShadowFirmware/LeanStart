@@ -20,7 +20,6 @@ import { HealthController } from "./health.controller";
 import { ProxyService } from "../molecules/proxy.service";
 import { LoginRateLimitGuard } from "../molecules/login-rate-limit.guard";
 import { TokenRevocationService } from "../molecules/token-revocation.service";
-import { SessionPresenceService } from "../molecules/session-presence.service";
 
 const jwtModule = JwtModule.registerAsync({
   imports: [ConfigModule],
@@ -32,10 +31,9 @@ const jwtModule = JwtModule.registerAsync({
 
 @Module({
   imports: [jwtModule],
-  // Exportamos JwtModule, TokenRevocationService y SessionPresenceService para que
-  // JwtAuthGuard (registrado como APP_GUARD en AppModule, fuera de este módulo)
-  // pueda resolver sus dependencias.
-  exports: [jwtModule, TokenRevocationService, SessionPresenceService],
+  // Exportamos JwtModule y TokenRevocationService para que JwtAuthGuard (registrado
+  // como APP_GUARD en AppModule, fuera de este módulo) pueda resolver sus dependencias.
+  exports: [jwtModule, TokenRevocationService],
   controllers: [
     AuthController,
     UsuariosController,
@@ -53,6 +51,6 @@ const jwtModule = JwtModule.registerAsync({
     NotificacionesController,
     HealthController,
   ],
-  providers: [ProxyService, InternalHttpClient, LoginRateLimitGuard, TokenRevocationService, SessionPresenceService],
+  providers: [ProxyService, InternalHttpClient, LoginRateLimitGuard, TokenRevocationService],
 })
 export class GatewayModule {}
