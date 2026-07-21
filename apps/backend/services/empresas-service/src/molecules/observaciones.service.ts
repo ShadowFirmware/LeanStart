@@ -143,10 +143,17 @@ export class ObservacionesService {
     }
   }
 
+  // Todo el cuerpo va en el try (no solo la llamada HTTP): un error leyendo la config
+  // (p. ej. NOTIFICACIONES_SERVICE_URL sin definir) es síncrono y ocurre ANTES del
+  // await, así que un .catch() encadenado solo a la promesa no lo alcanza a cubrir.
+  // Notificar es best-effort en todos los call sites — nunca debe tumbar la operación
+  // principal (guardar la observación, cambiar el estado, etc.).
   private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string }) {
-    const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
-    await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data }).catch((err) => {
+    try {
+      const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
+      await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data });
+    } catch (err) {
       this.logger.warn(`No se pudo notificar a ${destinatarioUserId} (tipo=${data.tipo}): ${err instanceof Error ? err.message : err}`);
-    });
+    }
   }
 }
