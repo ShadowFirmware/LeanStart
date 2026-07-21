@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
-import { modoDemo, useUsuariosStore, usePerfilStore } from "@leanstart/commons";
+import { modoDemo, useUsuariosStore, usePerfilStore, useCargaInicialStore } from "@leanstart/commons";
 import {
   useCriteriosStore, useEvaluacionesStore, usePrivilegiosStore,
   useReportesGeneradosStore, useViabilidadStore,
@@ -45,23 +45,30 @@ export function LiveSync() {
     STORES.forEach(({ store }) => void store.persist?.rehydrate());
   }, []);
 
-  // Backend real: carga inicial desde la API una vez que hay sesión.
-  // (silencioso a propósito: la UI ya maneja el estado vacío / 403 si el rol no aplica.)
+  // Backend real: carga inicial desde la API una vez que hay sesión. Cada tarea
+  // reporta su avance a useCargaInicialStore para que InitialLoadOverlay muestre
+  // un checklist con el progreso real (no una animación decorativa).
   useEffect(() => {
     if (modoDemo() || status !== "authenticated") return;
+    const { iniciar, marcarCompletada, finalizar } = useCargaInicialStore.getState();
 
-    useEmpresasStore.getState().cargarEmpresas().catch(() => {});
-    useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
-    if (userId) usePerfilStore.getState().cargarPerfil(userId).catch(() => {});
-
+    const tareas: Promise<unknown>[] = [
+      useEmpresasStore.getState().cargarEmpresas(),
+      useNotificacionesStore.getState().cargarNotificaciones(),
+    ];
+    if (userId) tareas.push(usePerfilStore.getState().cargarPerfil(userId));
     if (rol === "administrador") {
-      useUsuariosStore.getState().cargarUsuarios().catch(() => {});
+      tareas.push(useUsuariosStore.getState().cargarUsuarios());
     }
     if (rol === "administrador" || rol === "evaluador") {
-      useCriteriosStore.getState().cargarCriterios().catch(() => {});
-      useViabilidadStore.getState().cargarViabilidad().catch(() => {});
-      useReportesGeneradosStore.getState().cargarReportesGenerados().catch(() => {});
+      tareas.push(useCriteriosStore.getState().cargarCriterios());
+      tareas.push(useViabilidadStore.getState().cargarViabilidad());
+      tareas.push(useReportesGeneradosStore.getState().cargarReportesGenerados());
     }
+
+    iniciar(tareas.length);
+    const conTracking = tareas.map((p) => p.catch(() => {}).finally(marcarCompletada));
+    Promise.allSettled(conTracking).then(finalizar);
   }, [status, rol, userId]);
 
   // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
