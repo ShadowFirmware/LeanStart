@@ -4,6 +4,7 @@ import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import { IS_PUBLIC_KEY, type AuthUser } from "@leanstart/backend-commons";
 import { TokenRevocationService } from "./token-revocation.service";
+import { SessionPresenceService } from "./session-presence.service";
 
 /**
  * Único guard que valida el JWT en todo el sistema. Tras validarlo, adjunta
@@ -16,7 +17,8 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
-    private readonly revocation: TokenRevocationService
+    private readonly revocation: TokenRevocationService,
+    private readonly presence: SessionPresenceService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,6 +43,12 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (payload.jti && (await this.revocation.estaRevocado(payload.jti))) {
+      throw new UnauthorizedException("La sesión fue cerrada. Inicia sesión de nuevo.");
+    }
+
+    // Ninguna pestaña mandó un heartbeat en los últimos TTL_SEGUNDOS: se asume
+    // que se cerraron todas (navegador cerrado por completo), no solo recargó.
+    if (payload.jti && !(await this.presence.estaPresente(payload.jti))) {
       throw new UnauthorizedException("La sesión fue cerrada. Inicia sesión de nuevo.");
     }
 

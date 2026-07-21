@@ -7,6 +7,7 @@ import { CurrentUser, Public, type AuthUser } from "@leanstart/backend-commons";
 import { ProxyService } from "../molecules/proxy.service";
 import { LoginRateLimitGuard } from "../molecules/login-rate-limit.guard";
 import { TokenRevocationService } from "../molecules/token-revocation.service";
+import { SessionPresenceService } from "../molecules/session-presence.service";
 import { LoginDto, RecuperarDto, RegisterDto } from "../atoms/auth.dto";
 
 @ApiTags("auth")
@@ -18,6 +19,7 @@ export class AuthController {
     private readonly proxy: ProxyService,
     private readonly jwt: JwtService,
     private readonly revocation: TokenRevocationService,
+    private readonly presence: SessionPresenceService,
     config: ConfigService
   ) {
     this.baseUrl = config.getOrThrow<string>("AUTH_SERVICE_URL");
@@ -34,8 +36,17 @@ export class AuthController {
   @UseGuards(LoginRateLimitGuard)
   @Post("login")
   @ApiOperation({ summary: "Login — shape consumido por el Credentials provider de NextAuth" })
-  login(@Body() dto: LoginDto) {
-    return this.proxy.post(this.baseUrl, "/auth/login", dto);
+  async login(@Body() dto: LoginDto) {
+    const respuesta = await this.proxy.post<{ accessToken: string }>(this.baseUrl, "/auth/login", dto);
+
+    // Sesión "presente" desde ya: el cliente recién arranca su heartbeat al
+    // recibir esto, así que sin esto la primera petición autenticada (o el
+    // primer heartbeat) llegaría con la presencia todavía sin sembrar.
+    const payload = this.jwt.decode(respuesta.accessToken) as { jti?: string } | null;
+    if (payload?.jti) {
+      await this.presence.marcarPresente(payload.jti);
+    }
+    return respuesta;
   }
 
   @Public()
@@ -55,6 +66,20 @@ export class AuthController {
   @ApiOperation({ summary: "Actualizar perfil propio" })
   updateMe(@CurrentUser() user: AuthUser, @Body() body: Record<string, unknown>) {
     return this.proxy.patch(this.baseUrl, "/auth/me", body, user);
+  }
+
+  @Post("heartbeat")
+  @ApiOperation({ summary: "Marca la sesión como activa (el cliente lo llama cada pocos segundos)" })
+  async heartbeat(@Req() req: Request) {
+    const authHeader = req.header("authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+    if (!token) return { ok: true };
+
+    const payload = this.jwt.decode(token) as { jti?: string } | null;
+    if (payload?.jti) {
+      await this.presence.marcarPresente(payload.jti);
+    }
+    return { ok: true };
   }
 
   @Post("logout")
