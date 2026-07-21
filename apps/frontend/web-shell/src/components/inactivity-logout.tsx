@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { cerrarSesionBackend, modoDemo } from "@leanstart/commons";
 
 const LIMITE_INACTIVIDAD_MS = 5 * 60 * 1000;
+// Le da tiempo al toast a pintarse y ser visible antes de que signOut() recargue
+// la página por completo — sin esto, el aviso nunca alcanza a mostrarse.
+const ESPERA_ANTES_DE_REDIRIGIR_MS = 2000;
 const EVENTOS_ACTIVIDAD = ["mousemove", "keydown", "click", "scroll", "touchstart"] as const;
 
 /**
@@ -23,7 +26,8 @@ export function InactivityLogout() {
 
     function cerrarPorInactividad() {
       toast.info("Tu sesión se cerró por inactividad.");
-      cerrarSesionBackend().finally(() => signOut({ callbackUrl: "/login" }));
+      cerrarSesionBackend().catch(() => {});
+      setTimeout(() => signOut({ callbackUrl: "/login" }), ESPERA_ANTES_DE_REDIRIGIR_MS);
     }
 
     function reiniciarTemporizador() {
