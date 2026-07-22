@@ -323,6 +323,25 @@ export function UsuariosView() {
                 )}
               />
 
+                            <FormField
+                control={form.control}
+                name="password"
+                render={({ field }: { field: ControllerRenderProps<FormValues, "password"> }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={editTarget ? "Dejar en blanco para no cambiarla" : "Mínimo 8 caracteres"}
+                        style={inputStyle}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormItem>
                 <FormLabel>Rol</FormLabel>
                 <Controller
@@ -350,24 +369,7 @@ export function UsuariosView() {
                 )}
               </FormItem>
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }: { field: ControllerRenderProps<FormValues, "password"> }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder={editTarget ? "Dejar en blanco para no cambiarla" : "Mínimo 8 caracteres"}
-                        style={inputStyle}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
