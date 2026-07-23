@@ -285,11 +285,13 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
 }
 
 /* ─── Resultado ya emitido (solo lectura) ─── */
-function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: {
+export interface ResultadoEvaluacionProps {
   calculo: ReporteCalculo;
   niveles: NivelViabilidad[];
   comentarioGeneral: string;
-}) {
+}
+
+export function ResultadoEvaluacion({ calculo, niveles, comentarioGeneral }: ResultadoEvaluacionProps) {
   return (
     <div className="flex flex-col gap-5">
       {calculo.criterios.length > 0 && (
