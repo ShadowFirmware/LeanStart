@@ -138,6 +138,7 @@ export class EmpresasService {
       titulo: "Te asignaron un nuevo proyecto",
       mensaje: `"${empresa.nombre}" ahora está bajo tu mentoría.`,
       empresaNombre: empresa.nombre,
+      empresaId: id,
     });
 
     return actualizada;
@@ -146,7 +147,17 @@ export class EmpresasService {
   async asignarEvaluador(user: AuthUser, id: string, evaluadorId: string) {
     const empresa = await this.obtener(user, id);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "en_evaluacion");
-    return this.prisma.empresa.update({ where: { id }, data: { evaluadorId, estado: "en_evaluacion" } });
+    const actualizada = await this.prisma.empresa.update({ where: { id }, data: { evaluadorId, estado: "en_evaluacion" } });
+
+    await this.notificar(empresa.ownerId, {
+      tipo: "enviado_evaluacion",
+      titulo: "Tu proyecto fue enviado a evaluación",
+      mensaje: `"${empresa.nombre}" ya está en manos del equipo evaluador.`,
+      empresaNombre: empresa.nombre,
+      empresaId: id,
+    });
+
+    return actualizada;
   }
 
   // Todo el cuerpo va en el try (no solo la llamada HTTP): un error leyendo la config
@@ -154,7 +165,7 @@ export class EmpresasService {
   // await, así que un .catch() encadenado solo a la promesa no lo alcanza a cubrir.
   // Notificar es best-effort en todos los call sites — nunca debe tumbar la operación
   // principal (asignar mentor, cambiar estado, etc.).
-  private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string }) {
+  private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string; empresaId?: string }) {
     try {
       const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
       await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data });

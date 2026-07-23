@@ -135,12 +135,14 @@ export function ObservacionesButton({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>{o.autorNombre}</span>
-                    <span
-                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                      style={{ color: cfg.color, backgroundColor: cfg.bg }}
-                    >
-                      {cfg.label}
-                    </span>
+                    {estadoMostrado !== "borrador" && (
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
+                        style={{ color: cfg.color, backgroundColor: cfg.bg }}
+                      >
+                        {cfg.label}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm leading-relaxed break-words" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>
                     {o.comentario}

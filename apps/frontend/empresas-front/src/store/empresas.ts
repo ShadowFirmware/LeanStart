@@ -250,6 +250,14 @@ interface EmpresasStore {
   eliminarHipotesis: (empresaId: string, hipotesisId: string) => Promise<void>;
   asignarMentor: (empresaId: string, mentorId: string) => Promise<void>;
   asignarEvaluador: (empresaId: string, evaluadorId: string) => Promise<void>;
+  /**
+   * Aplica campos en memoria SIN llamar a la API — para cuando otro store/servicio
+   * (observaciones, evaluaciones) ya hizo el cambio real en el backend y solo falta
+   * que este store se entere, sin un round-trip extra. Sin esto, el estado/score/nivel
+   * se quedan viejos en memoria hasta recargar (ej. al enviar retroalimentación, al
+   * marcar observaciones atendidas, al finalizar una evaluación).
+   */
+  sincronizarLocal: (empresaId: string, data: Partial<Empresa>) => void;
 }
 
 export const useEmpresasStore = create<EmpresasStore>()(
@@ -636,6 +644,12 @@ export const useEmpresasStore = create<EmpresasStore>()(
               ? { ...e, evaluadorId, estado: "en_evaluacion", updatedAt: "Justo ahora" }
               : e
           ),
+        });
+      },
+
+      sincronizarLocal(empresaId, data) {
+        set({
+          empresas: get().empresas.map((e) => (e.id === empresaId ? { ...e, ...data } : e)),
         });
       },
     }),

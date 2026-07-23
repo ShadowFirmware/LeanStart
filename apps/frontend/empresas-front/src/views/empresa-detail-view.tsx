@@ -310,11 +310,13 @@ export function EmpresaDetailView({
   const { empresas, actualizarEmpresa } = useEmpresasStore();
   const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
   const asignarEvaluador = useEmpresasStore((s) => s.asignarEvaluador);
+  const sincronizarLocal = useEmpresasStore((s) => s.sincronizarLocal);
   const usuarios = useUsuariosStore((s) => s.usuarios);
   const observaciones = useObservacionesStore((s) => s.observaciones);
   const cerrarObservacionesDeEmpresa = useObservacionesStore((s) => s.cerrarObservacionesDeEmpresa);
   const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
   const enviarRetroalimentacion = useObservacionesStore((s) => s.enviarRetroalimentacion);
+  const marcarTodasAtendidas = useObservacionesStore((s) => s.marcarTodasAtendidas);
   const reportarEmpresa = useReportesEmpresaStore((s) => s.reportarEmpresa);
   const empresa = empresas.find((e) => e.id === id);
 
@@ -406,7 +408,12 @@ export function EmpresaDetailView({
       // Libera los borradores del mentor (recién ahí el emprendedor los ve) y de paso
       // mueve el estado del proyecto — antes esto solo hacía lo segundo, porque los
       // comentarios ya eran visibles al instante desde que se creaban.
-      await enviarRetroalimentacion(id);
+      const estado = await enviarRetroalimentacion(id);
+      // Sin esto, el store de empresas se queda con el estado viejo en memoria (el cambio
+      // real lo hizo el backend dentro de "enviar", no una llamada a actualizarEmpresa) y
+      // el botón "Enviar comentarios" sigue visible/clickeable hasta recargar — pudiendo
+      // mandarlo dos veces.
+      if (estado) sincronizarLocal(id, { estado });
       toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
     } catch {
       toast.error("No se pudieron enviar los comentarios.");
@@ -415,7 +422,12 @@ export function EmpresaDetailView({
 
   async function enviarNuevamenteAlMentor() {
     try {
-      await actualizarEmpresa(id, { estado: "observaciones_atendidas" });
+      // OJO: antes esto llamaba a actualizarEmpresa(id, {estado}) — pero UpdateEmpresaDto
+      // no tiene campo "estado", así que el ValidationPipe lo descartaba en silencio y el
+      // proyecto nunca avanzaba de estado por esta vía. marcarTodasAtendidas() sí lo hace
+      // (y de paso marca las observaciones y notifica al mentor una sola vez).
+      const estado = await marcarTodasAtendidas(id);
+      if (estado) sincronizarLocal(id, { estado });
       toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
     } catch {
       toast.error("No se pudo enviar al mentor.");

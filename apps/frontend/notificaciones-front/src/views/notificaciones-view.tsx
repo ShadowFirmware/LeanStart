@@ -22,7 +22,6 @@ interface NotificacionesViewProps {
 export function NotificacionesView({ destinatario = "emprendedor" }: NotificacionesViewProps = {}) {
   const hydrated = useHasHydrated();
   const todas = useNotificacionesStore((s) => s.notificaciones);
-  const marcarLeida = useNotificacionesStore((s) => s.marcarLeida);
   const marcarTodasLeidasStore = useNotificacionesStore((s) => s.marcarTodasLeidas);
 
   const notificaciones = todas.filter((n) => (n.destinatario ?? "emprendedor") === destinatario);
@@ -101,21 +100,12 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
             const cfg = TIPO_CONFIG[n.tipo];
             const Icon = cfg.icon;
             return (
-              <button
+              <div
                 key={n.id}
-                onClick={() => {
-                  if (!n.leida) marcarLeida(n.id).catch(() => toast.error("No se pudo marcar como leída."));
-                }}
                 className="flex items-start gap-4 rounded-xl px-5 py-4 text-left w-full transition-colors"
                 style={{
                   backgroundColor: n.leida ? "var(--surface-profile)" : "var(--brand-tint)",
                   border: `1px solid ${n.leida ? "var(--border-subtle)" : "rgba(154,98,250,0.18)"}`,
-                }}
-                onMouseEnter={(e) => {
-                  if (!n.leida) (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!n.leida) (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.18)";
                 }}
               >
                 {/* Ícono + punto de no leída */}
@@ -161,14 +151,9 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
                       </div>
                     )}
                     <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>{n.creadaEn}</span>
-                    {!n.leida && (
-                      <span className="text-[11px] ml-auto" style={{ color: "var(--brand)" }}>
-                        Clic para marcar como leída
-                      </span>
-                    )}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

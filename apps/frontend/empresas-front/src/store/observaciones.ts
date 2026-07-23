@@ -78,8 +78,20 @@ interface ObservacionesStore {
   actualizarEstadoObservacion: (id: string, estado: EstadoObservacion) => Promise<void>;
   eliminarObservacion: (id: string) => Promise<void>;
   cerrarObservacionesDeEmpresa: (empresaId: string) => Promise<void>;
-  /** El mentor envía todos sus borradores de esta empresa: recién ahí se hacen visibles al emprendedor. */
-  enviarRetroalimentacion: (empresaId: string) => Promise<void>;
+  /**
+   * El mentor envía todos sus borradores de esta empresa: recién ahí se hacen visibles
+   * al emprendedor. Devuelve el estado real de la empresa después del envío (puede
+   * haber cambiado a "observaciones_pendientes") para que quien lo llama pueda
+   * sincronizar el store de empresas — si no, el botón "Enviar comentarios" se queda
+   * visible con el estado viejo en memoria y se puede volver a apretar (envío doble).
+   */
+  enviarRetroalimentacion: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
+  /**
+   * El emprendedor confirma que ya corrigió: marca todas sus observaciones abiertas
+   * como "atendida", avanza el estado del proyecto y notifica al mentor UNA vez.
+   * Devuelve el nuevo estado para que quien lo llama sincronice el store de empresas.
+   */
+  marcarTodasAtendidas: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
 }
 
 function mapObservacion(o: Record<string, unknown>): Observacion {
@@ -161,13 +173,36 @@ export const useObservacionesStore = create<ObservacionesStore>()(
       },
 
       async enviarRetroalimentacion(empresaId) {
-        if (modoDemo()) return;
-        await apiFetch(`/empresas/${empresaId}/observaciones/enviar`, { method: "POST" });
+        if (modoDemo()) return undefined;
+        const resultado = await apiFetch<{ estado: EstadoEmpresa }>(`/empresas/${empresaId}/observaciones/enviar`, { method: "POST" });
         set({
           observaciones: get().observaciones.map((o) =>
             o.empresaId === empresaId && o.estado === "borrador" ? { ...o, estado: "pendiente" } : o
           ),
         });
+        return resultado.estado;
+      },
+
+      async marcarTodasAtendidas(empresaId) {
+        if (!modoDemo()) {
+          const resultado = await apiFetch<{ estado: EstadoEmpresa }>(
+            `/empresas/${empresaId}/observaciones/marcar-atendidas`,
+            { method: "POST" }
+          );
+          set({
+            observaciones: get().observaciones.map((o) =>
+              o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "atendida" } : o
+            ),
+          });
+          return resultado.estado;
+        }
+
+        set({
+          observaciones: get().observaciones.map((o) =>
+            o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "atendida" } : o
+          ),
+        });
+        return "observaciones_atendidas";
       },
 
       async cerrarObservacionesDeEmpresa(empresaId) {

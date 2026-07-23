@@ -55,7 +55,10 @@ export class ObservacionesService {
       where: { empresaId, autorId: user.id, estado: "borrador" },
       data: { estado: "pendiente" },
     });
-    if (count === 0) return { ok: true, enviadas: 0 };
+    if (count === 0) return { ok: true, enviadas: 0, estado: empresa.estado };
+
+    // El estado real que queda (puede ser el mismo si la transición no aplicaba).
+    let estadoFinal = empresa.estado;
 
     // Efecto secundario best-effort: la retroalimentación ya quedó visible arriba,
     // que falle mover el estado o notificar no debe reportarse como error al mentor.
@@ -63,18 +66,20 @@ export class ObservacionesService {
       if (ESTADOS_MENTORIA.includes(empresa.estado) && empresa.estado !== "observaciones_pendientes") {
         this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "observaciones_pendientes");
         await this.prisma.empresa.update({ where: { id: empresaId }, data: { estado: "observaciones_pendientes" } });
+        estadoFinal = "observaciones_pendientes";
       }
       await this.notificar(empresa.ownerId, {
         tipo: "comentario_mentor",
         titulo: "Nuevo comentario de tu mentor",
         mensaje: `Tu mentor dejó retroalimentación en "${empresa.nombre}".`,
         empresaNombre: empresa.nombre,
+        empresaId,
       });
     } catch {
       // best-effort
     }
 
-    return { ok: true, enviadas: count };
+    return { ok: true, enviadas: count, estado: estadoFinal };
   }
 
   async actualizarEstado(user: AuthUser, empresaId: string, id: string, estado: EstadoObservacion) {
@@ -84,12 +89,15 @@ export class ObservacionesService {
 
     // El emprendedor marcando "en revisión" avisa al mentor que ya hay cambios que revisar
     // (espejo de la notificación que `crear` ya dispara en la dirección mentor→emprendedor).
+    // empresaId habilita la deduplicación en notificaciones-service: si el emprendedor
+    // marca varias observaciones seguidas, el mentor recibe UN aviso, no uno por cada una.
     if (estado === "en_revision" && empresa.mentorId) {
       await this.notificar(empresa.mentorId, {
         tipo: "cambio_emprendedor",
         titulo: "El emprendedor atendió un comentario",
         mensaje: `Hay cambios pendientes de revisar en "${empresa.nombre}".`,
         empresaNombre: empresa.nombre,
+        empresaId,
       });
     }
 
@@ -115,9 +123,10 @@ export class ObservacionesService {
         titulo: "El emprendedor atendió tus observaciones",
         mensaje: `"${empresa.nombre}" fue actualizado en respuesta a tus comentarios.`,
         empresaNombre: empresa.nombre,
+        empresaId,
       });
     }
-    return { ok: true };
+    return { ok: true, estado: "observaciones_atendidas" as const };
   }
 
   async cerrarDeEmpresa(user: AuthUser, empresaId: string) {
@@ -148,7 +157,7 @@ export class ObservacionesService {
   // await, así que un .catch() encadenado solo a la promesa no lo alcanza a cubrir.
   // Notificar es best-effort en todos los call sites — nunca debe tumbar la operación
   // principal (guardar la observación, cambiar el estado, etc.).
-  private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string }) {
+  private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string; empresaId?: string }) {
     try {
       const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");
       await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data });

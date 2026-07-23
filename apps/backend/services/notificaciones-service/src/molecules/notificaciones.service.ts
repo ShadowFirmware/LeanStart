@@ -13,7 +13,24 @@ export class NotificacionesService {
     });
   }
 
+  /**
+   * Si ya hay una notificación sin leer del mismo tipo+empresa+destinatario, no crea
+   * otra — evita el spam de "el emprendedor atendió un comentario" repetida una vez
+   * por cada observación que marque, cuando en realidad es un solo aviso: "hay
+   * cambios pendientes de revisar en esta empresa".
+   */
   async crear(dto: CreateNotificacionDto) {
+    if (dto.empresaId) {
+      const existente = await this.prisma.notificacion.findFirst({
+        where: {
+          destinatarioUserId: dto.destinatarioUserId,
+          empresaId: dto.empresaId,
+          tipo: dto.tipo,
+          leida: false,
+        },
+      });
+      if (existente) return existente;
+    }
     return this.prisma.notificacion.create({ data: dto });
   }
 

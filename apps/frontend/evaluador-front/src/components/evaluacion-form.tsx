@@ -31,6 +31,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   const router = useRouter();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === empresaId));
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
+  const sincronizarLocal = useEmpresasStore((s) => s.sincronizarLocal);
 
   const criterios = useCriteriosStore((s) => s.criterios);
   const niveles = useViabilidadStore((s) => s.niveles);
@@ -105,8 +106,18 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
         );
       } else {
         // El backend calcula el score con los criterios/niveles reales del servidor,
-        // transiciona la empresa y ya notifica al emprendedor — no hace falta repetir nada aquí.
+        // transiciona la empresa y ya notifica al emprendedor — no hace falta repetir nada
+        // aquí, PERO el store de empresas en memoria no se entera solo (la transición pasó
+        // en empresas-service, llamado internamente por evaluaciones-service, nunca por una
+        // llamada directa de este store) — sin esto se queda con el estado/score viejos
+        // hasta recargar la lista.
         const resultado = await finalizarReal(empresaId);
+        sincronizarLocal(empresaId, {
+          estado: resultado.accionResultante,
+          scoreFinal: resultado.scoreFinal,
+          nivelNombre: resultado.nivel?.nombre,
+          nivelColor: resultado.nivel?.color,
+        });
         toast.success(
           resultado.accionResultante === "publicado"
             ? `"${empresa.nombre}" fue evaluada y publicada (score ${resultado.scoreFinal}%).`

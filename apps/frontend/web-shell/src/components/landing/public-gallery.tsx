@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, BadgeCheck, Award } from "lucide-react";
-import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
-import { useHasHydrated } from "@leanstart/commons";
+import { useEmpresasStore } from "@leanstart/empresas-front";
+import { useHasHydrated, apiFetch, modoDemo } from "@leanstart/commons";
 import type { GiroEmpresa } from "@leanstart/commons";
 
 const GIRO_LABELS: Record<GiroEmpresa, string> = {
@@ -19,8 +19,30 @@ const GIRO_LABELS: Record<GiroEmpresa, string> = {
 
 const AUTOPLAY_MS = 4200;
 
+/** Esta es una vitrina PÚBLICA: todos los visitantes deben ver las mismas empresas
+ *  publicadas, sin importar quién (o si alguien) tenga sesión iniciada. */
+interface EmpresaPublica {
+  id: string;
+  nombre: string;
+  giro: GiroEmpresa;
+  descripcion: string;
+  scoreFinal?: number;
+  logoUrl?: string;
+}
+
+function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
+  return {
+    id: e.id as string,
+    nombre: e.nombre as string,
+    giro: e.giro as GiroEmpresa,
+    descripcion: e.descripcion as string,
+    scoreFinal: (e.scoreFinal as number) ?? undefined,
+    logoUrl: (e.logoUrl as string) ?? undefined,
+  };
+}
+
 /** Logo de la empresa (o inicial) para la vitrina pública. */
-function EmpresaLogo({ empresa }: { empresa: Empresa }) {
+function EmpresaLogo({ empresa }: { empresa: EmpresaPublica }) {
   if (empresa.logoUrl) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
@@ -52,9 +74,25 @@ function EmpresaLogo({ empresa }: { empresa: Empresa }) {
 
 export function PublicGallery() {
   const hydrated = useHasHydrated();
-  const empresasRaw = useEmpresasStore((s) => s.empresas);
-  const empresas = hydrated ? empresasRaw : [];
-  const publicadas = empresas.filter((e) => e.estado === "publicado");
+  // Modo demo: no hay backend real, se usa el store local (seed compartido, no
+  // escopeado por sesión real, así que no arrastra el problema de abajo).
+  const empresasDemo = useEmpresasStore((s) => s.empresas);
+  // Modo real: SIEMPRE desde el endpoint público (sin auth, sin scoping por usuario)
+  // — nunca desde useEmpresasStore, que es privado y queda persistido en localStorage
+  // con los datos de quien estuvo logueado por última vez (por eso, al cerrar sesión
+  // como emprendedor, esta vitrina mostraba solo SUS empresas en vez de todas).
+  const [publicasReal, setPublicasReal] = useState<EmpresaPublica[]>([]);
+
+  useEffect(() => {
+    if (modoDemo()) return;
+    apiFetch<Record<string, unknown>[]>("/public/empresas")
+      .then((filas) => setPublicasReal(filas.map(mapEmpresaPublica)))
+      .catch(() => setPublicasReal([]));
+  }, []);
+
+  const publicadas: EmpresaPublica[] = modoDemo()
+    ? (hydrated ? empresasDemo : []).filter((e) => e.estado === "publicado")
+    : publicasReal;
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -77,7 +115,8 @@ export function PublicGallery() {
     return () => clearInterval(id);
   }, [emblaApi, paused, publicadas.length]);
 
-  if (!hydrated || publicadas.length === 0) return null;
+  // La hidratación del store solo aplica al modo demo; el modo real no depende de ella.
+  if ((modoDemo() && !hydrated) || publicadas.length === 0) return null;
 
   return (
     <section className="relative w-full py-24 overflow-hidden">

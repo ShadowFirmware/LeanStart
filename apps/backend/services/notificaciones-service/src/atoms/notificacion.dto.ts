@@ -31,4 +31,9 @@ export class CreateNotificacionDto {
   @IsOptional()
   @IsString()
   empresaNombre?: string;
+
+  @ApiProperty({ required: false, description: "Para deduplicar: evita crear otra si ya hay una sin leer del mismo tipo+empresa+destinatario" })
+  @IsOptional()
+  @IsString()
+  empresaId?: string;
 }
