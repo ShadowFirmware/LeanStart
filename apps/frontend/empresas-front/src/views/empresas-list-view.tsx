@@ -451,7 +451,7 @@ export function EmpresasListView({
                         {GIRO_LABELS[empresa.giro]}
                       </span>
                       {typeof empresa.scoreFinal === "number" && (
-                        <>
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                           <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
                             {empresa.scoreFinal} calif.
                           </span>
@@ -463,7 +463,7 @@ export function EmpresasListView({
                               {nivel.nombre}
                             </span>
                           )}
-                        </>
+                        </span>
                       )}
                     </div>
                   </div>
