@@ -92,7 +92,7 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
     if (!empresa) return;
     try {
       if (modoDemo()) {
-        await actualizarEmpresa(empresaId, { estado: accionResultante });
+        await actualizarEmpresa(empresaId, { estado: accionResultante, scoreFinal: calculo.scoreFinal });
         toast.success(
           accionResultante === "publicado"
             ? `"${empresa.nombre}" fue evaluada y publicada.`

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, BadgeCheck, Award } from "lucide-react";
 import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
 import { useHasHydrated } from "@leanstart/commons";
 import type { GiroEmpresa } from "@leanstart/commons";
@@ -135,12 +135,23 @@ export function PublicGallery() {
                     <EmpresaLogo empresa={empresa} />
                     <div>
                       <p className="text-2xl md:text-3xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
-                      <span
-                        className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full mt-3"
-                        style={{ backgroundColor: "var(--brand-tint)", color: "#C9A8FE" }}
-                      >
-                        {GIRO_LABELS[empresa.giro]}
-                      </span>
+                      <div className="flex items-center justify-center gap-2 flex-wrap mt-3">
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: "var(--brand-tint)", color: "#C9A8FE" }}
+                        >
+                          {GIRO_LABELS[empresa.giro]}
+                        </span>
+                        {typeof empresa.scoreFinal === "number" && (
+                          <span
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+                            style={{ backgroundColor: "rgba(16,185,129,0.14)", color: "#10B981" }}
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            {empresa.scoreFinal}% de calificación
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p
                       className="text-sm md:text-base leading-relaxed line-clamp-2 break-words max-w-md"

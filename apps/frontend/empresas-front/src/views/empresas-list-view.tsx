@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
+import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog, Award } from "lucide-react";
 import {
   Button,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -453,6 +453,14 @@ export function EmpresasListView({
                       {(empresa.hipotesisList ?? []).length} hipótesis
                     </span>
                   </div>
+                  {typeof empresa.scoreFinal === "number" && (
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                      <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>
+                        {empresa.scoreFinal}% calificación
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Fecha */}
