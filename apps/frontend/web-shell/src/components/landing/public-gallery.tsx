@@ -108,12 +108,22 @@ export function PublicGallery() {
     };
   }, [emblaApi]);
 
+  // Con muy pocas tarjetas (ej. solo 2 empresas publicadas) Embla no tiene suficiente
+  // contenido para armar un loop real y se queda pegado en el primer/último slide al
+  // llegar al borde. Envolvemos el índice nosotros mismos en vez de depender de su loop.
+  const total = publicadas.length;
+  function irA(index: number) {
+    if (!emblaApi || total === 0) return;
+    emblaApi.scrollTo(((index % total) + total) % total);
+  }
+
   // Autoplay suave, en pausa mientras el mouse está sobre la vitrina.
   useEffect(() => {
-    if (!emblaApi || paused || publicadas.length < 2) return;
-    const id = setInterval(() => emblaApi.scrollNext(), AUTOPLAY_MS);
+    if (!emblaApi || paused || total < 2) return;
+    const id = setInterval(() => irA(selectedIndex + 1), AUTOPLAY_MS);
     return () => clearInterval(id);
-  }, [emblaApi, paused, publicadas.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emblaApi, paused, total, selectedIndex]);
 
   // La hidratación del store solo aplica al modo demo; el modo real no depende de ella.
   if ((modoDemo() && !hydrated) || publicadas.length === 0) return null;
@@ -158,7 +168,7 @@ export function PublicGallery() {
                 <div
                   key={empresa.id}
                   className="shrink-0 grow-0"
-                  style={{ flexBasis: "80%", maxWidth: 560, paddingLeft: 16 }}
+                  style={{ flexBasis: "85%", maxWidth: 720, paddingLeft: 16 }}
                 >
                   <div
                     className="rounded-3xl p-8 md:p-10 flex flex-col items-center text-center gap-5 transition-all duration-500"
@@ -209,7 +219,7 @@ export function PublicGallery() {
         <div className="flex items-center justify-center gap-5 mt-8">
           <button
             type="button"
-            onClick={() => emblaApi?.scrollPrev()}
+            onClick={() => irA(selectedIndex - 1)}
             className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
             style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
             aria-label="Anterior"
@@ -248,7 +258,7 @@ export function PublicGallery() {
 
           <button
             type="button"
-            onClick={() => emblaApi?.scrollNext()}
+            onClick={() => irA(selectedIndex + 1)}
             className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
             style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
             aria-label="Siguiente"
