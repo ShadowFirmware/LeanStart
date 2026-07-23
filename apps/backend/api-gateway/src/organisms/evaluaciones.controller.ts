@@ -15,7 +15,8 @@ export class EvaluacionesController {
   }
 
   @Get(":empresaId")
-  @ApiOperation({ summary: "Borrador/resultado de la evaluación de una empresa" })
+  @Roles("evaluador", "administrador", "emprendedor")
+  @ApiOperation({ summary: "Borrador/resultado de la evaluación de una empresa (el emprendedor solo ve la suya, ya finalizada)" })
   @ApiParam({ name: "empresaId" })
   obtener(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
     return this.proxy.get(this.baseUrl, `/evaluaciones/${empresaId}`, user);

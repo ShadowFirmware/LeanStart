@@ -20,8 +20,8 @@ export class CriteriosController {
   constructor(private readonly criterios: CriteriosService) {}
 
   @Get()
-  @Roles("administrador", "evaluador")
-  @ApiOperation({ summary: "Listar criterios de evaluación (lectura: también el evaluador, para poder calificar)" })
+  @Roles("administrador", "evaluador", "emprendedor")
+  @ApiOperation({ summary: "Listar criterios de evaluación (lectura: evaluador para calificar, emprendedor para ver el detalle de su feedback)" })
   listar() {
     return this.criterios.listar();
   }

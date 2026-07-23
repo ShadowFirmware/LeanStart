@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InternalHttpClient, type AuthUser } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
@@ -60,8 +60,25 @@ export class EvaluacionesService {
     });
   }
 
-  async obtener(empresaId: string) {
-    return this.getRaw(empresaId);
+  /**
+   * El evaluador/administrador siempre ven todo (incluido mientras se está calificando).
+   * El emprendedor solo puede ver SU PROPIA empresa, y solo una vez finalizada la
+   * evaluación — antes de eso vería las notas del evaluador a medio escribir, algo que
+   * nunca debe pasar (mismo criterio que el borrador de observaciones del mentor).
+   */
+  async obtener(actingAs: AuthUser, empresaId: string) {
+    const data = await this.getRaw(empresaId);
+    if (actingAs.rol === "emprendedor") {
+      const empresasUrl = this.config.getOrThrow<string>("EMPRESAS_SERVICE_URL");
+      const empresa = await this.http.get<{ ownerId: string }>(`${empresasUrl}/empresas/${empresaId}/interno`);
+      if (empresa.ownerId !== actingAs.id) {
+        throw new ForbiddenException("No tienes acceso a esta evaluación.");
+      }
+      if (!data.finalizada) {
+        return { ...VACIA, finalizada: false, scoreFinal: null as number | null };
+      }
+    }
+    return data;
   }
 
   async setPuntaje(empresaId: string, criterioId: string, puntaje: number) {

@@ -31,7 +31,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
-import { compressImageToDataUrl, modoDemo } from "@leanstart/commons";
+import { compressImageToDataUrl, modoDemo, apiFetch } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -324,6 +324,29 @@ export function EmpresaDetailView({
     if (!modoDemo()) cargarObservaciones(id).catch(() => toast.error("No se pudieron cargar las observaciones."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Comentarios del evaluador: solo tienen sentido una vez que ya evaluó el proyecto
+  // (devuelto o publicado); el backend igual los oculta si aún no finalizó su evaluación.
+  const [evalInfo, setEvalInfo] = useState<{
+    comentarioEvaluador: string;
+    comentariosCriterios: Record<string, string>;
+    finalizada: boolean;
+  } | null>(null);
+  const [criteriosNombres, setCriteriosNombres] = useState<Record<string, string>>({});
+  const empresaEstado = empresa?.estado;
+
+  useEffect(() => {
+    if (modoDemo() || readOnly) return;
+    if (empresaEstado !== "devuelto" && empresaEstado !== "publicado") return;
+    apiFetch<{ comentarioEvaluador: string; comentariosCriterios: Record<string, string>; finalizada: boolean }>(
+      `/evaluaciones/${id}`
+    )
+      .then(setEvalInfo)
+      .catch(() => {});
+    apiFetch<{ id: string; nombre: string }[]>("/criterios")
+      .then((rows) => setCriteriosNombres(Object.fromEntries(rows.map((r) => [r.id, r.nombre]))))
+      .catch(() => {});
+  }, [id, empresaEstado, readOnly]);
 
   const [editando, setEditando] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -771,14 +794,59 @@ export function EmpresaDetailView({
 
             <p className="text-xs mt-4" style={{ color: "var(--text-faint)" }}>Creada el {empresa.creadaEn}</p>
 
-            {!readOnly && empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
+            {!readOnly &&
+              evalInfo?.finalizada &&
+              (evalInfo.comentarioEvaluador.trim() || Object.values(evalInfo.comentariosCriterios).some((c) => c?.trim())) && (
+                <>
+                  <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-faint)" }}>
+                      Comentarios del evaluador
+                    </p>
+                    {evalInfo.comentarioEvaluador.trim() && (
+                      <p
+                        className="text-sm leading-relaxed whitespace-pre-wrap break-words mb-3"
+                        style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}
+                      >
+                        {evalInfo.comentarioEvaluador}
+                      </p>
+                    )}
+                    {Object.entries(evalInfo.comentariosCriterios).filter(([, c]) => c?.trim()).length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {Object.entries(evalInfo.comentariosCriterios)
+                          .filter(([, c]) => c?.trim())
+                          .map(([criterioId, comentario]) => (
+                            <div
+                              key={criterioId}
+                              className="rounded-lg px-3 py-2"
+                              style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+                            >
+                              <p className="text-xs font-semibold" style={{ color: "var(--text-strong)" }}>
+                                {criteriosNombres[criterioId] ?? "Criterio"}
+                              </p>
+                              <p className="text-xs mt-1 break-words" style={{ color: "var(--text-dim)", overflowWrap: "anywhere" }}>
+                                {comentario}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+            {!readOnly && (empresa.estado === "borrador" || empresa.estado === "devuelto") && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis && (
               <>
                 <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>Proyecto listo para enviar</p>
+                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>
+                      {empresa.estado === "devuelto" ? "Proyecto listo para reenviar" : "Proyecto listo para enviar"}
+                    </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                      Completaste todos los requisitos: producto, canvas e hipótesis.
+                      {empresa.estado === "devuelto"
+                        ? "Corrige lo que indicó el evaluador y vuelve a enviarlo a mentoría."
+                        : "Completaste todos los requisitos: producto, canvas e hipótesis."}
                     </p>
                   </div>
                   <button

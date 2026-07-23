@@ -11,10 +11,11 @@ export class EvaluacionesController {
   constructor(private readonly evaluaciones: EvaluacionesService) {}
 
   @Get(":empresaId")
-  @ApiOperation({ summary: "Borrador/resultado de la evaluación de una empresa" })
+  @Roles("evaluador", "administrador", "emprendedor")
+  @ApiOperation({ summary: "Borrador/resultado de la evaluación de una empresa (el emprendedor solo ve la suya, ya finalizada)" })
   @ApiParam({ name: "empresaId" })
-  obtener(@Param("empresaId") empresaId: string) {
-    return this.evaluaciones.obtener(empresaId);
+  obtener(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
+    return this.evaluaciones.obtener(user, empresaId);
   }
 
   @Patch(":empresaId/puntaje")
