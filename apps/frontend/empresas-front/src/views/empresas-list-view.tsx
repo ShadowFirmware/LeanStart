@@ -443,12 +443,29 @@ export function EmpresasListView({
                     <p className="text-sm font-semibold leading-snug truncate" style={{ color: "var(--text-strong)" }}>
                       {empresa.nombre}
                     </p>
-                    <span
-                      className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
-                      style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
-                    >
-                      {GIRO_LABELS[empresa.giro]}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      <span
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-full inline-block"
+                        style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
+                      >
+                        {GIRO_LABELS[empresa.giro]}
+                      </span>
+                      {typeof empresa.scoreFinal === "number" && (
+                        <>
+                          <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
+                            {empresa.scoreFinal} calif.
+                          </span>
+                          {nivel && (
+                            <span
+                              className="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ color: nivel.color, backgroundColor: `${nivel.color}1F` }}
+                            >
+                              {nivel.nombre}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   <span
                     className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
@@ -457,23 +474,6 @@ export function EmpresasListView({
                     {estadoConfig.label}
                   </span>
                 </div>
-
-                {/* Calificación final + nivel de viabilidad obtenido (congelado al finalizar) */}
-                {typeof empresa.scoreFinal === "number" && (
-                  <div className="flex items-center justify-end gap-2 mb-3">
-                    <span className="text-sm font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
-                      {empresa.scoreFinal} calif.
-                    </span>
-                    {nivel && (
-                      <span
-                        className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
-                        style={{ color: nivel.color, backgroundColor: `${nivel.color}1F`, border: `1px solid ${nivel.color}3D` }}
-                      >
-                        {nivel.nombre}
-                      </span>
-                    )}
-                  </div>
-                )}
 
                 {/* Stats */}
                 <div

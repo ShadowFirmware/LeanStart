@@ -700,6 +700,21 @@ export function EmpresaDetailView({
                       <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}>
                         {estadoConfig.label}
                       </span>
+                      {typeof empresa.scoreFinal === "number" && (
+                        <>
+                          <span className="text-xs font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
+                            {empresa.scoreFinal} calif.
+                          </span>
+                          {empresa.nivelNombre && (
+                            <span
+                              className="text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ color: empresa.nivelColor ?? "#9A62FA", backgroundColor: `${empresa.nivelColor ?? "#9A62FA"}1F` }}
+                            >
+                              {empresa.nivelNombre}
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
