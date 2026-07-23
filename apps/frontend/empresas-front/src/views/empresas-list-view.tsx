@@ -428,7 +428,7 @@ export function EmpresasListView({
                 }
               >
                 {/* Header: logo + nombre/giro + estado */}
-                <div className="flex items-start gap-3 mb-4">
+                <div className="flex items-start gap-3 mb-3">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden"
                     style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
@@ -450,21 +450,20 @@ export function EmpresasListView({
                       {GIRO_LABELS[empresa.giro]}
                     </span>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-full"
-                      style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}
-                    >
-                      {estadoConfig.label}
+                  <span
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
+                    style={{ color: estadoConfig.color, backgroundColor: estadoConfig.bg }}
+                  >
+                    {estadoConfig.label}
+                  </span>
+                </div>
+
+                {/* Calificación final + nivel de viabilidad obtenido (congelado al finalizar) */}
+                {typeof empresa.scoreFinal === "number" && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
+                      {empresa.scoreFinal}% calificación
                     </span>
-                    {typeof empresa.scoreFinal === "number" && (
-                      <span
-                        className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
-                        style={{ color: "var(--brand)", backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}
-                      >
-                        {empresa.scoreFinal}% calificación
-                      </span>
-                    )}
                     {nivel && (
                       <span
                         className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
@@ -474,7 +473,7 @@ export function EmpresasListView({
                       </span>
                     )}
                   </div>
-                </div>
+                )}
 
                 {/* Stats */}
                 <div
