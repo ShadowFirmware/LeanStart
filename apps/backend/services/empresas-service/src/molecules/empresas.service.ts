@@ -133,7 +133,10 @@ export class EmpresasService {
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "en_mentoria");
     const actualizada = await this.prisma.empresa.update({ where: { id }, data: { mentorId, estado: "en_mentoria" } });
 
-    await this.notificar(mentorId, {
+    // Sin await a propósito: notificar es best-effort (ver comentario en el método) y
+    // esperar la ida-vuelta a notificaciones-service solo demora la respuesta al usuario
+    // que hizo la asignación sin aportarle nada.
+    void this.notificar(mentorId, {
       tipo: "proyecto_asignado",
       titulo: "Te asignaron un nuevo proyecto",
       mensaje: `"${empresa.nombre}" ahora está bajo tu mentoría.`,
@@ -149,7 +152,7 @@ export class EmpresasService {
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "en_evaluacion");
     const actualizada = await this.prisma.empresa.update({ where: { id }, data: { evaluadorId, estado: "en_evaluacion" } });
 
-    await this.notificar(empresa.ownerId, {
+    void this.notificar(empresa.ownerId, {
       tipo: "enviado_evaluacion",
       titulo: "Tu proyecto fue enviado a evaluación",
       mensaje: `"${empresa.nombre}" ya está en manos del equipo evaluador.`,
@@ -164,7 +167,8 @@ export class EmpresasService {
   // (p. ej. NOTIFICACIONES_SERVICE_URL sin definir) es síncrono y ocurre ANTES del
   // await, así que un .catch() encadenado solo a la promesa no lo alcanza a cubrir.
   // Notificar es best-effort en todos los call sites — nunca debe tumbar la operación
-  // principal (asignar mentor, cambiar estado, etc.).
+  // principal (asignar mentor, cambiar estado, etc.), y los call sites la invocan sin
+  // await para que la ida-vuelta a notificaciones-service no demore la respuesta.
   private async notificar(destinatarioUserId: string, data: { tipo: string; titulo: string; mensaje: string; empresaNombre: string; empresaId?: string }) {
     try {
       const baseUrl = this.config.getOrThrow<string>("NOTIFICACIONES_SERVICE_URL");

@@ -133,7 +133,9 @@ export class EvaluacionesService {
       actingAs
     );
 
-    await this.http
+    // Sin await: la notificación es best-effort y no afecta lo que se devuelve al
+    // frontend — esperarla solo demoraría la respuesta de "finalizar" innecesariamente.
+    void this.http
       .post(`${notifUrl}/notificaciones`, {
         destinatarioUserId: empresa.ownerId,
         tipo: accionResultante === "publicado" ? "proyecto_publicado" : "proyecto_devuelto",
