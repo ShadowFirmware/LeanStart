@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog, Award } from "lucide-react";
+import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
 import {
   Button,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -403,6 +403,13 @@ export function EmpresasListView({
               empresa.estado === "observaciones_pendientes" ||
               empresa.estado === "devuelto"
             );
+            // El nivel congelado (guardado al finalizar) manda; si una empresa antigua
+            // no lo tiene, se calcula con los rangos configurados actualmente.
+            const nivel = typeof empresa.scoreFinal === "number"
+              ? (empresa.nivelNombre
+                  ? { nombre: empresa.nivelNombre, color: empresa.nivelColor ?? "var(--brand)" }
+                  : nivelPorScore(nivelesViabilidad, empresa.scoreFinal))
+              : null;
             return (
               <Link
                 key={empresa.id}
@@ -421,7 +428,7 @@ export function EmpresasListView({
                 }
               >
                 {/* Header: logo + nombre/giro + estado */}
-                <div className="flex items-start gap-3 mb-4">
+                <div className="flex items-start gap-3 mb-3">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden"
                     style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
@@ -436,12 +443,29 @@ export function EmpresasListView({
                     <p className="text-sm font-semibold leading-snug truncate" style={{ color: "var(--text-strong)" }}>
                       {empresa.nombre}
                     </p>
-                    <span
-                      className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
-                      style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
-                    >
-                      {GIRO_LABELS[empresa.giro]}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      <span
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-full inline-block"
+                        style={{ backgroundColor: "var(--border-subtle)", color: "var(--text-dim)" }}
+                      >
+                        {GIRO_LABELS[empresa.giro]}
+                      </span>
+                      {typeof empresa.scoreFinal === "number" && (
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                          <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
+                            {empresa.scoreFinal} calif.
+                          </span>
+                          {nivel && (
+                            <span
+                              className="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ color: nivel.color, backgroundColor: `${nivel.color}1F` }}
+                            >
+                              {nivel.nombre}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span
                     className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
@@ -469,37 +493,6 @@ export function EmpresasListView({
                     </span>
                   </div>
                 </div>
-
-                {/* Calificación final + nivel de viabilidad obtenido (congelado al finalizar) */}
-                {typeof empresa.scoreFinal === "number" && (() => {
-                  // El nivel congelado (guardado al finalizar) manda; si una empresa antigua
-                  // no lo tiene, se calcula con los rangos configurados actualmente.
-                  const nivel = empresa.nivelNombre
-                    ? { nombre: empresa.nivelNombre, color: empresa.nivelColor ?? "var(--brand)" }
-                    : nivelPorScore(nivelesViabilidad, empresa.scoreFinal!);
-                  return (
-                    <div
-                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 mt-3"
-                      style={{ backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Award className="w-4 h-4 shrink-0" style={{ color: "var(--brand)" }} />
-                        <span className="text-lg font-bold shrink-0" style={{ color: "var(--text-strong)" }}>
-                          {empresa.scoreFinal}%
-                        </span>
-                        <span className="text-[11px]" style={{ color: "var(--text-dim)" }}>calificación</span>
-                      </div>
-                      {nivel && (
-                        <span
-                          className="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
-                          style={{ color: nivel.color, backgroundColor: `${nivel.color}1F` }}
-                        >
-                          {nivel.nombre}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
 
                 {/* Fecha */}
                 <span className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Search, Plus, Users, MoreVertical, Pencil, Ban, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Users, MoreVertical, Pencil, Ban, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import {
   Button,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -71,6 +72,7 @@ export function UsuariosView() {
   const [filtroRol, setFiltroRol] = useState(TODOS_LOS_ROLES);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Usuario | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -90,12 +92,14 @@ export function UsuariosView() {
   function abrirCrear() {
     setEditTarget(null);
     form.reset({ nombre: "", correo: "", rol: "" as Role, password: "" });
+    setShowPassword(false);
     setDialogOpen(true);
   }
 
   function abrirEditar(usuario: Usuario) {
     setEditTarget(usuario);
     form.reset({ nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol, password: "" });
+    setShowPassword(false);
     setDialogOpen(true);
   }
 
@@ -220,12 +224,23 @@ export function UsuariosView() {
               >
                 {/* Usuario */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-                    style={{ backgroundColor: `${rolConfig.color}22`, color: rolConfig.color }}
-                  >
-                    {u.nombre.charAt(0).toUpperCase()}
-                  </div>
+                  {u.avatarUrl ? (
+                    <Image
+                      src={u.avatarUrl}
+                      alt={u.nombre}
+                      width={36}
+                      height={36}
+                      unoptimized
+                      className="w-9 h-9 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                      style={{ backgroundColor: `${rolConfig.color}22`, color: rolConfig.color }}
+                    >
+                      {u.nombre.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{u.nombre}</p>
                     <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{u.correo}</p>
@@ -323,19 +338,33 @@ export function UsuariosView() {
                 )}
               />
 
-                            <FormField
+              <FormField
                 control={form.control}
                 name="password"
                 render={({ field }: { field: ControllerRenderProps<FormValues, "password"> }) => (
                   <FormItem>
                     <FormLabel>Contraseña</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder={editTarget ? "Dejar en blanco para no cambiarla" : "Mínimo 8 caracteres"}
-                        style={inputStyle}
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder={editTarget ? "Dejar en blanco para no cambiarla" : "Mínimo 8 caracteres"}
+                          className="pr-11"
+                          style={inputStyle}
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                          style={{ color: "var(--text-dim)" }}
+                          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+                          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

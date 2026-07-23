@@ -12,11 +12,13 @@ import type { EstadoEmpresa, EstadoObservacion } from "@leanstart/commons";
  * siguen siendo instantáneas. La sincronización entre pestañas mantiene todo actualizado.
  */
 export function puedeVerObservaciones(
-  _estado: EstadoEmpresa,
+  estado: EstadoEmpresa,
   _readOnly: boolean,
   _permitirComentarios: boolean
 ): boolean {
-  return true;
+  // Una vez que el proyecto llega a un estado final (evaluado y publicado, o devuelto),
+  // la retroalimentación del mentor ya cumplió su propósito — se oculta para todos.
+  return estado !== "publicado" && estado !== "devuelto";
 }
 
 /** Estados en los que el proyecto está en manos del mentor para colaborar en vivo. */
