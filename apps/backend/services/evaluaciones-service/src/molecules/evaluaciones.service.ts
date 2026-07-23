@@ -124,7 +124,12 @@ export class EvaluacionesService {
 
     await this.http.patch(
       `${empresasUrl}/empresas/${empresaId}/estado-interno`,
-      { estado: accionResultante, scoreFinal: calculo.scoreFinal },
+      {
+        estado: accionResultante,
+        scoreFinal: calculo.scoreFinal,
+        nivelNombre: calculo.nivel?.nombre,
+        nivelColor: calculo.nivel?.color,
+      },
       actingAs
     );
 

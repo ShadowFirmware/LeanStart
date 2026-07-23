@@ -95,13 +95,37 @@ export class EmpresasService {
   }
 
   /** Usado por el saga de finalizar evaluación (evaluaciones-service), sin scoping de usuario. */
-  async cambiarEstadoInterno(id: string, estado: EstadoEmpresa, scoreFinal?: number) {
+  async cambiarEstadoInterno(
+    id: string,
+    estado: EstadoEmpresa,
+    scoreFinal?: number,
+    nivelNombre?: string,
+    nivelColor?: string
+  ) {
     const empresa = await this.obtenerInterno(id);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, estado);
     return this.prisma.empresa.update({
       where: { id },
-      data: { estado, ...(scoreFinal !== undefined ? { scoreFinal } : {}) },
+      data: {
+        estado,
+        ...(scoreFinal !== undefined ? { scoreFinal } : {}),
+        ...(nivelNombre !== undefined ? { nivelNombre } : {}),
+        ...(nivelColor !== undefined ? { nivelColor } : {}),
+      },
     });
+  }
+
+  /** [Interno] Empresas ya evaluadas (scoreFinal definido) a las que aún les falta el nivel congelado. */
+  async listarPendientesNivelInterno() {
+    return this.prisma.empresa.findMany({
+      where: { scoreFinal: { not: null }, nivelNombre: null },
+      select: { id: true, scoreFinal: true },
+    });
+  }
+
+  /** [Interno] Solo usado por el script de backfill — no valida transición, no toca estado. */
+  async actualizarNivelInterno(id: string, nivelNombre: string, nivelColor: string) {
+    return this.prisma.empresa.update({ where: { id }, data: { nivelNombre, nivelColor } });
   }
 
   async asignarMentor(user: AuthUser, id: string, mentorId: string) {

@@ -3,7 +3,7 @@ import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, Roles, type AuthUser } from "@leanstart/backend-commons";
 import { EmpresasService } from "../molecules/empresas.service";
 import { CreateEmpresaDto, UpdateEmpresaDto } from "../atoms/empresa.dto";
-import { AsignarDto, CambiarEstadoDto, CambiarEstadoInternoDto } from "../atoms/estado.dto";
+import { ActualizarNivelInternoDto, AsignarDto, CambiarEstadoDto, CambiarEstadoInternoDto } from "../atoms/estado.dto";
 
 @ApiTags("empresas")
 @Controller("empresas")
@@ -14,6 +14,12 @@ export class EmpresasController {
   @ApiOperation({ summary: "Listar empresas visibles para el usuario actual" })
   listar(@CurrentUser() user: AuthUser) {
     return this.empresas.listar(user);
+  }
+
+  @Get("pendientes-nivel-interno")
+  @ApiOperation({ summary: "[Interno] Empresas evaluadas sin nivel congelado — solo para el script de backfill" })
+  listarPendientesNivelInterno() {
+    return this.empresas.listarPendientesNivelInterno();
   }
 
   @Get(":id")
@@ -62,7 +68,14 @@ export class EmpresasController {
   @ApiOperation({ summary: "[Interno] Cambiar estado sin scoping — usado por el saga de evaluaciones-service" })
   @ApiParam({ name: "id" })
   cambiarEstadoInterno(@Param("id") id: string, @Body() dto: CambiarEstadoInternoDto) {
-    return this.empresas.cambiarEstadoInterno(id, dto.estado, dto.scoreFinal);
+    return this.empresas.cambiarEstadoInterno(id, dto.estado, dto.scoreFinal, dto.nivelNombre, dto.nivelColor);
+  }
+
+  @Patch(":id/nivel-interno")
+  @ApiOperation({ summary: "[Interno] Rellenar el nivel congelado — solo para el script de backfill" })
+  @ApiParam({ name: "id" })
+  actualizarNivelInterno(@Param("id") id: string, @Body() dto: ActualizarNivelInternoDto) {
+    return this.empresas.actualizarNivelInterno(id, dto.nivelNombre, dto.nivelColor);
   }
 
   @Patch(":id/asignar-mentor")

@@ -19,6 +19,10 @@ model Empresa {
   mentorId         String?
   evaluadorId      String?
   scoreFinal       Int?
+  /// Nombre y color del nivel de viabilidad al momento de finalizar — congelados,
+  /// no se recalculan si el administrador cambia los rangos de viabilidad después.
+  nivelNombre      String?
+  nivelColor       String?
   canvasBloques    Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

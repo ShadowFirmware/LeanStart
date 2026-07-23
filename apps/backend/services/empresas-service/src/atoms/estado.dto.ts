@@ -26,6 +26,27 @@ export class CambiarEstadoInternoDto extends CambiarEstadoDto {
   @Min(0)
   @Max(100)
   scoreFinal?: number;
+
+  @ApiProperty({ required: false, description: "Nombre del nivel de viabilidad obtenido, congelado al finalizar" })
+  @IsOptional()
+  @IsString()
+  nivelNombre?: string;
+
+  @ApiProperty({ required: false, description: "Color del nivel de viabilidad obtenido, congelado al finalizar" })
+  @IsOptional()
+  @IsString()
+  nivelColor?: string;
+}
+
+/** Usado solo por el script de backfill (rellena el nivel en empresas ya evaluadas antes de este cambio). */
+export class ActualizarNivelInternoDto {
+  @ApiProperty({ description: "Nombre del nivel de viabilidad" })
+  @IsString()
+  nivelNombre!: string;
+
+  @ApiProperty({ description: "Color del nivel de viabilidad" })
+  @IsString()
+  nivelColor!: string;
 }
 
 export class AsignarDto {

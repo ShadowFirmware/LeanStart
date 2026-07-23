@@ -11,6 +11,10 @@ import figlet from "figlet";
 // una carpeta arriba — es decir, en la raíz de apps/backend.
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+// En Windows, pnpm se instala como pnpm.cmd (un batch file). spawn() sin shell
+// solo encuentra ejecutables literales, no shims .cmd, y falla con ENOENT.
+const IS_WINDOWS = process.platform === "win32";
+
 // api-gateway es el único punto público: no se puede desactivar.
 const REQUIRED = "api-gateway";
 
@@ -93,7 +97,7 @@ function launchService(key) {
   const s = SERVICES[key];
   const paint = paintFor(s.color);
   const prefix = paint(`[${key}]`);
-  const child = spawn(s.command, s.args, { cwd: join(ROOT, s.dir), shell: false });
+  const child = spawn(s.command, s.args, { cwd: join(ROOT, s.dir), shell: IS_WINDOWS });
   child.stdout.on("data", (d) => process.stdout.write(prefixChunk(prefix, d)));
   child.stderr.on("data", (d) => process.stderr.write(prefixChunk(prefix, d)));
   child.on("exit", (code) => console.log(`${prefix} ${chalk.red(`proceso terminado (code ${code})`)}`));
@@ -185,7 +189,7 @@ async function main() {
     const prefix = paintFor(s.color)(`[prisma-studio:${key}]`);
     const child = spawn("pnpm", ["exec", "prisma", "studio", "--port", String(s.studioPort)], {
       cwd: join(ROOT, s.dir),
-      shell: false,
+      shell: IS_WINDOWS,
     });
     child.stdout.on("data", (d) => process.stdout.write(prefixChunk(prefix, d)));
     child.stderr.on("data", (d) => process.stderr.write(prefixChunk(prefix, d)));

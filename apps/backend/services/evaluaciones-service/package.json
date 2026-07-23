@@ -10,6 +10,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "seed": "ts-node prisma/seed.ts",
+    "backfill:nivel": "ts-node scripts/backfill-nivel.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },

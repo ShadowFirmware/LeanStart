@@ -108,6 +108,9 @@ export interface Empresa {
   mentorId?: string;
   evaluadorId?: string;
   scoreFinal?: number;
+  /** Nivel de viabilidad obtenido al finalizar la evaluación, congelado (no se recalcula si cambian los rangos). */
+  nivelNombre?: string;
+  nivelColor?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -189,6 +192,8 @@ function mapEmpresaCompleta(e: Record<string, unknown>): Empresa {
     mentorId: (e.mentorId as string) ?? undefined,
     evaluadorId: (e.evaluadorId as string) ?? undefined,
     scoreFinal: (e.scoreFinal as number) ?? undefined,
+    nivelNombre: (e.nivelNombre as string) ?? undefined,
+    nivelColor: (e.nivelColor as string) ?? undefined,
     canvasBloques,
     canvas: mapCanvas(e.canvas as Record<string, unknown>),
     productosList,
@@ -216,6 +221,8 @@ function mergeEmpresaParcial(actual: Empresa, e: Record<string, unknown>): Empre
     mentorId: (e.mentorId as string) ?? actual.mentorId,
     evaluadorId: (e.evaluadorId as string) ?? actual.evaluadorId,
     scoreFinal: (e.scoreFinal as number) ?? actual.scoreFinal,
+    nivelNombre: (e.nivelNombre as string) ?? actual.nivelNombre,
+    nivelColor: (e.nivelColor as string) ?? actual.nivelColor,
     updatedAt: e.updatedAt ? formatFecha(e.updatedAt as string) : actual.updatedAt,
   };
 }

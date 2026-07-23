@@ -100,6 +100,20 @@ interface EmpresasListViewProps {
   estadosPermitidos?: EstadoEmpresa[];
   /** Muestra un filtro adicional por giro. */
   mostrarFiltroGiro?: boolean;
+  /** Niveles de viabilidad configurados (para mostrar el badge de nivel obtenido en cada card). */
+  nivelesViabilidad?: NivelViabilidadLite[];
+}
+
+export interface NivelViabilidadLite {
+  nombre: string;
+  hasta: number;
+  color: string;
+}
+
+/** Nivel de viabilidad que corresponde a una calificación final, según los rangos configurados. */
+function nivelPorScore(niveles: NivelViabilidadLite[] | undefined, score: number): NivelViabilidadLite | null {
+  if (!niveles || niveles.length === 0) return null;
+  return niveles.find((n) => score <= n.hasta) ?? niveles[niveles.length - 1];
 }
 
 type TipoAsignacion = "mentor" | "evaluador";
@@ -114,6 +128,7 @@ export function EmpresasListView({
   scopeAsignadoId,
   estadosPermitidos,
   mostrarFiltroGiro = false,
+  nivelesViabilidad,
 }: EmpresasListViewProps = {}) {
   const hydrated = useHasHydrated();
   const currentUser = useCurrentUser();
@@ -453,15 +468,38 @@ export function EmpresasListView({
                       {(empresa.hipotesisList ?? []).length} hipótesis
                     </span>
                   </div>
-                  {typeof empresa.scoreFinal === "number" && (
-                    <div className="flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
-                      <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>
-                        {empresa.scoreFinal}% calificación
-                      </span>
-                    </div>
-                  )}
                 </div>
+
+                {/* Calificación final + nivel de viabilidad obtenido (congelado al finalizar) */}
+                {typeof empresa.scoreFinal === "number" && (() => {
+                  // El nivel congelado (guardado al finalizar) manda; si una empresa antigua
+                  // no lo tiene, se calcula con los rangos configurados actualmente.
+                  const nivel = empresa.nivelNombre
+                    ? { nombre: empresa.nivelNombre, color: empresa.nivelColor ?? "var(--brand)" }
+                    : nivelPorScore(nivelesViabilidad, empresa.scoreFinal!);
+                  return (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 mt-3"
+                      style={{ backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Award className="w-4 h-4 shrink-0" style={{ color: "var(--brand)" }} />
+                        <span className="text-lg font-bold shrink-0" style={{ color: "var(--text-strong)" }}>
+                          {empresa.scoreFinal}%
+                        </span>
+                        <span className="text-[11px]" style={{ color: "var(--text-dim)" }}>calificación</span>
+                      </div>
+                      {nivel && (
+                        <span
+                          className="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
+                          style={{ color: nivel.color, backgroundColor: `${nivel.color}1F` }}
+                        >
+                          {nivel.nombre}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Fecha */}
                 <span className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>

@@ -17,8 +17,8 @@ export class ViabilidadController {
   constructor(private readonly viabilidad: ViabilidadService) {}
 
   @Get()
-  @Roles("administrador", "evaluador")
-  @ApiOperation({ summary: "Configuración de viabilidad (lectura: también el evaluador, para calcular el nivel)" })
+  @Roles("administrador", "evaluador", "mentor", "emprendedor")
+  @ApiOperation({ summary: "Configuración de viabilidad (lectura: todos los roles, para mostrar el nivel obtenido)" })
   obtener() {
     return this.viabilidad.obtenerConfig();
   }

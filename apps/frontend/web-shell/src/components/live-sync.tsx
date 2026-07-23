@@ -59,9 +59,11 @@ export function LiveSync() {
     }
     if (rol === "administrador" || rol === "evaluador") {
       useCriteriosStore.getState().cargarCriterios().catch(() => {});
-      useViabilidadStore.getState().cargarViabilidad().catch(() => {});
       useReportesGeneradosStore.getState().cargarReportesGenerados().catch(() => {});
     }
+    // Todos los roles pueden leer la config de viabilidad (para mostrar el nivel
+    // obtenido en las cards de empresas); solo el administrador puede modificarla.
+    useViabilidadStore.getState().cargarViabilidad().catch(() => {});
   }, [status, rol, userId]);
 
   // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
