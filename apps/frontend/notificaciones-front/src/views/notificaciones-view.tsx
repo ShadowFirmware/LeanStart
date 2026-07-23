@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useHasHydrated } from "@leanstart/commons";
@@ -34,6 +35,15 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
       toast.error("No se pudieron marcar las notificaciones como leídas.");
     }
   }
+
+  // Como en la mensajería de un teléfono: con solo entrar a este apartado, lo que
+  // haya sin leer se marca como leído, sin que el usuario tenga que hacer nada más.
+  useEffect(() => {
+    if (hydrated && noLeidas > 0) {
+      marcarTodasLeidasStore().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, noLeidas]);
 
   // Esqueleto neutro hasta rehidratar el store persistido (evita mismatch de hidratación).
   if (!hydrated) {
