@@ -2,17 +2,21 @@
 
 import {
   Users, Building2, GraduationCap, ClipboardCheck,
-  UserCog, Star, FileEdit, Activity, LayoutGrid, Rocket, UsersRound,
+  UserCog, Star, FileEdit, Activity, LayoutGrid, Rocket, UsersRound, UserPlus,
 } from "lucide-react";
 import { useUsuariosStore, useHasHydrated } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 
-const ESTADOS_MENTORIA = ["pendiente_mentoria", "en_mentoria", "observaciones_pendientes", "observaciones_atendidas"];
-const ESTADOS_EVALUACION = ["pendiente_evaluacion", "en_evaluacion"];
+// "pendiente_mentoria"/"pendiente_evaluacion" NO cuentan como "en mentoría"/"en evaluación"
+// — todavía no tienen mentor/evaluador asignado, están esperando esa asignación. Antes se
+// mezclaban en el mismo conteo, así que un proyecto sin asignar aparecía como "en curso".
+const ESTADOS_MENTORIA = ["en_mentoria", "observaciones_pendientes", "observaciones_atendidas"];
+const ESTADOS_EVALUACION = ["en_evaluacion"];
+const ESTADOS_PENDIENTES_ASIGNACION = ["pendiente_mentoria", "pendiente_evaluacion"];
 
 type StatKey =
   | "usuariosRegistrados" | "empresasRegistradas"
-  | "proyectosEnMentoria" | "proyectosEnEvaluacion" | "empresasEnBorrador"
+  | "proyectosEnMentoria" | "proyectosEnEvaluacion" | "empresasEnBorrador" | "proyectosPendientesAsignacion"
   | "mentoresActivos" | "evaluadoresActivos" | "empresariosActivos";
 
 function hexToRgb(hex: string) {
@@ -81,9 +85,10 @@ const PLATAFORMA: { key: StatKey; label: string; icon: React.ElementType }[] = [
 ];
 
 const PROYECTOS: { key: StatKey; label: string; icon: React.ElementType; color: string }[] = [
-  { key: "proyectosEnMentoria",   label: "En mentoría",   icon: GraduationCap,  color: "#3B82F6" },
-  { key: "proyectosEnEvaluacion", label: "En evaluación", icon: ClipboardCheck, color: "#F59E0B" },
-  { key: "empresasEnBorrador",    label: "En borrador",   icon: FileEdit,       color: "#7E7C86" },
+  { key: "proyectosEnMentoria",         label: "En mentoría",             icon: GraduationCap,  color: "#3B82F6" },
+  { key: "proyectosEnEvaluacion",       label: "En evaluación",           icon: ClipboardCheck, color: "#F59E0B" },
+  { key: "proyectosPendientesAsignacion", label: "Pendientes de asignar", icon: UserPlus,       color: "#EF4444" },
+  { key: "empresasEnBorrador",          label: "En borrador",             icon: FileEdit,       color: "#7E7C86" },
 ];
 
 const EQUIPO: { key: StatKey; label: string; icon: React.ElementType }[] = [
@@ -106,13 +111,15 @@ export function AdminDashboardView() {
     empresasRegistradas: empresas.length,
     proyectosEnMentoria: empresas.filter((e) => ESTADOS_MENTORIA.includes(e.estado)).length,
     proyectosEnEvaluacion: empresas.filter((e) => ESTADOS_EVALUACION.includes(e.estado)).length,
+    proyectosPendientesAsignacion: empresas.filter((e) => ESTADOS_PENDIENTES_ASIGNACION.includes(e.estado)).length,
     empresasEnBorrador: empresas.filter((e) => e.estado === "borrador").length,
     mentoresActivos: activosPorRol("mentor"),
     evaluadoresActivos: activosPorRol("evaluador"),
     empresariosActivos: activosPorRol("emprendedor"),
   };
 
-  const totalProyectos = stats.proyectosEnMentoria + stats.proyectosEnEvaluacion + stats.empresasEnBorrador;
+  const totalProyectos =
+    stats.proyectosEnMentoria + stats.proyectosEnEvaluacion + stats.proyectosPendientesAsignacion + stats.empresasEnBorrador;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -137,7 +144,7 @@ export function AdminDashboardView() {
 
       {/* Proyectos en curso */}
       <SectionCard title="Proyectos en curso" icon={Rocket} color="#3B82F6" meta={`${totalProyectos} en total`}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {PROYECTOS.map(({ key, label, icon, color }) => (
             <StatItem key={key} label={label} value={stats[key]} icon={icon} color={color} />
           ))}

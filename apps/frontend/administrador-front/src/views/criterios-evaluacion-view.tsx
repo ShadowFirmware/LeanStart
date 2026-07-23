@@ -39,7 +39,7 @@ const inputStyle = {
 };
 
 /* ─── Stepper de peso: editar el % directo en la tarjeta, sin abrir el diálogo ─── */
-function PesoStepper({ criterio }: { criterio: Criterio }) {
+function PesoStepper({ criterio, maxPeso }: { criterio: Criterio; maxPeso: number }) {
   const actualizarPeso = useCriteriosStore((s) => s.actualizarPeso);
   const [valor, setValor] = useState(String(criterio.peso));
 
@@ -54,17 +54,24 @@ function PesoStepper({ criterio }: { criterio: Criterio }) {
   );
 
   function commit(v: string) {
-    const n = Math.max(1, Math.min(100, Math.round(parseFloat(v))));
+    const n = Math.max(1, Math.min(maxPeso, Math.round(parseFloat(v))));
     if (isNaN(n)) {
       setValor(String(criterio.peso));
       return;
+    }
+    if (n < Math.round(parseFloat(v))) {
+      toast.error(`El peso total no puede superar 100%. Máximo para este criterio: ${maxPeso}%.`);
     }
     setValor(String(n));
     if (n !== criterio.peso) guardarPeso(criterio.id, n);
   }
 
   function ajustar(delta: number) {
-    const nuevo = Math.max(1, Math.min(100, criterio.peso + delta));
+    const nuevo = Math.max(1, Math.min(maxPeso, criterio.peso + delta));
+    if (nuevo === criterio.peso && delta > 0) {
+      toast.error(`El peso total no puede superar 100%. Máximo para este criterio: ${maxPeso}%.`);
+      return;
+    }
     setValor(String(nuevo));
     guardarPeso(criterio.id, nuevo);
   }
@@ -149,6 +156,13 @@ export function CriteriosEvaluacionView() {
 
   async function onSubmit(values: FormValues) {
     const data = { nombre: values.nombre, descripcion: values.descripcion, peso: parseFloat(values.peso) };
+    const totalSinEste = pesoTotal - (editTarget?.peso ?? 0);
+    if (totalSinEste + data.peso > 100) {
+      form.setError("peso", {
+        message: `El peso total no puede superar 100%. Máximo disponible: ${Math.max(0, 100 - totalSinEste)}%.`,
+      });
+      return;
+    }
     try {
       if (editTarget) {
         await editarCriterio(editTarget.id, data);
@@ -186,7 +200,9 @@ export function CriteriosEvaluacionView() {
         </div>
         <Button
           onClick={abrirCrear}
-          className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
+          disabled={pesoTotal >= 100}
+          title={pesoTotal >= 100 ? "Reduce el peso de otros criterios antes de agregar uno nuevo." : undefined}
+          className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
         >
           <Plus className="w-4 h-4" />
@@ -246,7 +262,7 @@ export function CriteriosEvaluacionView() {
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-sm font-semibold break-words" style={{ color: "var(--text-strong)" }}>{criterio.nombre}</p>
                   <div className="flex items-center gap-2 shrink-0">
-                    <PesoStepper criterio={criterio} />
+                    <PesoStepper criterio={criterio} maxPeso={Math.max(1, 100 - (pesoTotal - criterio.peso))} />
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
