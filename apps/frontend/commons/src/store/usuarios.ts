@@ -12,6 +12,8 @@ export interface Usuario {
   rol: Role;
   estado: EstadoUsuario;
   creadoEn: string;
+  /** Avatar en data URL (comprimido), el mismo que el usuario sube en "Mi Perfil". */
+  avatarUrl?: string;
 }
 
 interface UsuariosStore {
@@ -41,6 +43,7 @@ function mapUsuario(u: Record<string, unknown>): Usuario {
     correo: u.correo as string,
     rol: u.rol as Role,
     estado: u.estado as EstadoUsuario,
+    avatarUrl: (u.avatarUrl as string) ?? undefined,
     creadoEn: new Date(u.createdAt as string).toLocaleDateString("es-MX", {
       day: "numeric",
       month: "short",

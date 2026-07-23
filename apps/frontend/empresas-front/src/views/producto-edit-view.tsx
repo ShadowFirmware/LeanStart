@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -101,18 +101,29 @@ interface ProductoEditViewProps {
   autorNombre?: string;
 }
 
-export function ProductoEditView({
+export function ProductoEditView(props: ProductoEditViewProps = {}) {
+  return (
+    <Suspense fallback={null}>
+      <ProductoEditViewInner {...props} />
+    </Suspense>
+  );
+}
+
+function ProductoEditViewInner({
   basePath = "/emprendedor/empresas",
   readOnly = false,
   permitirComentarios = false,
   autorNombre,
-}: ProductoEditViewProps = {}) {
+}: ProductoEditViewProps) {
   const { id, pid } = useParams<{ id: string; pid: string }>();
+  const searchParams = useSearchParams();
   const actualizarProducto = useEmpresasStore((s) => s.actualizarProducto);
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const producto = empresa?.productosList?.find((p) => p.id === pid);
   const [loading, setLoading] = useState(false);
-  const [editando, setEditando] = useState(false);
+  // El botón "Editar" del listado navega con ?editar=true para entrar directo al formulario,
+  // sin pasar primero por la vista de solo consulta.
+  const [editando, setEditando] = useState(() => searchParams.get("editar") === "true");
   const [imagenes, setImagenes] = useState<string[]>(producto?.imagenes ?? []);
   const [precioServicio, setPrecioServicio] = useState<ServicioPrecioValue>(() =>
     storeToServicioPrecio(producto ?? {})

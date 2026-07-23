@@ -460,9 +460,9 @@ export function EmpresasListView({
 
                 {/* Calificación final + nivel de viabilidad obtenido (congelado al finalizar) */}
                 {typeof empresa.scoreFinal === "number" && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
-                      {empresa.scoreFinal}% calificación
+                  <div className="flex items-center justify-end gap-2 mb-3">
+                    <span className="text-sm font-bold whitespace-nowrap" style={{ color: "var(--brand)" }}>
+                      {empresa.scoreFinal} calif.
                     </span>
                     {nivel && (
                       <span

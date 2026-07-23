@@ -421,7 +421,7 @@ export function ProductosListView({
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); router.push(editHref); }}
+                        onClick={(e) => { e.stopPropagation(); router.push(`${editHref}?editar=true`); }}
                         className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
                         style={{ color: "var(--text-dim)" }}
                         onMouseEnter={(e) => { e.currentTarget.style.color = "var(--brand)"; e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.1)"; }}
