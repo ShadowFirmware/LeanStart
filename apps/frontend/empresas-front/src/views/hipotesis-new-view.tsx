@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, AlertTriangle, FileText, X as XIcon } from "lucide-react";
+import {
+  ArrowLeft, Check, AlertTriangle, FileText, X as XIcon,
+  Type, AlignLeft, FlaskConical, Target, CheckCircle2, BarChart3, Paperclip, Flag,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -82,9 +85,10 @@ const inputStyle: React.CSSProperties = {
   color: "var(--text-strong)",
 };
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ icon: Icon, children }: { icon?: React.ElementType; children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "var(--text-dim)" }}>
+    <p className="text-xs font-medium uppercase tracking-wider mb-1.5 inline-flex items-center gap-1.5" style={{ color: "var(--text-dim)" }}>
+      {Icon && <Icon className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />}
       {children}
     </p>
   );
@@ -219,7 +223,9 @@ export function HipotesisNewView() {
   }
 
   /* ─── Guardado final (escribe en store) ─── */
-  async function guardarTodo(fase: 1 | 2 | 3) {
+  // `fase` decide el estado visible (Creación/Experimento/Completa); `incluirResultados`
+  // solo persiste lo ya escrito en el paso 3 sin marcar la hipótesis como completa.
+  async function guardarTodo(fase: 1 | 2 | 3, incluirResultados: boolean = fase === 3) {
     const evidenciaFinal =
       tipoEvidencia === "url" ? evidenciaUrl.trim() : evidenciaDataUrl || undefined;
 
@@ -235,7 +241,7 @@ export function HipotesisNewView() {
         criterioExito: criterio.trim(),
         fechaObjetivo: fechaObj || undefined,
       },
-      resultados: fase === 3 ? {
+      resultados: incluirResultados ? {
         resultado: resultado.trim(),
         evidencia: evidenciaFinal || undefined,
         evidenciaNombre: tipoEvidencia !== "url" ? evidenciaNombre || undefined : undefined,
@@ -291,7 +297,10 @@ export function HipotesisNewView() {
       return;
     }
     try {
-      await guardarTodo(paso === 1 ? 1 : paso === 2 ? 2 : 3);
+      // "Guardar y salir" nunca marca la hipótesis como Fase 3 (Completa) — eso
+      // solo debe ocurrir al presionar "Finalizar". Si el usuario ya escribió
+      // algo en el paso 3, se conserva, pero la fase se limita a 2 (Experimento).
+      await guardarTodo(paso === 1 ? 1 : 2, paso === 3);
       toast.success("Hipótesis guardada. Puedes completar las fases restantes más adelante.");
       router.push(`/emprendedor/empresas/${id}`);
     } catch {
@@ -348,7 +357,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Título</Label>
+                    <Label icon={Type}>Título</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                       {titulo.length} / {MAX_TITULO}
                     </span>
@@ -369,7 +378,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Descripción de la hipótesis</Label>
+                    <Label icon={AlignLeft}>Descripción de la hipótesis</Label>
                     <span className="text-xs" style={{ color: descripcion.length < 15 ? "var(--text-faint)" : "var(--text-dim)" }}>
                       {descripcion.length} / {MAX_TEXTAREA} (mín. 15)
                     </span>
@@ -390,7 +399,7 @@ export function HipotesisNewView() {
 
                 {/* Tipo de experimento */}
                 <Field>
-                  <Label>Tipo de experimento</Label>
+                  <Label icon={FlaskConical}>Tipo de experimento</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {TIPOS_EXPERIMENTO.map((t) => (
                       <button
@@ -443,7 +452,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Descripción del experimento</Label>
+                    <Label icon={AlignLeft}>Descripción del experimento</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descExp.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
@@ -462,7 +471,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Objetivo</Label>
+                    <Label icon={Target}>Objetivo</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
@@ -481,7 +490,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Criterio de éxito</Label>
+                    <Label icon={CheckCircle2}>Criterio de éxito</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>{criterio.length} / 300</span>
                   </div>
                   <textarea
@@ -546,7 +555,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Resultado</Label>
+                    <Label icon={BarChart3}>Resultado</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>{resultado.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea
@@ -565,7 +574,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Evidencia</Label>
+                    <Label icon={Paperclip}>Evidencia</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -701,7 +710,7 @@ export function HipotesisNewView() {
 
                 <Field>
                   <div className="flex items-center justify-between mb-1.5">
-                    <Label>Conclusión</Label>
+                    <Label icon={Flag}>Conclusión</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
                   </div>
                   <textarea

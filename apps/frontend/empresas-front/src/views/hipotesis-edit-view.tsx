@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
@@ -50,9 +50,10 @@ const inputStyle: React.CSSProperties = {
   color: "var(--text-strong)",
 };
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ icon: Icon, children }: { icon?: React.ElementType; children: React.ReactNode }) {
   return (
-    <p className="text-xs font-medium uppercase tracking-wider mb-1.5" style={{ color: "var(--text-dim)" }}>
+    <p className="text-xs font-medium uppercase tracking-wider mb-1.5 inline-flex items-center gap-1.5" style={{ color: "var(--text-dim)" }}>
+      {Icon && <Icon className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />}
       {children}
     </p>
   );
@@ -85,13 +86,22 @@ function SectionCard({ title, icon: Icon, children }: {
   );
 }
 
-function ReadField({ label, value }: { label: string; value?: string }) {
+function ReadField({ icon, label, value }: { icon?: React.ElementType; label: string; value?: string }) {
+  const tieneValor = Boolean(value && value.trim());
   return (
     <div>
-      <Label>{label}</Label>
-      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>
-        {value && value.trim() ? value : <span style={{ color: "var(--text-faint)" }}>Sin información</span>}
-      </p>
+      <Label icon={icon}>{label}</Label>
+      <div
+        className="rounded-lg px-3.5 py-2.5"
+        style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+      >
+        <p
+          className="text-sm leading-relaxed whitespace-pre-wrap break-words"
+          style={{ color: tieneValor ? "var(--muted-foreground)" : "var(--text-faint)", overflowWrap: "anywhere" }}
+        >
+          {tieneValor ? value : "Sin información"}
+        </p>
+      </div>
     </div>
   );
 }
@@ -119,6 +129,7 @@ export function HipotesisEditView({
   const actualizarHipotesis = useEmpresasStore((s) => s.actualizarHipotesis);
 
   const [editando, setEditando] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Fase 1
   const [titulo, setTitulo] = useState(hipotesis?.titulo ?? "");
@@ -248,6 +259,7 @@ export function HipotesisEditView({
     const tieneFase3 = resultado.trim() && conclusion.trim();
     const nuevaFase: 1 | 2 | 3 = tieneFase3 ? 3 : tieneFase2 ? 2 : 1;
 
+    setLoading(true);
     try {
       await actualizarHipotesis(id, hid, {
         titulo: titulo.trim(),
@@ -272,6 +284,8 @@ export function HipotesisEditView({
       setEditando(false);
     } catch {
       toast.error("No se pudo actualizar la hipótesis.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -344,9 +358,10 @@ export function HipotesisEditView({
 
         <div className="flex flex-col gap-5">
           <SectionCard title="Creación" icon={Lightbulb}>
-            <ReadField label="Título" value={hipotesis.titulo} />
-            <ReadField label="Descripción" value={hipotesis.descripcion} />
+            <ReadField icon={Type} label="Título" value={hipotesis.titulo} />
+            <ReadField icon={AlignLeft} label="Descripción" value={hipotesis.descripcion} />
             <ReadField
+              icon={FlaskConical}
               label="Tipo de experimento"
               value={hipotesis.experimento?.tipo ? TIPO_EXPERIMENTO_LABELS[hipotesis.experimento.tipo] : undefined}
             />
@@ -355,11 +370,11 @@ export function HipotesisEditView({
           <SectionCard title="Diseño del experimento" icon={FlaskConical}>
             {hipotesis.experimento ? (
               <>
-                <ReadField label="Descripción del experimento" value={hipotesis.experimento.descripcion} />
-                <ReadField label="Objetivo" value={hipotesis.experimento.objetivo} />
-                <ReadField label="Criterio de éxito" value={hipotesis.experimento.criterioExito} />
+                <ReadField icon={AlignLeft} label="Descripción del experimento" value={hipotesis.experimento.descripcion} />
+                <ReadField icon={Target} label="Objetivo" value={hipotesis.experimento.objetivo} />
+                <ReadField icon={CheckCircle2} label="Criterio de éxito" value={hipotesis.experimento.criterioExito} />
                 {hipotesis.experimento.fechaObjetivo && (
-                  <ReadField label="Fecha objetivo" value={hipotesis.experimento.fechaObjetivo} />
+                  <ReadField icon={Calendar} label="Fecha objetivo" value={hipotesis.experimento.fechaObjetivo} />
                 )}
               </>
             ) : (
@@ -370,10 +385,10 @@ export function HipotesisEditView({
           <SectionCard title="Resultados" icon={BarChart3}>
             {hipotesis.resultados ? (
               <>
-                <ReadField label="Resultado" value={hipotesis.resultados.resultado} />
+                <ReadField icon={BarChart3} label="Resultado" value={hipotesis.resultados.resultado} />
                 {hipotesis.resultados.evidencia && (
                   <div>
-                    <Label>Evidencia</Label>
+                    <Label icon={Paperclip}>Evidencia</Label>
                     {hipotesis.resultados.tipoEvidencia === "url" ? (
                       <a
                         href={hipotesis.resultados.evidencia}
@@ -421,7 +436,7 @@ export function HipotesisEditView({
                     )}
                   </div>
                 )}
-                <ReadField label="Conclusión" value={hipotesis.resultados.conclusion} />
+                <ReadField icon={Flag} label="Conclusión" value={hipotesis.resultados.conclusion} />
               </>
             ) : (
               <p className="text-sm" style={{ color: "var(--text-dim)" }}>Aún no hay resultados registrados.</p>
@@ -493,7 +508,7 @@ export function HipotesisEditView({
         <SectionCard title="Creación" icon={Lightbulb}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Título</Label>
+              <Label icon={Type}>Título</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{titulo.length} / {MAX_TITULO}</span>
             </div>
             <input
@@ -510,7 +525,7 @@ export function HipotesisEditView({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Descripción</Label>
+              <Label icon={AlignLeft}>Descripción</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descripcion.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
@@ -526,7 +541,7 @@ export function HipotesisEditView({
           </div>
 
           <div>
-            <Label>Tipo de experimento</Label>
+            <Label icon={FlaskConical}>Tipo de experimento</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {TIPOS_EXPERIMENTO.map((t) => (
                 <button
@@ -553,7 +568,7 @@ export function HipotesisEditView({
         <SectionCard title="Diseño del experimento" icon={FlaskConical}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Descripción del experimento</Label>
+              <Label icon={AlignLeft}>Descripción del experimento</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{descExp.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
@@ -570,7 +585,7 @@ export function HipotesisEditView({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Objetivo</Label>
+              <Label icon={Target}>Objetivo</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{objetivo.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
@@ -587,7 +602,7 @@ export function HipotesisEditView({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Criterio de éxito</Label>
+              <Label icon={CheckCircle2}>Criterio de éxito</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{criterio.length} / 200</span>
             </div>
             <input
@@ -607,7 +622,7 @@ export function HipotesisEditView({
         <SectionCard title="Resultados" icon={BarChart3}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Resultado</Label>
+              <Label icon={BarChart3}>Resultado</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{resultado.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
@@ -624,7 +639,7 @@ export function HipotesisEditView({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Evidencia</Label>
+              <Label icon={Paperclip}>Evidencia</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -762,7 +777,7 @@ export function HipotesisEditView({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>Conclusión</Label>
+              <Label icon={Flag}>Conclusión</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>{conclusion.length} / {MAX_TEXTAREA}</span>
             </div>
             <textarea
@@ -783,7 +798,8 @@ export function HipotesisEditView({
           <button
             type="button"
             onClick={cancelarEdicion}
-            className="inline-flex items-center justify-center gap-2 text-sm px-5 h-9 rounded-lg"
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 text-sm px-5 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)" }}
           >
             Cancelar
@@ -791,10 +807,11 @@ export function HipotesisEditView({
           <button
             type="button"
             onClick={guardar}
-            className="h-9 px-6 text-sm font-semibold rounded-lg"
+            disabled={loading}
+            className="h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
-            Guardar cambios
+            {loading ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
       </div>
