@@ -216,7 +216,7 @@ function ProductoEditViewInner({
     const imgs = producto.imagenes ?? [];
 
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
+      <div className="p-4 md:p-8 max-w-3xl mx-auto flex flex-col gap-5">
         <Link
           href={`${basePath}/${id}/productos`}
           className="inline-flex items-center gap-2 text-sm w-fit transition-colors"
@@ -279,88 +279,86 @@ function ProductoEditViewInner({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
-          {/* Columna principal */}
-          <div className="sm:col-span-2 flex flex-col gap-5">
-            {/* Galería (solo productos) */}
-            {!esServicio && (
-              <SectionCard title="Imágenes" icon={ImageIcon}>
-                {imgs.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                    {imgs.map((src, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setLightboxSrc(src)}
-                        className="relative aspect-square rounded-xl overflow-hidden transition-transform hover:-translate-y-0.5"
-                        style={{ border: "1px solid var(--border-hair)" }}
-                        title="Ver imagen completa"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt={`${producto.nombre} ${i + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm" style={{ color: "var(--text-faint)" }}>Sin imágenes registradas.</p>
-                )}
-              </SectionCard>
-            )}
-
-            <SectionCard title="Descripción" icon={AlignLeft}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>
-                {producto.descripcion}
+        {/* Datos rápidos: precio + tipo */}
+        <div className={`grid grid-cols-1 ${esServicio ? "" : "sm:grid-cols-2"} gap-5`}>
+          <div
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--brand)" }}>Precio</span>
+            </div>
+            <p className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{resumenPrecio(producto)}</p>
+            {esServicio && producto.modalidadPrecio && (
+              <p className="text-[11px] mt-1.5" style={{ color: "var(--text-dim)" }}>
+                {MODALIDAD_PRECIO_LABEL[producto.modalidadPrecio]}
               </p>
-            </SectionCard>
+            )}
+          </div>
 
-            <SectionCard title="Características" icon={ListChecks}>
-              {caracteristicas.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {caracteristicas.map((c, i) => (
-                    <span
+          <div
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Tag className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Tipo</span>
+            </div>
+            <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{tipoCfg.label}</p>
+          </div>
+        </div>
+
+        {/* Secciones */}
+        <div className="flex flex-col gap-5">
+          {/* Galería (solo productos) */}
+          {!esServicio && (
+            <SectionCard title="Imágenes" icon={ImageIcon}>
+              {imgs.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+                  {imgs.map((src, i) => (
+                    <button
                       key={i}
-                      className="text-xs px-3 py-1.5 rounded-full break-words"
-                      style={{ backgroundColor: "var(--border-subtle)", color: "var(--muted-foreground)", border: "1px solid var(--border-subtle)" }}
+                      type="button"
+                      onClick={() => setLightboxSrc(src)}
+                      className="relative aspect-square rounded-xl overflow-hidden transition-transform hover:-translate-y-0.5"
+                      style={{ border: "1px solid var(--border-hair)" }}
+                      title="Ver imagen completa"
                     >
-                      {c}
-                    </span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`${producto.nombre} ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: "var(--text-faint)" }}>Sin características registradas.</p>
+                <p className="text-sm" style={{ color: "var(--text-faint)" }}>Sin imágenes registradas.</p>
               )}
             </SectionCard>
-          </div>
+          )}
 
-          {/* Columna lateral */}
-          <div className="flex flex-col gap-5">
-            <div
-              className="rounded-2xl p-5"
-              style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
-                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--brand)" }}>Precio</span>
-              </div>
-              <p className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{resumenPrecio(producto)}</p>
-              {esServicio && producto.modalidadPrecio && (
-                <p className="text-[11px] mt-1.5" style={{ color: "var(--text-dim)" }}>
-                  {MODALIDAD_PRECIO_LABEL[producto.modalidadPrecio]}
-                </p>
-              )}
-            </div>
+          <SectionCard title="Descripción" icon={AlignLeft}>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}>
+              {producto.descripcion}
+            </p>
+          </SectionCard>
 
-            <div
-              className="rounded-2xl p-5"
-              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
-                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Tipo</span>
+          <SectionCard title="Características" icon={ListChecks}>
+            {caracteristicas.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {caracteristicas.map((c, i) => (
+                  <span
+                    key={i}
+                    className="text-xs px-3 py-1.5 rounded-full break-words"
+                    style={{ backgroundColor: "var(--border-subtle)", color: "var(--muted-foreground)", border: "1px solid var(--border-subtle)" }}
+                  >
+                    {c}
+                  </span>
+                ))}
               </div>
-              <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{tipoCfg.label}</p>
-            </div>
-          </div>
+            ) : (
+              <p className="text-sm" style={{ color: "var(--text-faint)" }}>Sin características registradas.</p>
+            )}
+          </SectionCard>
         </div>
 
         {/* Lightbox de imágenes */}
