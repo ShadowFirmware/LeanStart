@@ -7,7 +7,7 @@ import { compressImageToDataUrl } from "@leanstart/commons";
 
 const MAX_IMAGENES = 6;
 const RECOMENDADO = 3;
-const MAX_MB = 2;
+const MAX_MB = 8;
 
 interface ProductoImagenesFieldProps {
   value: string[];
@@ -17,7 +17,7 @@ interface ProductoImagenesFieldProps {
 
 /**
  * Galería de imágenes de un producto. Mínimo 3 recomendado (no obligatorio),
- * máximo 6, cada archivo ≤ 2MB. Las miniaturas se muestran uniformes y el
+ * máximo 6, cada archivo ≤ 8MB. Las miniaturas se muestran uniformes y el
  * usuario puede eliminar cualquiera o agregar más hasta el tope.
  */
 export function ProductoImagenesField({ value, onChange, disabled = false }: ProductoImagenesFieldProps) {

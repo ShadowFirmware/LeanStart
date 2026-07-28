@@ -379,8 +379,8 @@ export function HipotesisNewView() {
                     value={descripcion}
                     maxLength={MAX_TEXTAREA}
                     onChange={(e) => setDescripcion(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-16"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
@@ -451,8 +451,8 @@ export function HipotesisNewView() {
                     value={descExp}
                     maxLength={MAX_TEXTAREA}
                     onChange={(e) => setDescExp(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-16"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
@@ -470,8 +470,8 @@ export function HipotesisNewView() {
                     value={objetivo}
                     maxLength={MAX_TEXTAREA}
                     onChange={(e) => setObjetivo(e.target.value)}
-                    rows={5}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-28"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-16"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
@@ -489,8 +489,8 @@ export function HipotesisNewView() {
                     value={criterio}
                     maxLength={300}
                     onChange={(e) => setCriterio(e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-24"
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-12"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
@@ -554,8 +554,8 @@ export function HipotesisNewView() {
                     value={resultado}
                     maxLength={MAX_TEXTAREA}
                     onChange={(e) => setResultado(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-16"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
@@ -709,8 +709,8 @@ export function HipotesisNewView() {
                     value={conclusion}
                     maxLength={MAX_TEXTAREA}
                     onChange={(e) => setConclusion(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-32"
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y leading-relaxed min-h-16"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
                     onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
