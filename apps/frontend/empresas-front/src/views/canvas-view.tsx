@@ -42,7 +42,7 @@ const BLOCK_META: Record<BlockKey, {
   max?: number;
   placeholder: string;
 }> = {
-  problema:          { icon: AlertCircle,  title: "Problema",                color: C.problema,          type: "multi",  max: 3, hint: "Lista los 3 principales problemas de tus clientes",          placeholder: "Ej. Alto costo de los servicios actuales" },
+  problema:          { icon: AlertCircle,  title: "Problema",                color: C.problema,          type: "multi",  max: 5, hint: "Lista los 5 principales problemas de tus clientes",          placeholder: "Ej. Alto costo de los servicios actuales" },
   solucion:          { icon: Lightbulb,    title: "Solución",                color: C.solucion,          type: "single",         hint: "Las características más importantes de tu solución",         placeholder: "Describe las características principales de tu solución..." },
   pvp:               { icon: Sparkles,     title: "Propuesta de valor única",color: C.pvp,               type: "single",         hint: "Mensaje claro que distingue tu oferta de todas las demás",  placeholder: "Ej. La única plataforma que permite a emprendedores..." },
   ventajaInjusta:    { icon: Lock,         title: "Ventaja injusta",         color: C.ventajaInjusta,    type: "single",         hint: "Algo que no puede ser copiado o comprado fácilmente",       placeholder: "Ej. Acceso exclusivo a datos de..." },
@@ -115,16 +115,55 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
   if (meta.type === "single") {
     const value = canvas[blockKey] as string;
     if (!value.trim()) return null;
+    // La PVP ocupa 2 filas del grid (más alta), así que soporta más líneas
+    // antes de recortar visualmente el texto.
+    const esAlto = blockKey === "pvp";
     return (
-      <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.6, marginTop: 2, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 8, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-        {value.length > 150 ? value.slice(0, 150) + "…" : value}
+      <p
+        style={{
+          color: "rgba(255,255,255,0.82)",
+          fontSize: 11,
+          lineHeight: 1.6,
+          marginTop: 2,
+          borderTop: "1px solid rgba(255,255,255,0.12)",
+          paddingTop: 8,
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          display: "-webkit-box",
+          WebkitBoxOrient: "vertical",
+          WebkitLineClamp: esAlto ? 14 : 6,
+          overflow: "hidden",
+        }}
+      >
+        {value}
       </p>
     );
   }
   const items = (canvas[blockKey] as string[]).filter(Boolean);
   if (items.length === 0) return null;
+
+  // La estructura de costos admite hasta 8 elementos: se reparten en 2 columnas
+  // de 4 filas para que la tarjeta no crezca en exceso.
+  const dosColumnas = blockKey === "estructuraCostos" && items.length > 4;
+
   return (
-    <ul style={{ margin: "2px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 8 }}>
+    <ul
+      style={{
+        margin: "2px 0 0",
+        padding: 0,
+        listStyle: "none",
+        display: dosColumnas ? "grid" : "flex",
+        flexDirection: dosColumnas ? undefined : "column",
+        gridTemplateColumns: dosColumnas ? "1fr 1fr" : undefined,
+        gridAutoFlow: dosColumnas ? "column" : undefined,
+        gridTemplateRows: dosColumnas ? `repeat(${Math.ceil(items.length / 2)}, auto)` : undefined,
+        columnGap: dosColumnas ? 14 : undefined,
+        rowGap: 4,
+        gap: dosColumnas ? undefined : 4,
+        borderTop: "1px solid rgba(255,255,255,0.12)",
+        paddingTop: 8,
+      }}
+    >
       {items.map((item, i) => (
         <li key={i} style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.4, display: "flex", gap: 5, alignItems: "flex-start", minWidth: 0 }}>
           <span style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>·</span>

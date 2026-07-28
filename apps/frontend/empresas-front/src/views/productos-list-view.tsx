@@ -244,24 +244,6 @@ export function ProductosListView({
           <p className="text-sm mb-6" style={{ color: "var(--text-dim)" }}>
             {puedeEditar ? `Agrega los productos o servicios que ofrece ${empresa.nombre}.` : `${empresa.nombre} no tiene registros.`}
           </p>
-          {puedeEditar && (
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Link
-                href={`${basePath}/${id}/productos/nuevo`}
-                className="inline-flex items-center justify-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
-                style={{ color: "var(--text-strong)", backgroundColor: "rgba(59,130,246,0.14)", border: "1px solid rgba(59,130,246,0.3)" }}
-              >
-                <Package className="w-3.5 h-3.5" /> Agregar producto
-              </Link>
-              <Link
-                href={`${basePath}/${id}/productos/nuevo-servicio`}
-                className="inline-flex items-center justify-center gap-1.5 text-xs px-4 h-8 rounded-lg font-medium"
-                style={{ color: "var(--text-strong)", backgroundColor: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.3)" }}
-              >
-                <Wrench className="w-3.5 h-3.5" /> Agregar servicio
-              </Link>
-            </div>
-          )}
         </div>
       ) : productosVisibles.length === 0 ? (
         <div
@@ -289,7 +271,6 @@ export function ProductosListView({
               ? p.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
               : [];
             const editHref = `${basePath}/${id}/productos/${p.id}/editar`;
-            const portada = p.tipo === "producto" ? p.imagenes?.[0] : undefined;
             const pendientes = pendientesPorProducto.get(p.id) ?? 0;
             const tieneComentario = pendientes > 0;
             return (
@@ -327,24 +308,14 @@ export function ProductosListView({
                   </span>
                 )}
 
-                {/* Header: portada/ícono + tipo */}
+                {/* Header: ícono + tipo */}
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  {portada ? (
-                    <div
-                      className="w-10 h-10 rounded-xl overflow-hidden shrink-0"
-                      style={{ border: `1px solid ${tipo.color}22` }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={portada} alt={p.nombre} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: tipo.bg, border: `1px solid ${tipo.color}22` }}
-                    >
-                      <tipo.icon className="w-4 h-4" style={{ color: tipo.color }} />
-                    </div>
-                  )}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: tipo.bg, border: `1px solid ${tipo.color}22` }}
+                  >
+                    <tipo.icon className="w-4 h-4" style={{ color: tipo.color }} />
+                  </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span
                       className="text-[11px] font-medium px-2.5 py-1 rounded-full"

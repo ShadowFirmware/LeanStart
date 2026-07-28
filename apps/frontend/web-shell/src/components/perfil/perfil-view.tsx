@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,7 +32,6 @@ type PerfilFormValues = z.infer<typeof perfilSchema>;
 
 export function PerfilView() {
   const currentUser = useCurrentUser();
-  const router = useRouter();
   const hydrated = useHasHydrated();
   const overrides = usePerfilStore((s) => (currentUser ? s.perfiles[currentUser.id] : undefined));
   const actualizarPerfil = usePerfilStore((s) => s.actualizarPerfil);
@@ -94,13 +92,6 @@ export function PerfilView() {
         avatarUrl,
       });
       toast.success("Perfil actualizado correctamente.");
-      // Regresa a la vista desde la que se abrió el perfil (no forzamos el
-      // dashboard). Si no hay historial previo, caemos al inicio del rol.
-      if (window.history.length > 1) {
-        router.back();
-      } else {
-        router.push(`/${rol}/dashboard`);
-      }
     } catch {
       toast.error("No se pudo actualizar el perfil.");
     }
