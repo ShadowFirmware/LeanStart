@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Tag, Package, Wrench, AlignLeft, ListChecks, DollarSign, ImageIcon } from "lucide-react";
+import { ArrowLeft, Pencil, Tag, Package, Wrench, AlignLeft, ListChecks, DollarSign, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
 import {
@@ -129,7 +129,7 @@ function ProductoEditViewInner({
     storeToServicioPrecio(producto ?? {})
   );
   const [precioError, setPrecioError] = useState<string | null>(null);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const esServicio = producto?.tipo === "servicio";
 
@@ -320,7 +320,7 @@ function ProductoEditViewInner({
                     <button
                       key={i}
                       type="button"
-                      onClick={() => setLightboxSrc(src)}
+                      onClick={() => setLightboxIndex(i)}
                       className="relative aspect-square rounded-xl overflow-hidden transition-transform hover:-translate-y-0.5"
                       style={{ border: "1px solid var(--border-hair)" }}
                       title="Ver imagen completa"
@@ -362,18 +362,48 @@ function ProductoEditViewInner({
         </div>
 
         {/* Lightbox de imágenes */}
-        <Dialog open={lightboxSrc !== null} onOpenChange={(open) => { if (!open) setLightboxSrc(null); }}>
+        <Dialog open={lightboxIndex !== null} onOpenChange={(open) => { if (!open) setLightboxIndex(null); }}>
           <DialogContent className="bg-transparent border-0 shadow-none p-0 max-w-[95vw] sm:max-w-[720px] ring-0">
             <DialogTitle className="sr-only">Imagen de {producto.nombre}</DialogTitle>
             <DialogDescription className="sr-only">Vista ampliada de la imagen del producto.</DialogDescription>
-            {lightboxSrc && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={lightboxSrc}
-                alt={producto.nombre}
-                className="block mx-auto w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl"
-                style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-              />
+            {lightboxIndex !== null && (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imgs[lightboxIndex]}
+                  alt={`${producto.nombre} ${lightboxIndex + 1}`}
+                  className="block mx-auto w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl"
+                  style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+                />
+                {imgs.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIndex((i) => (i === null ? null : (i - 1 + imgs.length) % imgs.length))}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+                      style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff" }}
+                      aria-label="Imagen anterior"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIndex((i) => (i === null ? null : (i + 1) % imgs.length))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+                      style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff" }}
+                      aria-label="Siguiente imagen"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <span
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-medium px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff" }}
+                    >
+                      {lightboxIndex + 1} / {imgs.length}
+                    </span>
+                  </>
+                )}
+              </div>
             )}
           </DialogContent>
         </Dialog>
@@ -383,7 +413,7 @@ function ProductoEditViewInner({
 
   // ─────────────────────────── MODO EDICIÓN ───────────────────────────
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
+    <div className="p-4 md:p-8 max-w-3xl mx-auto flex flex-col gap-5">
       <button
         type="button"
         onClick={cancelarEdicion}
@@ -396,7 +426,7 @@ function ProductoEditViewInner({
       </button>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
           {/* Header */}
           <div
             className="rounded-2xl p-5 md:p-6"
@@ -440,141 +470,139 @@ function ProductoEditViewInner({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
-            {/* Columna principal */}
-            <div className="sm:col-span-2 flex flex-col gap-5">
-              {/* Imágenes (solo productos) */}
-              {!esServicio && (
-                <SectionCard title="Imágenes" icon={ImageIcon}>
-                  <ProductoImagenesField value={imagenes} onChange={setImagenes} />
-                </SectionCard>
-              )}
-
-              <SectionCard title="Descripción" icon={AlignLeft}>
-                <FormField
-                  control={form.control}
-                  name="descripcion"
-                  render={({ field }: { field: ControllerRenderProps<FormValues, "descripcion"> }) => (
-                    <FormItem className="gap-1.5">
-                      <div className="flex items-center justify-end">
-                        <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "var(--text-faint)" : "var(--text-dim)" }}>
-                          {field.value?.length ?? 0} / {MAX_DESCRIPCION} (mín. 10)
-                        </span>
-                      </div>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe qué es, cómo funciona y qué problema resuelve."
-                          className="min-h-28 resize-none text-sm focus-visible:ring-0"
-                          style={inputStyle}
-                          maxLength={MAX_DESCRIPCION}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-              </SectionCard>
-
-              {/* Modalidad de precio (solo servicios) */}
-              {esServicio && (
-                <SectionCard title="Modalidad de precio" icon={DollarSign}>
-                  <ServicioPrecioField
-                    value={precioServicio}
-                    onChange={(v) => { setPrecioServicio(v); if (precioError) setPrecioError(validarServicioPrecio(v)); }}
-                    error={precioError ?? undefined}
-                  />
-                </SectionCard>
-              )}
-
-              <SectionCard title="Características" icon={ListChecks}>
-                <FormField
-                  control={form.control}
-                  name="caracteristicas"
-                  render={({ field }: { field: ControllerRenderProps<FormValues, "caracteristicas"> }) => (
-                    <FormItem className="gap-1.5">
-                      <div className="flex items-center justify-end">
-                        <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-                          Opcional · {field.value?.length ?? 0} / {MAX_CARACTERISTICAS}
-                        </span>
-                      </div>
-                      <FormControl>
-                        <Textarea
-                          placeholder={"Ej.\nMaterial resistente al agua\nCarga rápida"}
-                          className="min-h-28 resize-none text-sm focus-visible:ring-0"
-                          style={inputStyle}
-                          maxLength={MAX_CARACTERISTICAS}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )}
-                />
-              </SectionCard>
-            </div>
-
-            {/* Columna lateral */}
-            <div className="flex flex-col gap-5">
-              {/* Precio simple (solo productos) */}
-              {!esServicio && (
-                <div
-                  className="rounded-2xl p-5"
-                  style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
-                >
-                  <FormField
-                    control={form.control}
-                    name="precio"
-                    render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
-                      <FormItem className="gap-1.5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
-                          <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--brand)" }}>
-                            Precio
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-faint)" }}>$</span>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              min="0"
-                              max={MAX_PRECIO}
-                              step="0.01"
-                              placeholder="0.00"
-                              className="h-9 pl-6 text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              style={inputStyle}
-                              {...field}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "" || (parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO && v.length <= 12)) {
-                                  field.onChange(v);
-                                }
-                              }}
-                            />
-                          </div>
-                        </FormControl>
-                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>Opcional</span>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-
+          {/* Datos rápidos: precio + tipo */}
+          <div className={`grid grid-cols-1 ${esServicio ? "" : "sm:grid-cols-2"} gap-5`}>
+            {/* Precio simple (solo productos) */}
+            {!esServicio && (
               <div
                 className="rounded-2xl p-5"
-                style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Tag className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
-                  <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Tipo</span>
-                </div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{tipoCfg.label}</p>
-                <p className="text-[11px] mt-1" style={{ color: "var(--text-faint)" }}>El tipo no se puede cambiar.</p>
+                <FormField
+                  control={form.control}
+                  name="precio"
+                  render={({ field }: { field: ControllerRenderProps<FormValues, "precio"> }) => (
+                    <FormItem className="gap-1.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign className="w-3.5 h-3.5" style={{ color: "var(--brand)" }} />
+                        <FormLabel className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--brand)" }}>
+                          Precio
+                        </FormLabel>
+                      </div>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-faint)" }}>$</span>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            max={MAX_PRECIO}
+                            step="0.01"
+                            placeholder="0.00"
+                            className="h-9 pl-6 text-sm focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            style={inputStyle}
+                            {...field}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "" || (parseFloat(v) >= 0 && parseFloat(v) <= MAX_PRECIO && v.length <= 12)) {
+                                field.onChange(v);
+                              }
+                            }}
+                          />
+                        </div>
+                      </FormControl>
+                      <span className="text-xs" style={{ color: "var(--text-dim)" }}>Opcional</span>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
               </div>
+            )}
+
+            <div
+              className="rounded-2xl p-5"
+              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Tag className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Tipo</span>
+              </div>
+              <p className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{tipoCfg.label}</p>
+              <p className="text-[11px] mt-1" style={{ color: "var(--text-faint)" }}>El tipo no se puede cambiar.</p>
             </div>
+          </div>
+
+          {/* Secciones */}
+          <div className="flex flex-col gap-5">
+            {/* Imágenes (solo productos) */}
+            {!esServicio && (
+              <SectionCard title="Imágenes" icon={ImageIcon}>
+                <ProductoImagenesField value={imagenes} onChange={setImagenes} />
+              </SectionCard>
+            )}
+
+            <SectionCard title="Descripción" icon={AlignLeft}>
+              <FormField
+                control={form.control}
+                name="descripcion"
+                render={({ field }: { field: ControllerRenderProps<FormValues, "descripcion"> }) => (
+                  <FormItem className="gap-1.5">
+                    <div className="flex items-center justify-end">
+                      <span className="text-xs" style={{ color: (field.value?.length ?? 0) < 10 ? "var(--text-faint)" : "var(--text-dim)" }}>
+                        {field.value?.length ?? 0} / {MAX_DESCRIPCION} (mín. 10)
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe qué es, cómo funciona y qué problema resuelve."
+                        className="min-h-28 resize-none text-sm focus-visible:ring-0"
+                        style={inputStyle}
+                        maxLength={MAX_DESCRIPCION}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+            </SectionCard>
+
+            {/* Modalidad de precio (solo servicios) */}
+            {esServicio && (
+              <SectionCard title="Modalidad de precio" icon={DollarSign}>
+                <ServicioPrecioField
+                  value={precioServicio}
+                  onChange={(v) => { setPrecioServicio(v); if (precioError) setPrecioError(validarServicioPrecio(v)); }}
+                  error={precioError ?? undefined}
+                />
+              </SectionCard>
+            )}
+
+            <SectionCard title="Características" icon={ListChecks}>
+              <FormField
+                control={form.control}
+                name="caracteristicas"
+                render={({ field }: { field: ControllerRenderProps<FormValues, "caracteristicas"> }) => (
+                  <FormItem className="gap-1.5">
+                    <div className="flex items-center justify-end">
+                      <span className="text-xs" style={{ color: "var(--text-faint)" }}>
+                        Opcional · {field.value?.length ?? 0} / {MAX_CARACTERISTICAS}
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Ej.\nMaterial resistente al agua\nCarga rápida"}
+                        className="min-h-28 resize-none text-sm focus-visible:ring-0"
+                        style={inputStyle}
+                        maxLength={MAX_CARACTERISTICAS}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+            </SectionCard>
           </div>
 
           {/* Footer */}

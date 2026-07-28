@@ -86,14 +86,6 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
-            {i === 0 && (
-              <span
-                className="absolute bottom-1 left-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
-                style={{ backgroundColor: "var(--shell-header)", color: "var(--brand-accent)" }}
-              >
-                Portada
-              </span>
-            )}
             {!disabled && (
               <button
                 type="button"
