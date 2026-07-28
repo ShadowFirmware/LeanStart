@@ -91,17 +91,12 @@ function ReadField({ icon, label, value }: { icon?: React.ElementType; label: st
   return (
     <div>
       <Label icon={icon}>{label}</Label>
-      <div
-        className="rounded-lg px-3.5 py-2.5"
-        style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+      <p
+        className="text-sm leading-relaxed whitespace-pre-wrap break-words"
+        style={{ color: tieneValor ? "var(--muted-foreground)" : "var(--text-faint)", overflowWrap: "anywhere" }}
       >
-        <p
-          className="text-sm leading-relaxed whitespace-pre-wrap break-words"
-          style={{ color: tieneValor ? "var(--muted-foreground)" : "var(--text-faint)", overflowWrap: "anywhere" }}
-        >
-          {tieneValor ? value : "Sin información"}
-        </p>
-      </div>
+        {tieneValor ? value : "Sin información"}
+      </p>
     </div>
   );
 }
