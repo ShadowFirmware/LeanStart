@@ -35,15 +35,21 @@ export function InactivityLogout() {
   }, [limpiarTemporizadores]);
 
   const iniciarAvisoFinal = useCallback(() => {
-    setSegundosRestantes(AVISO_MS / 1000);
+    // Contador en una variable normal (no en el estado): el cierre de sesión es un
+    // efecto secundario, y la función que actualiza el estado debe quedarse pura —
+    // meterlo ahí adentro es exactamente el patrón que causó el incidente anterior
+    // con signOut() disparándose de más.
+    let restante = AVISO_MS / 1000;
+    setSegundosRestantes(restante);
     intervalCuentaRef.current = setInterval(() => {
-      setSegundosRestantes((actual) => {
-        if (actual === null || actual <= 1) {
-          cerrarPorInactividad();
-          return null;
-        }
-        return actual - 1;
-      });
+      restante -= 1;
+      if (restante <= 0) {
+        if (intervalCuentaRef.current) clearInterval(intervalCuentaRef.current);
+        setSegundosRestantes(null);
+        cerrarPorInactividad();
+        return;
+      }
+      setSegundosRestantes(restante);
     }, 1000);
   }, [cerrarPorInactividad]);
 

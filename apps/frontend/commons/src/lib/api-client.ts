@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 /**
  * Interruptor de modo demo (mismo flag que `DEMO_MODE` en `./demo.ts`, expuesto
@@ -14,6 +14,14 @@ interface ApiError {
   message?: string | string[];
   error?: string;
 }
+
+// Si la sesión ya murió (expiró, o el logout por inactividad no alcanzó a redirigir),
+// cada store que tenía una llamada pendiente recibía su propio 401 y lo tragaba en
+// silencio (a propósito, ver LiveSync) — el resultado era un dashboard con datos viejos
+// de localStorage, sin ningún aviso de que ya no hay sesión real. Un solo 401, sin
+// importar qué llamada lo dispare, ahora manda a /login. El flag evita que la ráfaga
+// de llamadas concurrentes (LiveSync dispara varias a la vez) llame a signOut() N veces.
+let sesionExpirada = false;
 
 /**
  * Llama al api-gateway adjuntando el Bearer token de la sesión activa (si existe).
@@ -32,6 +40,11 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
       ...options?.headers,
     },
   });
+
+  if (res.status === 401 && !sesionExpirada) {
+    sesionExpirada = true;
+    void signOut({ callbackUrl: "/login" });
+  }
 
   if (!res.ok) {
     const body: ApiError = await res.json().catch(() => ({}));
