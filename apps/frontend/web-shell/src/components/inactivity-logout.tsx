@@ -56,6 +56,9 @@ export function InactivityLogout() {
   useEffect(() => {
     if (modoDemo() || status !== "authenticated") return;
 
+    // Arranca los timers y suscribe los listeners de actividad (sistema externo:
+    // window + setTimeout/setInterval) — el caso que el propio lint sí permite.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     reiniciarTemporizador();
     EVENTOS_ACTIVIDAD.forEach((evento) => window.addEventListener(evento, reiniciarTemporizador));
 

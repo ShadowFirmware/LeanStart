@@ -22,6 +22,14 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
   // Neutro (0) hasta hidratar, para no romper el render del servidor.
   const noLeidas = hydrated ? noLeidasStore : 0;
   const [open, setOpen] = useState(false);
+  // Cierra el drawer al cambiar de ruta — ajuste de estado durante el render en vez
+  // de un efecto (patrón recomendado por React para "resetear estado cuando cambia
+  // una prop"), así no hay un frame de más con el drawer todavía abierto en la ruta nueva.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
 
   const navItems = [
     { href: "/mentor/dashboard",       label: "Dashboard",      icon: LayoutDashboard, badge: 0 },
@@ -29,11 +37,6 @@ export function MentorSidebar({ userName, userEmail }: MentorSidebarProps) {
     { href: "/mentor/historial",       label: "Historial",      icon: History,         badge: 0 },
     { href: "/mentor/notificaciones",  label: "Notificaciones", icon: Bell,            badge: noLeidas },
   ];
-
-  // Cierra el drawer al cambiar de ruta
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   // Evita scroll del body cuando el drawer está abierto en mobile
   useEffect(() => {

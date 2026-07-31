@@ -44,8 +44,8 @@ function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
 /** Logo de la empresa (o inicial) para la vitrina pública. */
 function EmpresaLogo({ empresa }: { empresa: EmpresaPublica }) {
   if (empresa.logoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={empresa.logoUrl}
         alt={empresa.nombre}

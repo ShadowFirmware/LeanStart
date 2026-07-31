@@ -49,6 +49,9 @@ export function ErrorArt({ className }: { className?: string }) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
+    // Lee/escribe sessionStorage (sistema externo real) — encaja en el caso que el
+    // propio lint sí permite: sincronizar con algo fuera de React, no estado derivado.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSrc(pickArt());
   }, []);
 

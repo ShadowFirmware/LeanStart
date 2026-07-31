@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Camera, Trash2, ShieldCheck, Palette } from "lucide-react";
@@ -47,11 +47,17 @@ export function PerfilView() {
     resolver: zodResolver(perfilSchema),
     defaultValues: { nombre: nombreBase, correo: correoBase },
   });
+  // useWatch (no form.watch()) para que el compilador de React pueda memoizar
+  // este componente con normalidad.
+  const nombreEnVivo = useWatch({ control: form.control, name: "nombre" });
 
   // Sincroniza los valores una vez que el store hidrata / cambia el usuario.
   useEffect(() => {
     if (!currentUser) return;
     form.reset({ nombre: nombreBase, correo: correoBase });
+    // Sincroniza con el store persistido (zustand-persist) al rehidratar/cambiar de
+    // usuario — es sincronizar con un sistema externo, el caso que sí amerita efecto.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvatarUrl(overrides?.avatarUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, hydrated, overrides?.nombre, overrides?.correo, overrides?.avatarUrl]);
@@ -65,7 +71,7 @@ export function PerfilView() {
   }
 
   const rol = currentUser.rol;
-  const inicial = (form.watch("nombre") || currentUser.name || "?").charAt(0).toUpperCase();
+  const inicial = (nombreEnVivo || currentUser.name || "?").charAt(0).toUpperCase();
 
   async function handleAvatarFile(file: File) {
     setSubiendoAvatar(true);

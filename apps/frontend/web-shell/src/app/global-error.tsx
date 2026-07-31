@@ -45,6 +45,9 @@ export default function GlobalError({
     } catch {
       /* noop */
     }
+    // Lee/escribe sessionStorage (sistema externo real) — encaja en el caso que el
+    // propio lint sí permite: sincronizar con algo fuera de React, no estado derivado.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setArt(choice);
   }, []);
 

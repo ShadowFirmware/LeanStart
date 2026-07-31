@@ -57,6 +57,9 @@ export function ErrorScreen({
   // Elegimos la ilustración en el SERVIDOR, por request: aparece de inmediato
   // (ya viene en el HTML, sin esperar a que hidrate el cliente) y cambia en
   // cada carga. Las páginas que usan esto declaran `dynamic = "force-dynamic"`.
+  // Este componente NO es "use client": no hidrata ni se re-ejecuta en el navegador,
+  // así que no hay riesgo de mismatch de hidratación por el valor aleatorio.
+  // eslint-disable-next-line react-hooks/purity
   const illustration = ART[Math.floor(Math.random() * ART.length)];
 
   return (

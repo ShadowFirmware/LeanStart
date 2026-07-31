@@ -1,9 +1,8 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
-import { cn } from "@leanstart/commons";
+import { cn, useHasHydrated } from "@leanstart/commons";
 
 const OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -18,8 +17,7 @@ const OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
  */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHasHydrated();
 
   return (
     <div

@@ -22,11 +22,14 @@ export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarPr
   // Neutro (0) hasta hidratar, para no romper el render del servidor.
   const noLeidas = hydrated ? noLeidasStore : 0;
   const [open, setOpen] = useState(false);
-
-  // Cierra el drawer al cambiar de ruta
-  useEffect(() => {
+  // Cierra el drawer al cambiar de ruta — ajuste de estado durante el render en vez
+  // de un efecto (patrón recomendado por React para "resetear estado cuando cambia
+  // una prop"), así no hay un frame de más con el drawer todavía abierto en la ruta nueva.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   // Evita scroll del body cuando el drawer está abierto en mobile
   useEffect(() => {
