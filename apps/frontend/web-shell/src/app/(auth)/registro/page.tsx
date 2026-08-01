@@ -22,9 +22,9 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 const registroSchema = z.object({
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(80, "Máximo 80 caracteres"),
   email: z.email("Correo electrónico inválido"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(72, "Máximo 72 caracteres"),
 });
 
 type RegistroFormValues = z.infer<typeof registroSchema>;

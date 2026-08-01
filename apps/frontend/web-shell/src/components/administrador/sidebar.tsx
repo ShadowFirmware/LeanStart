@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { cerrarSesionBackend } from "@leanstart/commons";
+import { cerrarSesionBackend, useHasHydrated } from "@leanstart/commons";
+import { useEmpresasStore } from "@leanstart/empresas-front";
 import {
   LayoutDashboard, Users, Building2, ShieldCheck,
   ClipboardList, TrendingUp, BarChart3, LogOut, Menu, X,
 } from "lucide-react";
 import { SidebarUser } from "@/components/perfil/sidebar-user";
 import { Logo } from "@/components/logo";
+
+const ESTADOS_PENDIENTES_ASIGNACION = ["pendiente_mentoria", "pendiente_evaluacion"];
 
 interface AdministradorSidebarProps {
   userName: string;
@@ -29,6 +32,11 @@ const NAV_ITEMS = [
 
 export function AdministradorSidebar({ userName, userEmail }: AdministradorSidebarProps) {
   const pathname = usePathname();
+  const hydrated = useHasHydrated();
+  const empresas = useEmpresasStore((s) => s.empresas);
+  // Punto de aviso en "Empresas" cuando hay algún proyecto esperando que se le asigne
+  // mentor o evaluador — para que el admin no tenga que entrar a revisar si hay algo pendiente.
+  const hayPendientesAsignacion = hydrated && empresas.some((e) => ESTADOS_PENDIENTES_ASIGNACION.includes(e.estado));
   const [open, setOpen] = useState(false);
   // Cierra el drawer al cambiar de ruta — ajuste de estado durante el render en vez
   // de un efecto (patrón recomendado por React para "resetear estado cuando cambia
@@ -82,7 +90,16 @@ export function AdministradorSidebar({ userName, userEmail }: AdministradorSideb
                 backgroundColor: isActive ? "var(--brand-tint)" : "transparent",
               }}
             >
-              <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "var(--brand)" : "currentColor" }} />
+              <span className="relative shrink-0">
+                <Icon className="w-4 h-4" style={{ color: isActive ? "var(--brand)" : "currentColor" }} />
+                {href === "/administrador/empresas" && hayPendientesAsignacion && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+                    style={{ backgroundColor: "#EF4444", boxShadow: "0 0 0 2px var(--shell)" }}
+                    aria-label="Hay empresas pendientes de asignar mentor o evaluador"
+                  />
+                )}
+              </span>
               <span className="flex-1 truncate">{label}</span>
             </Link>
           );

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, IsString, Max, Min } from "class-validator";
+import { IsInt, IsString, Max, MaxLength, Min } from "class-validator";
 
 export class SetPuntajeDto {
   @ApiProperty()
@@ -13,6 +13,7 @@ export class SetPuntajeDto {
   puntaje!: number;
 }
 
+// Mismos límites que ya exige el frontend (evaluacion-form.tsx: MAX_COMENTARIO_CRITERIO/MAX_COMENTARIO_GENERAL).
 export class SetComentarioCriterioDto {
   @ApiProperty()
   @IsString()
@@ -20,11 +21,13 @@ export class SetComentarioCriterioDto {
 
   @ApiProperty()
   @IsString()
+  @MaxLength(300)
   comentario!: string;
 }
 
 export class SetComentarioDto {
   @ApiProperty()
   @IsString()
+  @MaxLength(600)
   comentario!: string;
 }

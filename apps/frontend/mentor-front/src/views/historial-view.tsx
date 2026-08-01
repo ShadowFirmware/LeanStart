@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
-  MessageSquare, ClipboardList, CheckCircle2,
+  MessageSquare, ClipboardList, CheckCircle2, Search,
   LayoutTemplate, Package, Lightbulb, Building2,
 } from "lucide-react";
 import { useEmpresasStore, useObservacionesStore, type CanvasData, type Observacion } from "@leanstart/empresas-front";
-import { useHasHydrated } from "@leanstart/commons";
+import { useHasHydrated, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
+
+const TODOS_LOS_ESTADOS = "todos";
+const TODOS_LOS_MODULOS = "todos";
 
 const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: string; bg: string }> = {
   borrador: { label: "Borrador", color: "var(--text-dim)", bg: "var(--border-hair)" },
@@ -80,6 +84,19 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
   const atendidas = registros.filter((r) => r.estado === "atendida" || r.estado === "cerrada").length;
   const pendientes = total - atendidas;
 
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState(TODOS_LOS_ESTADOS);
+  const [filtroModulo, setFiltroModulo] = useState(TODOS_LOS_MODULOS);
+
+  const registrosFiltrados = registros.filter((r) => {
+    const texto = busqueda.toLowerCase();
+    const coincideBusqueda =
+      !texto || r.empresaNombre.toLowerCase().includes(texto) || r.comentario.toLowerCase().includes(texto);
+    const coincideEstado = filtroEstado === TODOS_LOS_ESTADOS || r.estado === filtroEstado;
+    const coincideModulo = filtroModulo === TODOS_LOS_MODULOS || r.modulo === filtroModulo;
+    return coincideBusqueda && coincideEstado && coincideModulo;
+  });
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
       {/* Header */}
@@ -116,25 +133,97 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
         ))}
       </div>
 
+      {/* Búsqueda y filtros */}
+      {registros.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+              style={{ color: "var(--text-faint)" }}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por empresa o comentario..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
+            />
+          </div>
+
+          <Select
+            value={filtroEstado}
+            onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}
+            items={[
+              { value: TODOS_LOS_ESTADOS, label: "Todos los estados" },
+              ...(Object.entries(ESTADO_OBS_CONFIG) as [EstadoObservacion, typeof ESTADO_OBS_CONFIG[EstadoObservacion]][])
+                .map(([value, cfg]) => ({ value, label: cfg.label })),
+            ]}
+          >
+            <SelectTrigger
+              className="w-full sm:w-48 h-9 text-sm shrink-0"
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+            >
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_LOS_ESTADOS}>Todos los estados</SelectItem>
+              {(Object.entries(ESTADO_OBS_CONFIG) as [EstadoObservacion, typeof ESTADO_OBS_CONFIG[EstadoObservacion]][])
+                .map(([value, cfg]) => (
+                  <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filtroModulo}
+            onValueChange={(v) => setFiltroModulo(v ?? TODOS_LOS_MODULOS)}
+            items={[
+              { value: TODOS_LOS_MODULOS, label: "Todos los módulos" },
+              ...(Object.entries(MODULO_CONFIG) as [Observacion["tipoElemento"], typeof MODULO_CONFIG[Observacion["tipoElemento"]]][])
+                .map(([value, cfg]) => ({ value, label: cfg.label })),
+            ]}
+          >
+            <SelectTrigger
+              className="w-full sm:w-48 h-9 text-sm shrink-0"
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+            >
+              <SelectValue placeholder="Módulo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_LOS_MODULOS}>Todos los módulos</SelectItem>
+              {(Object.entries(MODULO_CONFIG) as [Observacion["tipoElemento"], typeof MODULO_CONFIG[Observacion["tipoElemento"]]][])
+                .map(([value, cfg]) => (
+                  <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Lista de observaciones */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-dim)" }}>
           Observaciones realizadas
         </p>
 
-        {registros.length === 0 ? (
+        {registrosFiltrados.length === 0 ? (
           <div
             className="rounded-xl p-10 text-center"
             style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
           >
             <MessageSquare className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--text-dim)" }} />
             <p className="text-sm" style={{ color: "var(--text-dim)" }}>
-              Aún no has dejado observaciones. Cuando comentes en un proyecto, aparecerán aquí.
+              {registros.length === 0
+                ? "Aún no has dejado observaciones. Cuando comentes en un proyecto, aparecerán aquí."
+                : "Sin resultados para tu búsqueda/filtros."}
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {registros.map((r) => {
+            {registrosFiltrados.map((r) => {
               const cfg = ESTADO_OBS_CONFIG[r.estado];
               const moduloCfg = MODULO_CONFIG[r.modulo];
               return (

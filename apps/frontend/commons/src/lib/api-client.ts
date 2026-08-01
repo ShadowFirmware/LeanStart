@@ -23,14 +23,25 @@ interface ApiError {
 // de llamadas concurrentes (LiveSync dispara varias a la vez) llame a signOut() N veces.
 let sesionExpirada = false;
 
+interface ApiFetchOptions extends RequestInit {
+  /**
+   * Salta la llamada a getSession() — para endpoints públicos (@Public() en el
+   * gateway) que no necesitan el token. Sin esto, hasta un visitante anónimo (que
+   * nunca ha iniciado sesión) esperaba una ida-vuelta completa a next-auth antes de
+   * poder pedir algo tan básico como la galería pública.
+   */
+  skipAuth?: boolean;
+}
+
 /**
  * Llama al api-gateway adjuntando el Bearer token de la sesión activa (si existe).
  * Lanza un Error con el mensaje real del backend cuando la respuesta no es ok,
  * en vez de un "Failed to fetch" genérico.
  */
-export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const session = await getSession();
-  const token = (session as { accessToken?: string } | null)?.accessToken;
+export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Promise<T> {
+  const token = options?.skipAuth
+    ? undefined
+    : (await getSession() as { accessToken?: string } | null)?.accessToken;
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
     ...options,

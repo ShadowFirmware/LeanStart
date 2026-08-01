@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Building2, ClipboardList, CheckCircle2, GraduationCap } from "lucide-react";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 import { useHasHydrated } from "@leanstart/commons";
@@ -133,13 +134,17 @@ export function MentorDashboardView() {
                   onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 overflow-hidden"
                     style={{
                       backgroundColor: "var(--brand-tint)",
                       color: "var(--brand)",
                     }}
                   >
-                    {empresa.nombre.charAt(0)}
+                    {empresa.logoUrl ? (
+                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={36} height={36} className="object-contain w-full h-full p-1" unoptimized />
+                    ) : (
+                      empresa.nombre.charAt(0)
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">

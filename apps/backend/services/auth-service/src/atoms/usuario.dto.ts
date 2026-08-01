@@ -1,13 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import type { Role } from "@leanstart/backend-commons";
-import { IsEmail, IsIn, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 
 const ROLES: Role[] = ["administrador", "emprendedor", "mentor", "evaluador"];
+// bcrypt (usado para el hash) ignora en silencio todo lo que pase de 72 bytes — sin
+// este tope, dos contraseñas distintas que compartan el mismo prefijo de 72 podrían
+// funcionar igual, sin que el usuario se entere.
+const MAX_PASSWORD = 72;
 
 class UsuarioBaseDto {
   @ApiProperty({ example: "María Fernández" })
   @IsString()
   @MinLength(2)
+  @MaxLength(80)
   nombre!: string;
 
   @ApiProperty({ example: "maria@gmail.com" })
@@ -23,6 +28,7 @@ export class CreateUsuarioDto extends UsuarioBaseDto {
   @ApiProperty({ example: "Sup3rSegura!", minLength: 8 })
   @IsString()
   @MinLength(8)
+  @MaxLength(MAX_PASSWORD)
   password!: string;
 }
 
@@ -31,5 +37,6 @@ export class UpdateUsuarioDto extends UsuarioBaseDto {
   @IsOptional()
   @IsString()
   @MinLength(8)
+  @MaxLength(MAX_PASSWORD)
   password?: string;
 }

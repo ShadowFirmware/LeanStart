@@ -11,7 +11,7 @@ import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
   Plus, AlertCircle, ChevronRight, Trash2, Send, UserCog,
-  CheckCircle2, MessageSquare, Flag,
+  CheckCircle2, MessageSquare, Flag, MoreVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
@@ -27,6 +27,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   useUsuariosStore,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
@@ -79,8 +80,8 @@ const schema = z.object({
     ["tecnologia", "educacion", "salud", "sustentabilidad", "alimentacion", "comercio", "servicios"],
     { error: "Selecciona un giro" }
   ),
-  descripcion: z.string().min(20, "Mínimo 20 caracteres"),
-  mercadoObjetivo: z.string().min(20, "Mínimo 20 caracteres"),
+  descripcion: z.string().min(20, "Mínimo 20 caracteres").max(500, "Máximo 500 caracteres"),
+  mercadoObjetivo: z.string().min(20, "Mínimo 20 caracteres").max(500, "Máximo 500 caracteres"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -541,15 +542,25 @@ export function EmpresaDetailView({
           <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Link>
         {puedeReportar && (
-          <button
-            type="button"
-            onClick={() => setReportarOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg transition-colors shrink-0"
-            style={{ color: "#EF4444", backgroundColor: "rgba(239,68,68,0.1)" }}
-          >
-            <Flag className="w-3.5 h-3.5" />
-            Reportar empresa
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  style={{ color: "var(--text-dim)" }}
+                  aria-label="Más acciones"
+                />
+              }
+            >
+              <MoreVertical className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={() => setReportarOpen(true)}>
+                <Flag className="w-3.5 h-3.5" /> Reportar empresa
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

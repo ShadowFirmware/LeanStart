@@ -52,7 +52,7 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
 
   return (
     <div
-      className="fixed inset-0 z-[100] overflow-y-auto"
+      className="print-overlay fixed inset-0 z-[100] overflow-y-auto"
       style={{ backgroundColor: "var(--shell-header)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
       role="dialog"

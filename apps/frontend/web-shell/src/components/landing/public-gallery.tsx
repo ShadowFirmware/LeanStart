@@ -85,7 +85,7 @@ export function PublicGallery() {
 
   useEffect(() => {
     if (modoDemo()) return;
-    apiFetch<Record<string, unknown>[]>("/public/empresas")
+    apiFetch<Record<string, unknown>[]>("/public/empresas", { skipAuth: true })
       .then((filas) => setPublicasReal(filas.map(mapEmpresaPublica)))
       .catch(() => setPublicasReal([]));
   }, []);
