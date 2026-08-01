@@ -156,10 +156,14 @@ export function PublicGallery() {
         </div>
 
         <div
-          className="overflow-hidden"
+          className="relative overflow-hidden"
           ref={emblaRef}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
+          style={{
+            WebkitMaskImage: "linear-gradient(90deg, transparent 0, black 64px, black calc(100% - 64px), transparent 100%)",
+            maskImage: "linear-gradient(90deg, transparent 0, black 64px, black calc(100% - 64px), transparent 100%)",
+          }}
         >
           <div className="flex" style={{ marginLeft: "-16px" }}>
             {publicadas.map((empresa, i) => {
@@ -171,17 +175,32 @@ export function PublicGallery() {
                   style={{ flexBasis: "85%", maxWidth: 720, paddingLeft: 16 }}
                 >
                   <div
-                    className="rounded-3xl p-8 md:p-10 flex flex-col items-center text-center gap-5 transition-all duration-500"
+                    className="relative overflow-hidden rounded-3xl p-8 md:p-10 flex flex-col items-center text-center gap-5 transition-all"
                     style={{
                       backgroundColor: "var(--surface-profile)",
                       border: `1px solid ${isActive ? "rgba(154,98,250,0.4)" : "var(--border-subtle)"}`,
                       boxShadow: isActive ? "0 30px 80px rgba(154,98,250,0.22)" : "var(--shadow-card)",
-                      opacity: isActive ? 1 : 0.4,
-                      transform: isActive ? "scale(1)" : "scale(0.92)",
+                      opacity: isActive ? 1 : 0.45,
+                      transform: isActive ? "scale(1)" : "scale(0.9)",
+                      filter: isActive ? "none" : "blur(0.5px)",
                       minHeight: 340,
+                      transitionDuration: "600ms",
+                      transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                   >
-                    <EmpresaLogo empresa={empresa} />
+                    {/* Línea de acento superior, solo en la tarjeta activa */}
+                    <div
+                      className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full transition-all"
+                      style={{
+                        width: isActive ? "40%" : "0%",
+                        background: "linear-gradient(90deg, transparent, var(--brand), transparent)",
+                        opacity: isActive ? 1 : 0,
+                      }}
+                    />
+
+                    <div style={{ boxShadow: isActive ? "0 8px 24px rgba(154,98,250,0.25)" : "none", borderRadius: 16 }}>
+                      <EmpresaLogo empresa={empresa} />
+                    </div>
                     <div>
                       <p className="text-2xl md:text-3xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
                       <div className="flex items-center justify-center gap-2 flex-wrap mt-3">
@@ -220,11 +239,19 @@ export function PublicGallery() {
           <button
             type="button"
             onClick={() => irA(selectedIndex - 1)}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
+            className="group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
             style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)";
+              e.currentTarget.style.color = "var(--brand)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--border-hair)";
+              e.currentTarget.style.color = "var(--text-dim)";
+            }}
             aria-label="Anterior"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 transition-transform group-active:-translate-x-0.5" />
           </button>
 
           {/* Barras tipo "stories" */}
@@ -234,8 +261,8 @@ export function PublicGallery() {
                 key={empresa.id}
                 type="button"
                 onClick={() => emblaApi?.scrollTo(i)}
-                className="relative h-1 rounded-full overflow-hidden"
-                style={{ width: 32, backgroundColor: "rgba(255,255,255,0.12)" }}
+                className="relative h-1.5 rounded-full overflow-hidden transition-transform hover:scale-y-150"
+                style={{ width: 32, backgroundColor: "var(--border-subtle)" }}
                 aria-label={`Ir a ${empresa.nombre}`}
               >
                 {i < selectedIndex && (
@@ -259,11 +286,19 @@ export function PublicGallery() {
           <button
             type="button"
             onClick={() => irA(selectedIndex + 1)}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors shrink-0"
+            className="group flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
             style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)";
+              e.currentTarget.style.color = "var(--brand)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--border-hair)";
+              e.currentTarget.style.color = "var(--text-dim)";
+            }}
             aria-label="Siguiente"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 transition-transform group-active:translate-x-0.5" />
           </button>
         </div>
       </div>
