@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { AlarmClock } from "lucide-react";
-import { cerrarSesionBackend, modoDemo } from "@leanstart/commons";
+import { cerrarSesionBackend, cerrarSesionUnaVez, modoDemo } from "@leanstart/commons";
 
 const TIEMPO_TOTAL_MS = 5 * 60 * 1000;
 // Los últimos 30s del temporizador se muestran como cuenta regresiva en pantalla,
@@ -31,7 +31,7 @@ export function InactivityLogout() {
   const cerrarPorInactividad = useCallback(() => {
     limpiarTemporizadores();
     cerrarSesionBackend().catch(() => {});
-    signOut({ callbackUrl: "/login" });
+    cerrarSesionUnaVez();
   }, [limpiarTemporizadores]);
 
   const iniciarAvisoFinal = useCallback(() => {

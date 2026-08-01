@@ -15,13 +15,20 @@ interface ApiError {
   error?: string;
 }
 
-// Si la sesión ya murió (expiró, o el logout por inactividad no alcanzó a redirigir),
-// cada store que tenía una llamada pendiente recibía su propio 401 y lo tragaba en
-// silencio (a propósito, ver LiveSync) — el resultado era un dashboard con datos viejos
-// de localStorage, sin ningún aviso de que ya no hay sesión real. Un solo 401, sin
-// importar qué llamada lo dispare, ahora manda a /login. El flag evita que la ráfaga
-// de llamadas concurrentes (LiveSync dispara varias a la vez) llame a signOut() N veces.
-let sesionExpirada = false;
+// Punto único de cierre de sesión: además del 401 de aquí abajo, el botón "Cerrar
+// sesión" de cada sidebar y el logout por inactividad TAMBIÉN llaman a esta función
+// en vez de invocar signOut() por su cuenta. Sin este guard compartido, dos de esos
+// caminos disparándose casi al mismo tiempo (p. ej. el temporizador de inactividad
+// justo cuando una llamada de fondo recibe 401) volvían a llamar a signOut() dos
+// veces en paralelo — el mismo tipo de carrera que causó el incidente de sesión
+// anterior. Con el guard, sin importar quién lo dispare primero, solo se ejecuta una vez.
+let sesionCerrandose = false;
+
+export function cerrarSesionUnaVez(): void {
+  if (sesionCerrandose) return;
+  sesionCerrandose = true;
+  void signOut({ callbackUrl: "/login" });
+}
 
 interface ApiFetchOptions extends RequestInit {
   /**
@@ -52,9 +59,8 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
     },
   });
 
-  if (res.status === 401 && !sesionExpirada) {
-    sesionExpirada = true;
-    void signOut({ callbackUrl: "/login" });
+  if (res.status === 401) {
+    cerrarSesionUnaVez();
   }
 
   if (!res.ok) {

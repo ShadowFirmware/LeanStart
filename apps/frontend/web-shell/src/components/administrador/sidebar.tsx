@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
-import { cerrarSesionBackend, useHasHydrated } from "@leanstart/commons";
+import { cerrarSesionBackend, cerrarSesionUnaVez, useHasHydrated } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 import {
   LayoutDashboard, Users, Building2, ShieldCheck,
@@ -114,7 +113,7 @@ export function AdministradorSidebar({ userName, userEmail }: AdministradorSideb
         <SidebarUser rol="administrador" userName={userName} userEmail={userEmail} onNavigate={() => setOpen(false)} />
         <button
           type="button"
-          onClick={() => { cerrarSesionBackend().finally(() => signOut({ callbackUrl: "/login" })); }}
+          onClick={() => { cerrarSesionBackend().finally(cerrarSesionUnaVez); }}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full transition-colors"
           style={{ color: "var(--text-dim)" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
