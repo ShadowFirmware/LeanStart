@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Printer, Download, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Empresa, CanvasData, Observacion } from "@leanstart/empresas-front";
+import type { Empresa, CanvasData } from "@leanstart/empresas-front";
 import { GIRO_LABELS, type ReporteCalculo } from "../lib/reporte";
 
 const CANVAS_BLOCKS: { key: keyof CanvasData; label: string }[] = [
@@ -42,10 +42,10 @@ function canvasValor(v: string | string[] | undefined): string[] {
 interface ReporteDocumentoProps {
   tipo: "boleta" | "canvas";
   empresa: Empresa;
+  /** Nombre del emprendedor dueño de la empresa (resuelto desde su ownerId). */
+  autorEmpresa: string;
   calculo: ReporteCalculo;
   comentarioEvaluador: string;
-  /** Observaciones del mentor sobre la empresa (bloques del canvas, productos, hipótesis…). */
-  observaciones: Observacion[];
   /** true si este reporte ya quedó registrado en el historial (se reabrió desde ahí) —
    *  en ese caso no tiene sentido ofrecer "Guardar reporte"/"Cancelar" de nuevo. */
   guardado: boolean;
@@ -60,7 +60,7 @@ function nombreArchivo(empresa: Empresa, esBoleta: boolean): string {
   return `${base}-${esBoleta ? "boleta-evaluacion" : "reporte-canvas"}.pdf`;
 }
 
-export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, observaciones, guardado, onGuardar, onClose }: ReporteDocumentoProps) {
+export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comentarioEvaluador, guardado, onGuardar, onClose }: ReporteDocumentoProps) {
   const esBoleta = tipo === "boleta";
   const printRef = useRef<HTMLDivElement>(null);
   const [generandoPdf, setGenerandoPdf] = useState(false);
@@ -197,14 +197,15 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
               </div>
             </div>
             <div style={{ textAlign: "right", fontSize: 11, color: MUTED, whiteSpace: "nowrap" }}>
-              <p>Creada el {empresa.creadaEn}</p>
+              <p>Emprendedor: {autorEmpresa}</p>
+              <p style={{ marginTop: 2 }}>Creada el {empresa.creadaEn}</p>
             </div>
           </div>
 
           {esBoleta ? (
             <BoletaBody empresa={empresa} calculo={calculo} />
           ) : (
-            <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} observaciones={observaciones} />
+            <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} />
           )}
 
           {/* Pie */}
@@ -331,31 +332,13 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
 }
 
 /* ─────────────────────────── LEAN CANVAS ─────────────────────────── */
-function CanvasBody({ empresa, comentarioEvaluador, calculo, observaciones }: {
+function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
   empresa: Empresa;
   comentarioEvaluador: string;
   calculo: ReporteCalculo;
-  observaciones: Observacion[];
 }) {
   const canvas = empresa.canvas;
   const comentariosPorCriterio = calculo.criterios.filter((c) => c.comentario.trim());
-
-  // Etiqueta legible del elemento sobre el que el mentor dejó cada observación.
-  const canvasLabels = Object.fromEntries(CANVAS_BLOCKS.map((b) => [b.key, b.label]));
-  function etiquetaElemento(o: Observacion): string {
-    switch (o.tipoElemento) {
-      case "canvas":
-        return `Lean Canvas · ${canvasLabels[o.elementoId] ?? o.elementoId}`;
-      case "producto":
-        return `Producto · ${empresa.productosList.find((p) => p.id === o.elementoId)?.nombre ?? "—"}`;
-      case "hipotesis":
-        return `Hipótesis · ${empresa.hipotesisList.find((h) => h.id === o.elementoId)?.titulo ?? "—"}`;
-      case "general":
-        return "Información general";
-      default:
-        return "Comentario";
-    }
-  }
 
   return (
     <>
@@ -421,25 +404,6 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo, observaciones }: {
             ))}
           </div>
         </>
-      )}
-
-      {/* Observaciones del mentor sobre la empresa */}
-      <p style={{ ...SUBLABEL, marginTop: 16 }}>Observaciones del mentor</p>
-      {observaciones.length === 0 ? (
-        <p style={{ fontSize: 13, color: MUTED }}>No se registraron observaciones del mentor.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {observaciones.map((o) => (
-            <div key={o.id} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: ACCENT, wordBreak: "break-word" }}>{etiquetaElemento(o)}</p>
-                <span style={{ fontSize: 11, color: MUTED, whiteSpace: "nowrap" }}>{o.creadaEn}</span>
-              </div>
-              <p style={{ fontSize: 12.5, color: "#43405A", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5 }}>{o.comentario}</p>
-              <p style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>— {o.autorNombre}</p>
-            </div>
-          ))}
-        </div>
       )}
     </>
   );

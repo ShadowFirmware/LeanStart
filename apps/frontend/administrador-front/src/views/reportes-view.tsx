@@ -8,9 +8,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  useCurrentUser,
+  useCurrentUser, useUsuariosStore,
 } from "@leanstart/commons";
-import { useEmpresasStore, useObservacionesStore, type Empresa } from "@leanstart/empresas-front";
+import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
 import { useCriteriosStore } from "../store/criterios";
 import { useViabilidadStore } from "../store/viabilidad";
 import { useEvaluacionesStore } from "../store/evaluaciones";
@@ -77,7 +77,7 @@ export function ReportesView() {
   const niveles = useViabilidadStore((s) => s.niveles);
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
   const evaluaciones = useEvaluacionesStore((s) => s.evaluaciones);
-  const observaciones = useObservacionesStore((s) => s.observaciones);
+  const usuarios = useUsuariosStore((s) => s.usuarios);
 
   const historial = useReportesGeneradosStore((s) => s.reportes);
   const registrarReporte = useReportesGeneradosStore((s) => s.registrarReporte);
@@ -107,9 +107,9 @@ export function ReportesView() {
 
   const empresaActiva = reporteActivo ? empresas.find((e) => e.id === reporteActivo.empresaId) : undefined;
   const evaluacionActiva = reporteActivo ? evaluaciones[reporteActivo.empresaId] : undefined;
-  const observacionesActivas = reporteActivo
-    ? observaciones.filter((o) => o.empresaId === reporteActivo.empresaId)
-    : [];
+  const autorEmpresaActiva = empresaActiva
+    ? (usuarios.find((u) => u.id === empresaActiva.ownerId)?.nombre ?? "—")
+    : "—";
   const calculoActivo = useMemo(
     () => (empresaActiva ? calcularReporte(empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion) : null),
     [empresaActiva, evaluacionActiva, criterios, niveles, pesoEvaluacion]
@@ -423,9 +423,9 @@ export function ReportesView() {
         <ReporteDocumento
           tipo={reporteActivo.tipo}
           empresa={empresaActiva}
+          autorEmpresa={autorEmpresaActiva}
           calculo={calculoActivo}
           comentarioEvaluador={evaluacionActiva?.comentarioEvaluador ?? ""}
-          observaciones={observacionesActivas}
           guardado={reporteActivo.guardado}
           onGuardar={guardarReporteActivo}
           onClose={() => setReporteActivo(null)}
