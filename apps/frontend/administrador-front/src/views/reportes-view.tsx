@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import {
   BarChart3, FileText, LayoutTemplate, Sparkles, Search, Plus,
   ChevronRight, ChevronLeft, History as HistoryIcon, User, CalendarDays,
@@ -100,8 +99,11 @@ export function ReportesView() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoReporte | null>(null);
   const [busquedaEmpresa, setBusquedaEmpresa] = useState("");
 
-  // Documento activo (recién generado o reabierto desde el historial)
-  const [reporteActivo, setReporteActivo] = useState<{ tipo: TipoReporte; empresaId: string } | null>(null);
+  // Documento activo (recién generado o reabierto desde el historial). `guardado` distingue
+  // uno del otro: un reporte recién generado no se guarda en el historial hasta que el
+  // admin le da clic explícito a "Guardar reporte" (antes se guardaba solo con elegir la
+  // empresa, aunque el admin solo quisiera ver una vista previa y cerrarla sin guardar nada).
+  const [reporteActivo, setReporteActivo] = useState<{ tipo: TipoReporte; empresaId: string; guardado: boolean } | null>(null);
 
   const empresaActiva = reporteActivo ? empresas.find((e) => e.id === reporteActivo.empresaId) : undefined;
   const evaluacionActiva = reporteActivo ? evaluaciones[reporteActivo.empresaId] : undefined;
@@ -125,20 +127,22 @@ export function ReportesView() {
     setPaso("empresa");
   }
 
-  async function elegirEmpresa(empresa: Empresa) {
+  function elegirEmpresa(empresa: Empresa) {
     if (!tipoSeleccionado) return;
-    try {
-      await registrarReporte({
-        empresaId: empresa.id,
-        empresaNombre: empresa.nombre,
-        tipo: tipoSeleccionado,
-        generadoPor: usuarioActual?.name?.trim() || "Administrador",
-      });
-      setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id });
-      setDialogOpen(false);
-    } catch {
-      toast.error("No se pudo registrar el reporte.");
-    }
+    // Solo abre la vista previa — el reporte no queda en el historial hasta que el
+    // admin le dé clic a "Guardar reporte" dentro del documento.
+    setReporteActivo({ tipo: tipoSeleccionado, empresaId: empresa.id, guardado: false });
+    setDialogOpen(false);
+  }
+
+  async function guardarReporteActivo() {
+    if (!reporteActivo || !empresaActiva) return;
+    await registrarReporte({
+      empresaId: empresaActiva.id,
+      empresaNombre: empresaActiva.nombre,
+      tipo: reporteActivo.tipo,
+      generadoPor: usuarioActual?.name?.trim() || "Administrador",
+    });
   }
 
   const empresasFiltradasDialogo = empresasOrdenadas.filter((e) =>
@@ -259,7 +263,7 @@ export function ReportesView() {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setReporteActivo({ tipo: r.tipo, empresaId: r.empresaId })}
+                onClick={() => setReporteActivo({ tipo: r.tipo, empresaId: r.empresaId, guardado: true })}
                 disabled={!empresa}
                 title={empresa ? `Abrir ${cfg.label}` : "La empresa fue eliminada"}
                 className="flex flex-col rounded-xl p-5 text-left transition-[border-color] disabled:opacity-60 disabled:cursor-not-allowed"
@@ -422,6 +426,8 @@ export function ReportesView() {
           calculo={calculoActivo}
           comentarioEvaluador={evaluacionActiva?.comentarioEvaluador ?? ""}
           observaciones={observacionesActivas}
+          guardado={reporteActivo.guardado}
+          onGuardar={guardarReporteActivo}
           onClose={() => setReporteActivo(null)}
         />
       )}

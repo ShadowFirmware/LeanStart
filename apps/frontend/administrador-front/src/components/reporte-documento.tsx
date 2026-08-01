@@ -1,6 +1,8 @@
 "use client";
 
-import { Printer, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Printer, Download, Save, X } from "lucide-react";
+import { toast } from "sonner";
 import type { Empresa, CanvasData, Observacion } from "@leanstart/empresas-front";
 import { GIRO_LABELS, type ReporteCalculo } from "../lib/reporte";
 
@@ -44,11 +46,74 @@ interface ReporteDocumentoProps {
   comentarioEvaluador: string;
   /** Observaciones del mentor sobre la empresa (bloques del canvas, productos, hipótesis…). */
   observaciones: Observacion[];
+  /** true si este reporte ya quedó registrado en el historial (se reabrió desde ahí) —
+   *  en ese caso no tiene sentido ofrecer "Guardar reporte"/"Cancelar" de nuevo. */
+  guardado: boolean;
+  /** Solo aplica cuando !guardado: registra el reporte en el historial. */
+  onGuardar: () => Promise<void>;
   onClose: () => void;
 }
 
-export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, observaciones, onClose }: ReporteDocumentoProps) {
+/** Nombre de archivo seguro a partir del nombre de la empresa. */
+function nombreArchivo(empresa: Empresa, esBoleta: boolean): string {
+  const base = empresa.nombre.trim().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "empresa";
+  return `${base}-${esBoleta ? "boleta-evaluacion" : "reporte-canvas"}.pdf`;
+}
+
+export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, observaciones, guardado, onGuardar, onClose }: ReporteDocumentoProps) {
   const esBoleta = tipo === "boleta";
+  const printRef = useRef<HTMLDivElement>(null);
+  const [generandoPdf, setGenerandoPdf] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  async function descargarPDF() {
+    if (!printRef.current || generandoPdf) return;
+    setGenerandoPdf(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(nombreArchivo(empresa, esBoleta));
+    } catch {
+      toast.error("No se pudo generar el PDF.");
+    } finally {
+      setGenerandoPdf(false);
+    }
+  }
+
+  async function handleGuardar() {
+    setGuardando(true);
+    try {
+      await onGuardar();
+      toast.success("Reporte guardado en el historial.");
+      onClose();
+    } catch {
+      toast.error("No se pudo guardar el reporte.");
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
     <div
@@ -71,10 +136,19 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg border-0"
+            className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg"
+            style={{ backgroundColor: "transparent", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+          >
+            <Printer className="w-4 h-4" /> Imprimir
+          </button>
+          <button
+            type="button"
+            onClick={descargarPDF}
+            disabled={generandoPdf}
+            className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg border-0 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
-            <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
+            <Download className="w-4 h-4" /> {generandoPdf ? "Generando..." : "Descargar PDF"}
           </button>
           <button
             type="button"
@@ -89,8 +163,9 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
       </div>
 
       {/* Documento (papel) */}
-      <div className="flex justify-center px-3 py-6">
+      <div className="flex flex-col items-center px-3 py-6">
         <div
+          ref={printRef}
           className="print-area w-full max-w-[820px] rounded-lg"
           style={{ backgroundColor: "#FFFFFF", color: INK, padding: "40px", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
           onClick={(e) => e.stopPropagation()}
@@ -137,6 +212,33 @@ export function ReporteDocumento({ tipo, empresa, calculo, comentarioEvaluador, 
             Documento generado por LeanStart · Plataforma de validación de ideas de negocio
           </div>
         </div>
+
+        {/* Guardar / Cancelar: solo mientras el reporte todavía no quedó en el historial.
+            Fuera del papel (no forma parte del documento ni se imprime/descarga). */}
+        {!guardado && (
+          <div
+            className="no-print w-full max-w-[820px] flex items-center justify-end gap-3 mt-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-2 text-sm font-medium px-4 h-10 rounded-xl"
+              style={{ backgroundColor: "transparent", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleGuardar}
+              disabled={guardando}
+              className="inline-flex items-center gap-2 text-sm font-medium px-4 h-10 rounded-xl border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
+            >
+              <Save className="w-4 h-4" /> {guardando ? "Guardando..." : "Guardar reporte"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
