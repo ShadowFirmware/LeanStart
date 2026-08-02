@@ -8,6 +8,7 @@ import {
 } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
+import { iconoEvidencia } from "../lib/evidencia-icono";
 
 // pdfjs-dist / mammoth / xlsx tocan APIs de navegador en su inicialización, así
 // que estos visores deben cargarse solo en cliente: si Next.js los evalúa
@@ -143,5 +144,50 @@ export function EvidenciaViewerButton({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+interface EvidenciaThumbProps {
+  tipoEvidencia: TipoEvidencia;
+  /** Data URL base64 (solo se usa cuando tipoEvidencia === "imagen"). */
+  evidencia: string;
+  evidenciaNombre?: string;
+  /** "sm" para tarjetas compactas (listas), "lg" para previews grandes. Por defecto "sm". */
+  size?: "sm" | "lg";
+}
+
+/**
+ * Miniatura + ícono representativo del tipo de evidencia (PDF, Word, Excel/CSV,
+ * imagen, URL). Para imágenes se muestra la miniatura real con una insignia
+ * de ícono superpuesta; para el resto, un ícono dentro de una caja.
+ */
+export function EvidenciaThumb({ tipoEvidencia, evidencia, evidenciaNombre, size = "sm" }: EvidenciaThumbProps) {
+  const Icon = iconoEvidencia(tipoEvidencia, evidenciaNombre);
+  const caja = size === "lg" ? "w-20 h-20 rounded-lg" : "w-9 h-9 rounded-md";
+
+  if (tipoEvidencia === "imagen") {
+    const badge = size === "lg" ? "w-6 h-6" : "w-4 h-4";
+    const badgeIcon = size === "lg" ? "w-3.5 h-3.5" : "w-2.5 h-2.5";
+    return (
+      <div className={`relative ${caja} overflow-hidden shrink-0`} style={{ border: "1px solid var(--border-hair)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={evidencia} alt={evidenciaNombre || "Evidencia"} className="w-full h-full object-cover" />
+        <span
+          className={`absolute bottom-0 right-0 flex items-center justify-center ${badge}`}
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", borderTopLeftRadius: 6 }}
+        >
+          <Icon className={badgeIcon} style={{ color: "#fff" }} />
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${caja} flex items-center justify-center shrink-0`}
+      style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+    >
+      <Icon className={size === "lg" ? "w-8 h-8" : "w-4 h-4"} style={{ color: "var(--brand-accent)" }} />
+    </div>
   );
 }

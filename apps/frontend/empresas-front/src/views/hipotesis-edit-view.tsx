@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Pencil, FileText, FileSpreadsheet, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
+  ArrowLeft, Pencil, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
   CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
-import { EvidenciaViewerButton } from "../components/evidencia-viewer";
+import { EvidenciaViewerButton, EvidenciaThumb } from "../components/evidencia-viewer";
 import { HipotesisWizard } from "../components/hipotesis-wizard";
 import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
@@ -399,10 +399,11 @@ export function HipotesisEditView({
                         href={hipotesis.resultados.evidencia}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm"
+                        className="flex items-start gap-1.5 text-sm min-w-0"
                         style={{ color: "var(--brand-accent)" }}
                       >
-                        <ExternalLink className="w-3.5 h-3.5" /> {hipotesis.resultados.evidencia}
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span className="break-words" style={{ overflowWrap: "anywhere" }}>{hipotesis.resultados.evidencia}</span>
                       </a>
                     ) : (
                       <EvidenciaViewerButton
@@ -412,26 +413,11 @@ export function HipotesisEditView({
                         className="rounded-xl p-2.5 flex items-center gap-2.5 cursor-pointer transition-colors"
                         style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
                       >
-                        {hipotesis.resultados.tipoEvidencia === "imagen" ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={hipotesis.resultados.evidencia}
-                            alt={hipotesis.resultados.evidenciaNombre || "Evidencia"}
-                            className="w-9 h-9 rounded-md object-cover shrink-0"
-                            style={{ border: "1px solid var(--border-hair)" }}
-                          />
-                        ) : (
-                          <div
-                            className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                          >
-                            {detectarDocumentoSubtipo(hipotesis.resultados.evidenciaNombre) === "excel" || detectarDocumentoSubtipo(hipotesis.resultados.evidenciaNombre) === "csv" ? (
-                              <FileSpreadsheet className="w-4 h-4" style={{ color: "var(--brand-accent)" }} />
-                            ) : (
-                              <FileText className="w-4 h-4" style={{ color: "var(--brand-accent)" }} />
-                            )}
-                          </div>
-                        )}
+                        <EvidenciaThumb
+                          tipoEvidencia={hipotesis.resultados.tipoEvidencia!}
+                          evidencia={hipotesis.resultados.evidencia}
+                          evidenciaNombre={hipotesis.resultados.evidenciaNombre}
+                        />
                         <p className="flex-1 min-w-0 text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>
                           {hipotesis.resultados.evidenciaNombre || "Archivo cargado"}
                         </p>
@@ -716,26 +702,12 @@ export function HipotesisEditView({
                 className="rounded-xl p-3 flex items-start gap-3"
                 style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
               >
-                {tipoEvidencia === "imagen" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={evidenciaDataUrl}
-                    alt={evidenciaNombre || "Evidencia"}
-                    className="w-20 h-20 rounded-lg object-cover shrink-0"
-                    style={{ border: "1px solid var(--border-hair)" }}
-                  />
-                ) : (
-                  <div
-                    className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                  >
-                    {detectarDocumentoSubtipo(evidenciaNombre) === "excel" || detectarDocumentoSubtipo(evidenciaNombre) === "csv" ? (
-                      <FileSpreadsheet className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
-                    ) : (
-                      <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
-                    )}
-                  </div>
-                )}
+                <EvidenciaThumb
+                  tipoEvidencia={tipoEvidencia as TipoEvidencia}
+                  evidencia={evidenciaDataUrl}
+                  evidenciaNombre={evidenciaNombre}
+                  size="lg"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
                     {evidenciaNombre || "Archivo cargado"}

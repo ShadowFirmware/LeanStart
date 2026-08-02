@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Check, AlertTriangle, FileText, FileSpreadsheet, X as XIcon,
+  ArrowLeft, Check, AlertTriangle, X as XIcon,
   Type, AlignLeft, FlaskConical, Target, CheckCircle2, BarChart3, Paperclip, Flag,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import {
 import { useEmpresasStore, type Hipotesis } from "../store/empresas";
 import { EvidenciaViewerButton } from "./evidencia-viewer";
 import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
+import { iconoEvidencia } from "../lib/evidencia-icono";
 import type { TipoExperimento } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -698,11 +699,10 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                           className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
                           style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                         >
-                          {detectarDocumentoSubtipo(evidenciaNombre) === "excel" || detectarDocumentoSubtipo(evidenciaNombre) === "csv" ? (
-                            <FileSpreadsheet className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
-                          ) : (
-                            <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
-                          )}
+                          {(() => {
+                            const Icon = iconoEvidencia(tipoEvidencia as TipoEvidencia, evidenciaNombre);
+                            return <Icon className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />;
+                          })()}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
