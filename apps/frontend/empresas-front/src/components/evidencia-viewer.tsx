@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, FileText, Download } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Eye, FileText, Download } from "lucide-react";
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
+
+// pdfjs-dist toca APIs de navegador (DOMMatrix, canvas, …) en su inicialización,
+// así que el visor debe cargarse solo en cliente: si Next.js lo evalúa durante
+// el server render, la app truena.
+const PdfViewer = dynamic(() => import("./pdf-viewer").then((m) => m.PdfViewer), { ssr: false });
 
 interface EvidenciaViewerButtonProps {
   /** Data URL base64 (imagen/pdf/documento) o URL externa (no usado para "url"). */
@@ -51,7 +57,7 @@ export function EvidenciaViewerButton({
           }
         }
       >
-        <ExternalLink className="w-3 h-3" /> {label}
+        <Eye className="w-3 h-3" /> {label}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -96,12 +102,7 @@ export function EvidenciaViewerButton({
                 />
               </div>
             ) : tipoEvidencia === "pdf" ? (
-              <iframe
-                src={evidencia}
-                title={titulo}
-                className="w-full rounded-lg"
-                style={{ height: "80vh", border: "1px solid var(--border-hair)", backgroundColor: "#fff" }}
-              />
+              <PdfViewer file={evidencia} />
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                 <FileText className="w-12 h-12" style={{ color: "var(--brand-accent)" }} />

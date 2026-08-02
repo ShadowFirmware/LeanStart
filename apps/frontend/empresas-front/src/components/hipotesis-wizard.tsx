@@ -160,6 +160,10 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
   // Confirmación cuando evidencia está seleccionada pero vacía
   const [confirmEvidenciaVacia, setConfirmEvidenciaVacia] = useState(false);
 
+  // "Guardar y salir" y "Finalizar" navegan al guardar, pero mientras la
+  // petición está en curso ambos botones deben verse deshabilitados/cargando.
+  const [loading, setLoading] = useState(false);
+
   async function handleEvidenciaFile(file: File) {
     if (file.size > 3 * 1024 * 1024) {
       toast.error("El archivo es muy grande. Máximo 3MB.");
@@ -280,12 +284,14 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
   }
 
   async function ejecutarFinalizar() {
+    setLoading(true);
     try {
       await guardarTodo(3);
       toast.success("Hipótesis completada correctamente.");
       router.push(`/emprendedor/empresas/${empresaId}`);
     } catch {
       toast.error("No se pudo guardar la hipótesis.");
+      setLoading(false);
     }
   }
 
@@ -318,6 +324,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
       toast.error("Completa el paso 1 antes de guardar.");
       return;
     }
+    setLoading(true);
     try {
       // "Guardar y salir" nunca marca la hipótesis como Fase 3 (Completa) — eso
       // solo debe ocurrir al presionar "Finalizar" (el backend liga fase 3 a la
@@ -328,6 +335,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
       router.push(`/emprendedor/empresas/${empresaId}`);
     } catch {
       toast.error("No se pudo guardar la hipótesis.");
+      setLoading(false);
     }
   }
 
@@ -538,7 +546,8 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                   <button
                     type="button"
                     onClick={() => { setErrores({}); setPaso(1); }}
-                    className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1"
+                    disabled={loading}
+                    className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
                     ← Anterior
@@ -547,15 +556,17 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                     <button
                       type="button"
                       onClick={guardarParcial}
-                      className="text-sm px-4 h-9 rounded-lg"
+                      disabled={loading}
+                      className="text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
-                      Guardar y salir
+                      {loading ? "Guardando..." : "Guardar y salir"}
                     </button>
                     <button
                       type="button"
                       onClick={avanzarPaso2}
-                      className="h-9 px-6 text-sm font-semibold rounded-lg"
+                      disabled={loading}
+                      className="h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
                       Siguiente →
@@ -758,7 +769,8 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                   <button
                     type="button"
                     onClick={() => { setErrores({}); setPaso(2); }}
-                    className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1"
+                    disabled={loading}
+                    className="text-sm px-4 h-9 rounded-lg order-2 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
                     ← Anterior
@@ -767,18 +779,20 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                     <button
                       type="button"
                       onClick={guardarParcial}
-                      className="text-sm px-4 h-9 rounded-lg"
+                      disabled={loading}
+                      className="text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
-                      Guardar y salir
+                      {loading ? "Guardando..." : "Guardar y salir"}
                     </button>
                     <button
                       type="button"
                       onClick={finalizarPaso3}
-                      className="h-9 px-6 text-sm font-semibold rounded-lg"
+                      disabled={loading}
+                      className="h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
-                      Finalizar
+                      {loading ? "Finalizando..." : "Finalizar"}
                     </button>
                   </div>
                 </div>
