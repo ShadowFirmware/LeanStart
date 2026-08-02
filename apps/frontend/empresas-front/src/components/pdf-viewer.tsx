@@ -175,23 +175,32 @@ export function PdfViewer({ file }: PdfViewerProps) {
             ref={scrollBoxRef}
             onMouseDown={handleMouseDown}
             onDragStart={(e) => e.preventDefault()}
-            className="w-full h-full overflow-auto flex items-start justify-center select-none"
+            className="w-full h-full overflow-auto select-none"
             style={{ cursor: puedeArrastrar ? (dragging ? "grabbing" : "grab") : "default" }}
           >
-            <Document
-              file={file}
-              onLoadSuccess={({ numPages: n }) => { setNumPages(n); setPageNumber(1); }}
-              onLoadError={() => setError(true)}
-              loading={
-                <div className="flex flex-col items-center justify-center gap-2 py-24">
-                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--brand)" }} />
-                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>Cargando documento…</span>
-                </div>
-              }
-              className="py-4"
-            >
-              {pageWidth && <Page pageNumber={pageNumber} width={pageWidth} className="shadow-lg" />}
-            </Document>
+            {/* w-fit + mx-auto (en vez de justify-center en el contenedor con
+                scroll): centra la página cuando cabe, pero cuando se desborda
+                por el zoom queda pegada a la izquierda con todo su ancho
+                alcanzable arrastrando. `justify-center` en un contenedor con
+                overflow deja la mitad izquierda del contenido fuera de rango
+                de scroll (un problema conocido de CSS), lo que impedía
+                arrastrar hacia la izquierda. */}
+            <div className="w-fit mx-auto">
+              <Document
+                file={file}
+                onLoadSuccess={({ numPages: n }) => { setNumPages(n); setPageNumber(1); }}
+                onLoadError={() => setError(true)}
+                loading={
+                  <div className="flex flex-col items-center justify-center gap-2 py-24">
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--brand)" }} />
+                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>Cargando documento…</span>
+                  </div>
+                }
+                className="py-4"
+              >
+                {pageWidth && <Page pageNumber={pageNumber} width={pageWidth} className="shadow-lg" />}
+              </Document>
+            </div>
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
-  CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar, Eye,
+  CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
@@ -430,7 +430,6 @@ export function HipotesisEditView({
                         <p className="flex-1 min-w-0 text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>
                           {hipotesis.resultados.evidenciaNombre || "Archivo cargado"}
                         </p>
-                        <Eye className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--brand-accent)" }} />
                       </EvidenciaViewerButton>
                     )}
                   </div>
