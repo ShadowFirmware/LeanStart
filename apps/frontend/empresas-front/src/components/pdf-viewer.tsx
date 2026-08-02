@@ -62,6 +62,41 @@ export function PdfViewer({ file }: PdfViewerProps) {
   // Deja un margen (32px) para que la página no toque el borde del lienzo.
   const pageWidth = canvasWidth > 32 ? (canvasWidth - 32) * zoom : undefined;
 
+  // Arrastrar para desplazar el PDF cuando está acercado (zoom > 100%).
+  const scrollBoxRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
+  const [dragging, setDragging] = useState(false);
+  const puedeArrastrar = zoom > 1;
+
+  function handleMouseDown(e: React.MouseEvent) {
+    if (!puedeArrastrar) return;
+    const el = scrollBoxRef.current;
+    if (!el) return;
+    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop };
+    setDragging(true);
+  }
+
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      if (!dragRef.current.dragging) return;
+      const el = scrollBoxRef.current;
+      if (!el) return;
+      el.scrollLeft = dragRef.current.scrollLeft - (e.clientX - dragRef.current.startX);
+      el.scrollTop = dragRef.current.scrollTop - (e.clientY - dragRef.current.startY);
+    }
+    function handleMouseUp() {
+      if (!dragRef.current.dragging) return;
+      dragRef.current.dragging = false;
+      setDragging(false);
+    }
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-3 min-w-0 w-full">
       {/* Barra de herramientas propia */}
@@ -136,7 +171,13 @@ export function PdfViewer({ file }: PdfViewerProps) {
             <p className="text-sm" style={{ color: "var(--text-dim)" }}>No se pudo mostrar el PDF. Descárgalo para verlo.</p>
           </div>
         ) : (
-          <div className="w-full h-full overflow-auto flex items-start justify-center">
+          <div
+            ref={scrollBoxRef}
+            onMouseDown={handleMouseDown}
+            onDragStart={(e) => e.preventDefault()}
+            className="w-full h-full overflow-auto flex items-start justify-center select-none"
+            style={{ cursor: puedeArrastrar ? (dragging ? "grabbing" : "grab") : "default" }}
+          >
             <Document
               file={file}
               onLoadSuccess={({ numPages: n }) => { setNumPages(n); setPageNumber(1); }}

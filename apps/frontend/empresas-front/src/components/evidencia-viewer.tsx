@@ -18,16 +18,20 @@ interface EvidenciaViewerButtonProps {
   evidencia: string;
   tipoEvidencia: TipoEvidencia;
   evidenciaNombre?: string;
-  /** Texto del botón que dispara el visor. Por defecto "Abrir". */
+  /** Texto del botón que dispara el visor. Por defecto "Abrir". Se ignora si se pasa `children`. */
   label?: string;
   className?: string;
   style?: React.CSSProperties;
+  /** Si se pasa, reemplaza el botón por defecto: todo el contenido actúa como disparador clicable. */
+  children?: React.ReactNode;
 }
 
 /**
- * Botón que abre las evidencias (imagen / PDF) en un modal dentro de la app,
- * en lugar de mandar al usuario a una pestaña externa. Los documentos que no
- * se pueden previsualizar (docx, xlsx, …) ofrecen descarga desde el mismo modal.
+ * Abre las evidencias (imagen / PDF) en un modal dentro de la app, en lugar
+ * de mandar al usuario a una pestaña externa. Los documentos que no se
+ * pueden previsualizar (docx, xlsx, …) ofrecen descarga desde el mismo modal.
+ * Sin `children`, se dibuja como un botón "Abrir"; con `children`, todo el
+ * contenido pasado actúa como disparador clicable.
  */
 export function EvidenciaViewerButton({
   evidencia,
@@ -36,29 +40,48 @@ export function EvidenciaViewerButton({
   label = "Abrir",
   className,
   style,
+  children,
 }: EvidenciaViewerButtonProps) {
   const [open, setOpen] = useState(false);
   const titulo = evidenciaNombre || "Evidencia";
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={
-          className ??
-          "inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
-        }
-        style={
-          style ?? {
-            color: "var(--brand-accent)",
-            backgroundColor: "rgba(154,98,250,0.1)",
-            border: "1px solid var(--brand-tint-strong)",
+      {children ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setOpen(true);
+            }
+          }}
+          className={className ?? "cursor-pointer"}
+          style={style}
+        >
+          {children}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={
+            className ??
+            "inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
           }
-        }
-      >
-        <Eye className="w-3 h-3" /> {label}
-      </button>
+          style={
+            style ?? {
+              color: "var(--brand-accent)",
+              backgroundColor: "rgba(154,98,250,0.1)",
+              border: "1px solid var(--brand-tint-strong)",
+            }
+          }
+        >
+          <Eye className="w-3 h-3" /> {label}
+        </button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[900px] p-0 overflow-hidden">
