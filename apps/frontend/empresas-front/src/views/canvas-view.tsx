@@ -461,13 +461,18 @@ export function CanvasView({
                   </div>
                 ))}
                 {openMeta.max && (draft as string[]).length < openMeta.max ? (
-                  <button
-                    onClick={() => setDraft((prev) => [...(prev as string[]), ""])}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "var(--brand)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", width: "100%", boxSizing: "border-box" }}
-                  >
-                    <Plus size={13} /> Agregar
-                    <span style={{ color: "var(--text-faint)", marginLeft: "auto" }}>{(draft as string[]).length}/{openMeta.max}</span>
-                  </button>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", boxSizing: "border-box" }}>
+                    <button
+                      onClick={() => setDraft((prev) => [...(prev as string[]), ""])}
+                      style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "var(--brand)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box" }}
+                    >
+                      <Plus size={13} /> Agregar
+                      <span style={{ color: "var(--text-faint)", marginLeft: "auto" }}>{(draft as string[]).length}/{openMeta.max}</span>
+                    </button>
+                    {/* Espaciador del mismo ancho que el botón "X" de las filas de arriba,
+                        para que el botón "Agregar" termine exactamente donde terminan los inputs. */}
+                    {(draft as string[]).length > 1 && <div style={{ width: 22, flexShrink: 0 }} />}
+                  </div>
                 ) : (
                   <p style={{ color: "var(--text-faint)", fontSize: 11, textAlign: "center", width: "100%", boxSizing: "border-box" }}>
                     Límite de {openMeta.max} elementos alcanzado
