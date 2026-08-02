@@ -13,6 +13,7 @@ import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 import { EvidenciaViewerButton } from "../components/evidencia-viewer";
+import { HipotesisWizard } from "../components/hipotesis-wizard";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -296,6 +297,14 @@ export function HipotesisEditView({
   // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
   const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, Boolean(permitirComentarios));
+
+  // Hipótesis aún no finalizada (nunca se presionó "Finalizar" en el paso 3): el
+  // emprendedor retoma el mismo wizard de fases usado al crearla, en vez del
+  // formulario plano de una sola página (que solo aplica a hipótesis completas).
+  const estaFinalizada = fase === 3;
+  if (!estaFinalizada && puedeEditarProyecto && !bloqueadaPorMentor) {
+    return <HipotesisWizard empresaId={id} empresaNombre={empresa.nombre} hipotesisExistente={hipotesis} />;
+  }
 
   if (!editando || !puedeEditarProyecto || bloqueadaPorMentor) {
     return (
