@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, FileWarning } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -11,9 +11,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const MIN_SCALE = 0.6;
-const MAX_SCALE = 2.4;
-const SCALE_STEP = 0.2;
+// El zoom es un multiplicador sobre el ancho disponible del lienzo, no sobre
+// el tamaño nativo de la página del PDF: así, sin importar qué tan grande sea
+// la página original, al abrir el visor siempre se ve completa (100% = ajustada
+// al ancho del modal) en vez de aparecer ya "acercada" y desbordando la caja.
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.2;
 
 const toolbarButtonStyle: React.CSSProperties = {
   color: "var(--brand-accent)",
@@ -33,11 +37,28 @@ interface PdfViewerProps {
 export function PdfViewer({ file }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.1);
+  const [zoom, setZoom] = useState(1);
   const [error, setError] = useState(false);
 
+  const canvasBoxRef = useRef<HTMLDivElement>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
+
+  useEffect(() => {
+    const el = canvasBoxRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setCanvasWidth(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Deja un margen (32px) para que la página no toque el borde del lienzo.
+  const pageWidth = canvasWidth > 32 ? (canvasWidth - 32) * zoom : undefined;
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 min-w-0 w-full">
       {/* Barra de herramientas propia */}
       <div
         className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg"
@@ -72,8 +93,8 @@ export function PdfViewer({ file }: PdfViewerProps) {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(MIN_SCALE, +(s - SCALE_STEP).toFixed(2)))}
-            disabled={scale <= MIN_SCALE}
+            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)))}
+            disabled={zoom <= MIN_ZOOM}
             className="flex items-center justify-center w-7 h-7 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             style={toolbarButtonStyle}
             aria-label="Alejar"
@@ -81,12 +102,12 @@ export function PdfViewer({ file }: PdfViewerProps) {
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <span className="text-xs font-medium min-w-[42px] text-center" style={{ color: "var(--text-dim)" }}>
-            {Math.round(scale * 100)}%
+            {Math.round(zoom * 100)}%
           </span>
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))}
-            disabled={scale >= MAX_SCALE}
+            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)))}
+            disabled={zoom >= MAX_ZOOM}
             className="flex items-center justify-center w-7 h-7 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             style={toolbarButtonStyle}
             aria-label="Acercar"
@@ -98,7 +119,8 @@ export function PdfViewer({ file }: PdfViewerProps) {
 
       {/* Lienzo del documento */}
       <div
-        className="flex items-start justify-center overflow-auto rounded-lg"
+        ref={canvasBoxRef}
+        className="flex items-start justify-center overflow-auto rounded-lg min-w-0 w-full"
         style={{ height: "calc(80vh - 52px)", border: "1px solid var(--border-hair)", backgroundColor: "rgba(0,0,0,0.35)" }}
       >
         {error ? (
@@ -119,7 +141,7 @@ export function PdfViewer({ file }: PdfViewerProps) {
             }
             className="py-4"
           >
-            <Page pageNumber={pageNumber} scale={scale} className="shadow-lg" />
+            {pageWidth && <Page pageNumber={pageNumber} width={pageWidth} className="shadow-lg" />}
           </Document>
         )}
       </div>
