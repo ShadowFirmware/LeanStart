@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Eye, FileText, Download } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
+import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
 
-// pdfjs-dist toca APIs de navegador (DOMMatrix, canvas, …) en su inicialización,
-// así que el visor debe cargarse solo en cliente: si Next.js lo evalúa durante
-// el server render, la app truena.
+// pdfjs-dist / mammoth / xlsx tocan APIs de navegador en su inicialización, así
+// que estos visores deben cargarse solo en cliente: si Next.js los evalúa
+// durante el server render, la app truena.
 const PdfViewer = dynamic(() => import("./pdf-viewer").then((m) => m.PdfViewer), { ssr: false });
+const DocumentoViewer = dynamic(() => import("./documento-viewer").then((m) => m.DocumentoViewer), { ssr: false });
 
 interface EvidenciaViewerButtonProps {
   /** Data URL base64 (imagen/pdf/documento) o URL externa (no usado para "url"). */
@@ -94,7 +96,11 @@ export function EvidenciaViewerButton({
                 {titulo}
               </DialogTitle>
               <DialogDescription className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
+                {tipoEvidencia === "imagen"
+                  ? "Imagen"
+                  : tipoEvidencia === "pdf"
+                  ? "PDF"
+                  : DOCUMENTO_SUBTIPO_LABEL[detectarDocumentoSubtipo(evidenciaNombre)]}
               </DialogDescription>
             </div>
             <a
@@ -131,13 +137,7 @@ export function EvidenciaViewerButton({
             ) : tipoEvidencia === "pdf" ? (
               <PdfViewer file={evidencia} />
             ) : (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <FileText className="w-12 h-12" style={{ color: "var(--brand-accent)" }} />
-                <p className="text-sm" style={{ color: "var(--text-strong)" }}>{titulo}</p>
-                <p className="text-xs max-w-sm" style={{ color: "var(--text-dim)" }}>
-                  Este tipo de documento no se puede previsualizar. Descárgalo para abrirlo.
-                </p>
-              </div>
+              <DocumentoViewer file={evidencia} nombre={evidenciaNombre} />
             )}
           </div>
         </DialogContent>

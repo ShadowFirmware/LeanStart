@@ -14,9 +14,11 @@
     "@leanstart/commons": "*",
     "@leanstart/notificaciones-front": "*",
     "lucide-react": "^1.17.0",
+    "mammoth": "^1.12.0",
     "react-hook-form": "^7.78.0",
     "react-pdf": "^10.4.1",
     "sonner": "^2.0.7",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

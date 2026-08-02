@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Pencil, FileText, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
+  ArrowLeft, Pencil, FileText, FileSpreadsheet, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
   CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEdi
 import { ObservacionesButton } from "../components/observaciones-button";
 import { EvidenciaViewerButton } from "../components/evidencia-viewer";
 import { HipotesisWizard } from "../components/hipotesis-wizard";
+import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -424,7 +425,11 @@ export function HipotesisEditView({
                             className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
                             style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                           >
-                            <FileText className="w-4 h-4" style={{ color: "var(--brand-accent)" }} />
+                            {detectarDocumentoSubtipo(hipotesis.resultados.evidenciaNombre) === "excel" || detectarDocumentoSubtipo(hipotesis.resultados.evidenciaNombre) === "csv" ? (
+                              <FileSpreadsheet className="w-4 h-4" style={{ color: "var(--brand-accent)" }} />
+                            ) : (
+                              <FileText className="w-4 h-4" style={{ color: "var(--brand-accent)" }} />
+                            )}
                           </div>
                         )}
                         <p className="flex-1 min-w-0 text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>
@@ -643,7 +648,7 @@ export function HipotesisEditView({
             <div className="flex flex-wrap gap-2 mb-3">
               {(["pdf", "imagen", "documento", "url"] as TipoEvidencia[]).map((t) => {
                 const labels: Record<TipoEvidencia, string> = {
-                  pdf: "Archivo PDF", imagen: "Imagen", documento: "Documento", url: "URL",
+                  pdf: "Archivo PDF", imagen: "Imagen", documento: "Word / Excel", url: "URL",
                 };
                 const active = tipoEvidencia === t;
                 return (
@@ -694,7 +699,7 @@ export function HipotesisEditView({
                   accept={
                     tipoEvidencia === "pdf" ? ".pdf"
                     : tipoEvidencia === "imagen" ? "image/*"
-                    : "*"
+                    : ".doc,.docx,.xls,.xlsx,.csv"
                   }
                   className="hidden"
                   onChange={(e) => {
@@ -724,7 +729,11 @@ export function HipotesisEditView({
                     className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
-                    <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
+                    {detectarDocumentoSubtipo(evidenciaNombre) === "excel" || detectarDocumentoSubtipo(evidenciaNombre) === "csv" ? (
+                      <FileSpreadsheet className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
+                    ) : (
+                      <FileText className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />
+                    )}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -732,7 +741,7 @@ export function HipotesisEditView({
                     {evidenciaNombre || "Archivo cargado"}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                    {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : "Documento"}
+                    {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : DOCUMENTO_SUBTIPO_LABEL[detectarDocumentoSubtipo(evidenciaNombre)]}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <EvidenciaViewerButton
@@ -750,7 +759,7 @@ export function HipotesisEditView({
                         accept={
                           tipoEvidencia === "pdf" ? ".pdf"
                           : tipoEvidencia === "imagen" ? "image/*"
-                          : "*"
+                          : ".doc,.docx,.xls,.xlsx,.csv"
                         }
                         className="hidden"
                         onChange={(e) => {
