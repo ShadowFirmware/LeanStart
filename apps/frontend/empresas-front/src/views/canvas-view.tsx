@@ -298,7 +298,7 @@ export function CanvasView({
         <div style={{ minWidth: 820 }}>
 
           {/* Filas 1–2 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gridTemplateRows: "minmax(210px, 1fr) minmax(155px, 1fr)", gap: GAP }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gridTemplateRows: "minmax(220px, 1fr) minmax(210px, 1fr)", gap: GAP }}>
 
             {/* Col 1: Problema (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
@@ -344,10 +344,10 @@ export function CanvasView({
 
           {/* Fila 3: Costos + Ingresos */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: GAP, marginTop: GAP }}>
-            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} color={C.estructuraCostos} style={{ minHeight: 170 }} onClick={() => handleOpen("estructuraCostos")} tieneComentarioPendiente={tieneComentarioPendiente("estructuraCostos")}>
+            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} color={C.estructuraCostos} style={{ minHeight: 210 }} onClick={() => handleOpen("estructuraCostos")} tieneComentarioPendiente={tieneComentarioPendiente("estructuraCostos")}>
               <BlockContent blockKey="estructuraCostos" canvas={canvas} />
             </Block>
-            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} color={C.fuentesIngresos} style={{ minHeight: 170 }} onClick={() => handleOpen("fuentesIngresos")} tieneComentarioPendiente={tieneComentarioPendiente("fuentesIngresos")}>
+            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} color={C.fuentesIngresos} style={{ minHeight: 210 }} onClick={() => handleOpen("fuentesIngresos")} tieneComentarioPendiente={tieneComentarioPendiente("fuentesIngresos")}>
               <BlockContent blockKey="fuentesIngresos" canvas={canvas} />
             </Block>
           </div>
@@ -437,14 +437,14 @@ export function CanvasView({
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {(draft as string[]).map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", boxSizing: "border-box" }}>
                     <input
                       type="text"
                       value={item}
                       maxLength={MAX_LIST_ITEM}
                       onChange={(e) => setDraft((prev) => (prev as string[]).map((v, idx) => idx === i ? e.target.value : v))}
                       placeholder={openMeta.placeholder}
-                      style={{ flex: 1, minWidth: 0, backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", borderRadius: 10, padding: "9px 12px", color: "var(--text-strong)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+                      style={{ flex: 1, minWidth: 0, backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", borderRadius: 10, padding: "9px 12px", color: "var(--text-strong)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
                       onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.45)")}
                       onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
                     />
@@ -463,13 +463,13 @@ export function CanvasView({
                 {openMeta.max && (draft as string[]).length < openMeta.max ? (
                   <button
                     onClick={() => setDraft((prev) => [...(prev as string[]), ""])}
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "var(--brand)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", backgroundColor: "rgba(154,98,250,0.07)", border: "1px dashed rgba(154,98,250,0.25)", borderRadius: 10, color: "var(--brand)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", width: "100%", boxSizing: "border-box" }}
                   >
                     <Plus size={13} /> Agregar
                     <span style={{ color: "var(--text-faint)", marginLeft: "auto" }}>{(draft as string[]).length}/{openMeta.max}</span>
                   </button>
                 ) : (
-                  <p style={{ color: "var(--text-faint)", fontSize: 11, textAlign: "center" }}>
+                  <p style={{ color: "var(--text-faint)", fontSize: 11, textAlign: "center", width: "100%", boxSizing: "border-box" }}>
                     Límite de {openMeta.max} elementos alcanzado
                   </p>
                 )}
