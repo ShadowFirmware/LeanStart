@@ -84,7 +84,11 @@ export function EvidenciaViewerButton({
             </a>
           </div>
 
-          <div className="p-4" style={{ backgroundColor: "rgba(0,0,0,0.2)" }}>
+          {/* min-w-0: DialogContent es un grid; sin esto, la celda crece según
+              el max-content de lo que haya adentro (el canvas del PDF), y ese
+              ancho más grande retroalimentaba el cálculo de zoom del visor en
+              un ciclo infinito. */}
+          <div className="p-4 min-w-0" style={{ backgroundColor: "rgba(0,0,0,0.2)" }}>
             {tipoEvidencia === "imagen" ? (
               <div
                 className="flex items-center justify-center rounded-lg overflow-hidden"

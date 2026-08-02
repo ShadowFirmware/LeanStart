@@ -40,15 +40,20 @@ export function PdfViewer({ file }: PdfViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState(false);
 
-  const canvasBoxRef = useRef<HTMLDivElement>(null);
+  // "Regla" invisible que nunca contiene al PDF: mide el ancho disponible sin
+  // depender del tamaño del canvas. Medir el contenedor que SÍ tiene el PDF
+  // adentro crea un ciclo (el canvas se agranda → el contenedor "crece" con
+  // él → el nuevo ancho medido agranda aún más al canvas...), que es lo que
+  // causaba el error y el parpadeo al hacer zoom.
+  const rulerRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(0);
 
   useEffect(() => {
-    const el = canvasBoxRef.current;
+    const el = rulerRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width) setCanvasWidth(width);
+      const width = Math.round(entries[0]?.contentRect.width ?? 0);
+      setCanvasWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -117,10 +122,12 @@ export function PdfViewer({ file }: PdfViewerProps) {
         </div>
       </div>
 
+      {/* Regla invisible: mismo ancho que el lienzo, pero sin el PDF adentro. */}
+      <div ref={rulerRef} className="w-full h-0" aria-hidden="true" />
+
       {/* Lienzo del documento */}
       <div
-        ref={canvasBoxRef}
-        className="flex items-start justify-center overflow-auto rounded-lg min-w-0 w-full"
+        className="rounded-lg overflow-hidden min-w-0 w-full"
         style={{ height: "calc(80vh - 52px)", border: "1px solid var(--border-hair)", backgroundColor: "rgba(0,0,0,0.35)" }}
       >
         {error ? (
@@ -129,20 +136,22 @@ export function PdfViewer({ file }: PdfViewerProps) {
             <p className="text-sm" style={{ color: "var(--text-dim)" }}>No se pudo mostrar el PDF. Descárgalo para verlo.</p>
           </div>
         ) : (
-          <Document
-            file={file}
-            onLoadSuccess={({ numPages: n }) => { setNumPages(n); setPageNumber(1); }}
-            onLoadError={() => setError(true)}
-            loading={
-              <div className="flex flex-col items-center justify-center gap-2 py-24">
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--brand)" }} />
-                <span className="text-xs" style={{ color: "var(--text-dim)" }}>Cargando documento…</span>
-              </div>
-            }
-            className="py-4"
-          >
-            {pageWidth && <Page pageNumber={pageNumber} width={pageWidth} className="shadow-lg" />}
-          </Document>
+          <div className="w-full h-full overflow-auto flex items-start justify-center">
+            <Document
+              file={file}
+              onLoadSuccess={({ numPages: n }) => { setNumPages(n); setPageNumber(1); }}
+              onLoadError={() => setError(true)}
+              loading={
+                <div className="flex flex-col items-center justify-center gap-2 py-24">
+                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--brand)" }} />
+                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>Cargando documento…</span>
+                </div>
+              }
+              className="py-4"
+            >
+              {pageWidth && <Page pageNumber={pageNumber} width={pageWidth} className="shadow-lg" />}
+            </Document>
+          </div>
         )}
       </div>
     </div>
