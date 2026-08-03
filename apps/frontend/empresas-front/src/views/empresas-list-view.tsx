@@ -510,7 +510,7 @@ export function EmpresasListView({
                     className="flex items-center justify-between mt-3 pt-3"
                     style={{ borderTop: "1px solid var(--border-subtle)" }}
                   >
-                    {(empresa.estado === "borrador" || empresa.estado === "devuelto") && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
+                    {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
                       <button
                         onClick={async (e) => {
                           e.preventDefault();
