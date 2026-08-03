@@ -8,6 +8,12 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   Input, debounce,
 } from "@leanstart/commons";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useViabilidadStore, type NivelViabilidad } from "../store/viabilidad";
 
 const MAX_NOMBRE = 30;
@@ -86,6 +92,75 @@ function Stepper({ value, min, max, step = 1, disabled, onChange, label }: {
   );
 }
 
+/* ─── Fila arrastrable de un nivel (dnd-kit: transform/transition animados) ─── */
+function NivelRow({ nivel, min, esUltimo, stepperMax, onGuardarHasta, onAbrirEditar, onEliminar }: {
+  nivel: NivelViabilidad; min: number; esUltimo: boolean; stepperMax: number;
+  onGuardarHasta: (v: number) => void; onAbrirEditar: () => void; onEliminar: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: nivel.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3"
+      style={{
+        backgroundColor: "var(--hover-surface-2)",
+        border: "1px solid var(--border-subtle)",
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1 : "auto",
+        position: "relative",
+      }}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="flex items-center justify-center w-6 h-7 shrink-0 cursor-grab active:cursor-grabbing touch-none"
+        style={{ color: "var(--text-faint)" }}
+        aria-label={`Reordenar ${nivel.nombre}`}
+        title="Arrastrar para reordenar"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+
+      <button
+        onClick={onAbrirEditar}
+        className="flex items-center gap-2.5 min-w-[140px] shrink-0 text-left"
+        aria-label={`Editar nivel ${nivel.nombre}`}
+      >
+        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: nivel.color }} />
+        <span className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{nivel.nombre}</span>
+      </button>
+
+      <span className="text-xs shrink-0" style={{ color: "var(--text-dim)" }}>
+        {min}% – {nivel.hasta}%
+      </span>
+
+      <div className="flex items-center gap-2 ml-auto shrink-0">
+        {esUltimo ? (
+          <span className="text-xs px-2" style={{ color: "var(--text-faint)" }}>Hasta 100% (fijo)</span>
+        ) : (
+          <Stepper
+            value={nivel.hasta}
+            min={min}
+            max={stepperMax}
+            onChange={onGuardarHasta}
+            label={`límite superior de ${nivel.nombre}`}
+          />
+        )}
+        <Button variant="ghost" size="icon-sm" onClick={onAbrirEditar} style={{ color: "var(--text-dim)" }} aria-label={`Editar ${nivel.nombre}`}>
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={onEliminar} style={{ color: "var(--text-dim)" }} aria-label={`Eliminar ${nivel.nombre}`}>
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function ViabilidadView() {
   const pesoEvaluacion = useViabilidadStore((s) => s.pesoEvaluacion);
   const actualizarPesoEvaluacion = useViabilidadStore((s) => s.actualizarPesoEvaluacion);
@@ -128,32 +203,17 @@ export function ViabilidadView() {
   const [nombreDraft, setNombreDraft] = useState("");
   const [colorDraft, setColorDraft] = useState("");
 
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Distancia mínima antes de activar el arrastre: evita que un simple click
+  // (editar, +/-) se confunda con el inicio de un drag.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  function handleDragStart(e: React.DragEvent<HTMLButtonElement>, i: number) {
-    setDragIndex(i);
-    e.dataTransfer.effectAllowed = "move";
-    const fila = e.currentTarget.closest("[data-nivel-row]") as HTMLElement | null;
-    if (fila) e.dataTransfer.setDragImage(fila, 20, 20);
-  }
-
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>, i: number) {
-    e.preventDefault();
-    if (dragIndex !== null && i !== overIndex) setOverIndex(i);
-  }
-
-  function handleDrop(i: number) {
-    if (dragIndex !== null && dragIndex !== i) {
-      reordenarNivel(dragIndex, i).catch(() => toast.error("No se pudo reordenar el nivel."));
-    }
-    setDragIndex(null);
-    setOverIndex(null);
-  }
-
-  function handleDragEnd() {
-    setDragIndex(null);
-    setOverIndex(null);
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const desde = niveles.findIndex((n) => n.id === active.id);
+    const hasta = niveles.findIndex((n) => n.id === over.id);
+    if (desde === -1 || hasta === -1) return;
+    reordenarNivel(desde, hasta).catch(() => toast.error("No se pudo reordenar el nivel."));
   }
 
   function abrirEditar(nivel: NivelViabilidad) {
@@ -273,84 +333,28 @@ export function ViabilidadView() {
           Rango de 0% a 100%.
         </p>
 
-        <div className="flex flex-col gap-2">
-          {niveles.map((nivel, i) => {
-            const min = i === 0 ? 0 : niveles[i - 1].hasta + 1;
-            const esUltimo = i === niveles.length - 1;
-            return (
-              <div
-                key={nivel.id}
-                data-nivel-row
-                onDragOver={(e) => handleDragOver(e, i)}
-                onDrop={() => handleDrop(i)}
-                className="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 transition-colors"
-                style={{
-                  backgroundColor: "var(--hover-surface-2)",
-                  border: `1px solid ${overIndex === i && dragIndex !== null && dragIndex !== i ? "rgba(154,98,250,0.4)" : "var(--border-subtle)"}`,
-                  opacity: dragIndex === i ? 0.4 : 1,
-                }}
-              >
-                <button
-                  type="button"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, i)}
-                  onDragEnd={handleDragEnd}
-                  className="flex items-center justify-center w-6 h-7 shrink-0 cursor-grab active:cursor-grabbing"
-                  style={{ color: "var(--text-faint)" }}
-                  aria-label={`Reordenar ${nivel.nombre}`}
-                  title="Arrastrar para reordenar"
-                >
-                  <GripVertical className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => abrirEditar(nivel)}
-                  className="flex items-center gap-2.5 min-w-[140px] shrink-0 text-left"
-                  aria-label={`Editar nivel ${nivel.nombre}`}
-                >
-                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: nivel.color }} />
-                  <span className="text-sm font-medium" style={{ color: "var(--text-strong)" }}>{nivel.nombre}</span>
-                </button>
-
-                <span className="text-xs shrink-0" style={{ color: "var(--text-dim)" }}>
-                  {min}% – {nivel.hasta}%
-                </span>
-
-                <div className="flex items-center gap-2 ml-auto shrink-0">
-                  {esUltimo ? (
-                    <span className="text-xs px-2" style={{ color: "var(--text-faint)" }}>Hasta 100% (fijo)</span>
-                  ) : (
-                    <Stepper
-                      value={nivel.hasta}
-                      min={min}
-                      max={niveles[i + 1].hasta - 1}
-                      onChange={(v) => guardarHastaNivel(nivel.id, v)}
-                      label={`límite superior de ${nivel.nombre}`}
-                    />
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => abrirEditar(nivel)}
-                    style={{ color: "var(--text-dim)" }}
-                    aria-label={`Editar ${nivel.nombre}`}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => handleEliminarNivel(nivel)}
-                    style={{ color: "var(--text-dim)" }}
-                    aria-label={`Eliminar ${nivel.nombre}`}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DndContext id="niveles-viabilidad" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={niveles.map((n) => n.id)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-2">
+              {niveles.map((nivel, i) => {
+                const min = i === 0 ? 0 : niveles[i - 1].hasta + 1;
+                const esUltimo = i === niveles.length - 1;
+                return (
+                  <NivelRow
+                    key={nivel.id}
+                    nivel={nivel}
+                    min={min}
+                    esUltimo={esUltimo}
+                    stepperMax={esUltimo ? 100 : niveles[i + 1].hasta - 1}
+                    onGuardarHasta={(v) => guardarHastaNivel(nivel.id, v)}
+                    onAbrirEditar={() => abrirEditar(nivel)}
+                    onEliminar={() => handleEliminarNivel(nivel)}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Resultado según viabilidad */}

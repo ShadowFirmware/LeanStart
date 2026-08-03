@@ -7,7 +7,7 @@ import {
   LayoutTemplate, Package, Lightbulb, Building2,
 } from "lucide-react";
 import { useEmpresasStore, useObservacionesStore, type CanvasData, type Observacion } from "@leanstart/empresas-front";
-import { useHasHydrated, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@leanstart/commons";
+import { useHasHydrated, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, usePagination, PaginationBar } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
 
 const TODOS_LOS_ESTADOS = "todos";
@@ -95,6 +95,10 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
     const coincideEstado = filtroEstado === TODOS_LOS_ESTADOS || r.estado === filtroEstado;
     const coincideModulo = filtroModulo === TODOS_LOS_MODULOS || r.modulo === filtroModulo;
     return coincideBusqueda && coincideEstado && coincideModulo;
+  });
+
+  const { page, setPage, totalPages, pageItems: registrosPagina, pageSize, totalItems } = usePagination(registrosFiltrados, {
+    resetKey: `${busqueda}|${filtroEstado}|${filtroModulo}`,
   });
 
   return (
@@ -223,7 +227,7 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {registrosFiltrados.map((r) => {
+            {registrosPagina.map((r) => {
               const cfg = ESTADO_OBS_CONFIG[r.estado];
               const moduloCfg = MODULO_CONFIG[r.modulo];
               return (
@@ -276,6 +280,15 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
             })}
           </div>
         )}
+
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          itemLabel={totalItems === 1 ? "observación" : "observaciones"}
+        />
       </div>
     </div>
   );

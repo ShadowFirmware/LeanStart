@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { useHasHydrated } from "@leanstart/commons";
+import { useHasHydrated, usePagination, PaginationBar } from "@leanstart/commons";
 import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotificacion } from "../store/notificaciones";
 
 const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -27,6 +27,8 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
 
   const notificaciones = todas.filter((n) => (n.destinatario ?? "emprendedor") === destinatario);
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
+
+  const { page, setPage, totalPages, pageItems: notificacionesPagina, pageSize, totalItems } = usePagination(notificaciones);
 
   async function marcarTodasLeidas() {
     try {
@@ -106,7 +108,7 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {notificaciones.map((n) => {
+          {notificacionesPagina.map((n) => {
             const cfg = TIPO_CONFIG[n.tipo];
             const Icon = cfg.icon;
             return (
@@ -168,6 +170,15 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
           })}
         </div>
       )}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel={totalItems === 1 ? "notificación" : "notificaciones"}
+      />
     </div>
   );
 }

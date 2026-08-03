@@ -9,6 +9,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   useCurrentUser, useUsuariosStore,
+  usePagination, PaginationBar,
 } from "@leanstart/commons";
 import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
 import { useCriteriosStore } from "../store/criterios";
@@ -158,6 +159,10 @@ export function ReportesView() {
     return coincideTipo && coincideBusqueda;
   });
 
+  const { page, setPage, totalPages, pageItems: historialPagina, pageSize, totalItems } = usePagination(historialFiltrado, {
+    resetKey: `${busqueda}|${filtroTipo}`,
+  });
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header */}
@@ -256,7 +261,7 @@ export function ReportesView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {historialFiltrado.map((r) => {
+          {historialPagina.map((r) => {
             const empresa = empresas.find((e) => e.id === r.empresaId);
             const cfg = TIPO_CONFIG[r.tipo];
             return (
@@ -325,6 +330,15 @@ export function ReportesView() {
           })}
         </div>
       )}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel={totalItems === 1 ? "reporte" : "reportes"}
+      />
 
       {/* Diálogo: generar reporte */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

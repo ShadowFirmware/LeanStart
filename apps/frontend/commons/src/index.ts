@@ -10,6 +10,7 @@ export * from "./components/ui/form";
 export * from "./components/ui/input";
 export * from "./components/ui/label";
 export * from "./components/ui/navigation-menu";
+export * from "./components/ui/pagination-bar";
 export * from "./components/ui/popover";
 export * from "./components/ui/progress";
 export * from "./components/ui/select";
@@ -28,6 +29,7 @@ export { useIsMobile } from "./hooks/use-mobile";
 export { usePrivilegios } from "./hooks/use-privilegios";
 export { useCurrentUser } from "./hooks/use-current-user";
 export { useHasHydrated } from "./hooks/use-has-hydrated";
+export { usePagination } from "./hooks/use-pagination";
 
 // Modo demo / identidad
 export { DEMO_MODE, DEMO_USERS } from "./lib/demo";

@@ -9,6 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  usePagination, PaginationBar,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, useObservacionesStore, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
@@ -122,6 +123,10 @@ export function ProductosListView({
   }
 
   const hayFiltrosActivos = Boolean(busqueda) || filtroTipo !== TODOS;
+
+  const { page, setPage, totalPages, pageItems: productosPagina, pageSize, totalItems } = usePagination(productosVisibles, {
+    resetKey: `${busqueda}|${filtroTipo}|${orden}`,
+  });
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6">
@@ -265,7 +270,7 @@ export function ProductosListView({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {productosVisibles.map((p) => {
+          {productosPagina.map((p) => {
             const tipo = TIPO_CONFIG[p.tipo] ?? TIPO_CONFIG.producto;
             const caracteristicas = p.caracteristicas
               ? p.caracteristicas.split("\n").map((c) => c.trim()).filter(Boolean)
@@ -422,6 +427,15 @@ export function ProductosListView({
           })}
         </div>
       )}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel={totalItems === 1 ? "registro" : "registros"}
+      />
 
       {/* Confirmación de eliminado */}
       {puedeEditar && (

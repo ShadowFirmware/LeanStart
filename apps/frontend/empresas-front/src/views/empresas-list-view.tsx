@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog } from "lucide-react";
+import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog, User } from "lucide-react";
 import {
   Button,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   useUsuariosStore, useCurrentUser, useHasHydrated,
+  usePagination, PaginationBar,
 } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
@@ -208,6 +209,10 @@ export function EmpresasListView({
 
   const hayFiltrosActivos = Boolean(busqueda) || filtroEstado !== TODOS_LOS_ESTADOS || filtroGiro !== TODOS_LOS_GIROS;
 
+  const { page, setPage, totalPages, pageItems: empresasPagina, pageSize, totalItems } = usePagination(empresasFiltradas, {
+    resetKey: `${busqueda}|${filtroEstado}|${filtroGiro}`,
+  });
+
   // Hasta que el store persistido rehidrate, servidor y primer render de cliente
   // muestran el mismo esqueleto neutro para evitar mismatches de hidratación.
   if (!hydrated) {
@@ -395,7 +400,7 @@ export function EmpresasListView({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {empresasFiltradas.map((empresa) => {
+          {empresasPagina.map((empresa) => {
             const estadoConfig = ESTADO_CONFIG[empresa.estado];
             // El emprendedor solo puede eliminar mientras el proyecto está en captura o le toca atender observaciones.
             const puedeEditar = !readOnly && (
@@ -410,6 +415,8 @@ export function EmpresasListView({
                   ? { nombre: empresa.nivelNombre, color: empresa.nivelColor ?? "var(--brand)" }
                   : nivelPorScore(nivelesViabilidad, empresa.scoreFinal))
               : null;
+            // En vistas de consulta (Admin/Mentor/Evaluador) se muestra el emprendedor dueño de la empresa.
+            const emprendedor = readOnly ? usuarios.find((u) => u.id === empresa.ownerId) : undefined;
             return (
               <Link
                 key={empresa.id}
@@ -474,6 +481,16 @@ export function EmpresasListView({
                     {estadoConfig.label}
                   </span>
                 </div>
+
+                {/* Emprendedor dueño (solo consulta) */}
+                {emprendedor && (
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <User className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-faint)" }} />
+                    <span className="text-xs truncate" style={{ color: "var(--text-dim)" }}>
+                      {emprendedor.nombre}
+                    </span>
+                  </div>
+                )}
 
                 {/* Stats */}
                 <div
@@ -583,6 +600,15 @@ export function EmpresasListView({
           })}
         </div>
       )}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel={totalItems === 1 ? "empresa" : "empresas"}
+      />
 
       {/* Confirmación de eliminado */}
       {!readOnly && (

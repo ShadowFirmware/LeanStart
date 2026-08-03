@@ -11,7 +11,7 @@ import {
   ArrowLeft, Pencil, X, Check, Camera,
   Package, LayoutTemplate, Lightbulb,
   Plus, AlertCircle, ChevronRight, Trash2, Send, UserCog,
-  CheckCircle2, MessageSquare, Flag, MoreVertical,
+  CheckCircle2, MessageSquare, Flag, MoreVertical, User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
@@ -359,6 +359,8 @@ export function EmpresaDetailView({
   }
 
   const estadoConfig = ESTADO_CONFIG[empresa.estado];
+  // En vistas de consulta (Admin/Mentor/Evaluador) se muestra el emprendedor dueño de la empresa.
+  const emprendedor = readOnly ? usuarios.find((u) => u.id === empresa.ownerId) : undefined;
   const logoActual = logoPreview ?? empresa.logoUrl;
   const nombreActual = form.watch("nombre") || empresa.nombre;
   const canvasPct = Math.round(((empresa.canvasBloques ?? 0) / CANVAS_TOTAL) * 100);
@@ -724,6 +726,12 @@ export function EmpresaDetailView({
                         {estadoConfig.label}
                       </span>
                     </div>
+                    {emprendedor && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <User className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-faint)" }} />
+                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>{emprendedor.nombre}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {typeof empresa.scoreFinal === "number" && (

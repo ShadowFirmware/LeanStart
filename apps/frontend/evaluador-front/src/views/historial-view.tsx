@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { History, Search, ClipboardCheck, Percent, Award } from "lucide-react";
 import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
-import { useHasHydrated } from "@leanstart/commons";
+import { useHasHydrated, usePagination, PaginationBar } from "@leanstart/commons";
 import type { EstadoEmpresa } from "@leanstart/commons";
 import {
   useCriteriosStore, useViabilidadStore, useEvaluacionesStore,
@@ -77,6 +77,10 @@ export function EvaluadorHistorialView() {
   const total = registros.length;
   const promedio = total > 0 ? Math.round(registros.reduce((acc, r) => acc + r.calculo.scoreFinal, 0) / total) : 0;
   const aprobadas = registros.filter((r) => r.empresa.estado !== "devuelto").length;
+
+  const { page, setPage, totalPages, pageItems: registrosPagina, pageSize, totalItems } = usePagination(registrosFiltrados, {
+    resetKey: busqueda,
+  });
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
@@ -151,7 +155,7 @@ export function EvaluadorHistorialView() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {registrosFiltrados.map(({ empresa, calculo, fecha }) => {
+            {registrosPagina.map(({ empresa, calculo, fecha }) => {
               const estadoCfg = ESTADO_CONFIG[empresa.estado] ?? ESTADO_CONFIG.publicado;
               return (
                 <Link
@@ -201,6 +205,15 @@ export function EvaluadorHistorialView() {
             })}
           </div>
         )}
+
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          itemLabel={totalItems === 1 ? "evaluación" : "evaluaciones"}
+        />
       </div>
     </div>
   );

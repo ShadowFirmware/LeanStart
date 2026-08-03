@@ -295,7 +295,7 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
                   <div style={{ flex: 1, height: 6, borderRadius: 999, background: "#EFEAF9", overflow: "hidden" }}>
                     <div style={{ width: `${c.puntaje}%`, height: "100%", background: ACCENT }} />
                   </div>
-                  <span style={{ fontWeight: 700, width: 36, textAlign: "right" }}>{c.puntaje}%</span>
+                  <span style={{ fontWeight: 700, width: 44, textAlign: "right", whiteSpace: "nowrap" }}>{c.puntos} / {c.peso}</span>
                 </div>
               </td>
             </tr>

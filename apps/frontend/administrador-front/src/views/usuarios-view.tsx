@@ -14,6 +14,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  usePagination, PaginationBar,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useUsuariosStore, type Role, type Usuario, type EstadoUsuario } from "@leanstart/commons";
@@ -88,6 +89,10 @@ export function UsuariosView() {
       return coincideBusqueda && coincideRol;
     });
   }, [usuarios, busqueda, filtroRol]);
+
+  const { page, setPage, totalPages, pageItems: usuariosPagina, pageSize, totalItems } = usePagination(usuariosFiltrados, {
+    resetKey: `${busqueda}|${filtroRol}`,
+  });
 
   function abrirCrear() {
     setEditTarget(null);
@@ -211,7 +216,7 @@ export function UsuariosView() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {usuariosFiltrados.map((u) => {
+          {usuariosPagina.map((u) => {
             const rolConfig = ROL_CONFIG[u.rol];
             const estadoConfig = ESTADO_CONFIG[u.estado];
             return (
@@ -297,6 +302,15 @@ export function UsuariosView() {
           })}
         </div>
       )}
+
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        itemLabel={totalItems === 1 ? "usuario" : "usuarios"}
+      />
 
       {/* Dialog crear/editar */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
