@@ -104,7 +104,12 @@ export class ObservacionesService {
     return actualizada;
   }
 
-  /** El emprendedor marca que ya corrigió: notifica al mentor y avanza el estado del proyecto. */
+  /**
+   * El emprendedor marca que ya corrigió TODO de una vez: pasa sus observaciones abiertas
+   * a "en_revision" (mismo estado que dejaría marcándolas una por una) y avanza el estado
+   * del proyecto para que le toque al mentor. Ojo: esto NO las cierra como "atendida" —
+   * eso es una confirmación que le corresponde al mentor, ver `confirmarAtendidas`.
+   */
   async marcarAtendidas(user: AuthUser, empresaId: string) {
     const empresa = await this.empresas.obtener(user, empresaId);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, "observaciones_atendidas");
@@ -112,7 +117,7 @@ export class ObservacionesService {
     await this.prisma.$transaction([
       this.prisma.observacion.updateMany({
         where: { empresaId, estado: { not: "cerrada" } },
-        data: { estado: "atendida" },
+        data: { estado: "en_revision" },
       }),
       this.prisma.empresa.update({ where: { id: empresaId }, data: { estado: "observaciones_atendidas" } }),
     ]);
@@ -120,13 +125,28 @@ export class ObservacionesService {
     if (empresa.mentorId) {
       void this.notificar(empresa.mentorId, {
         tipo: "cambio_emprendedor",
-        titulo: "El emprendedor atendió tus observaciones",
-        mensaje: `"${empresa.nombre}" fue actualizado en respuesta a tus comentarios.`,
+        titulo: "El emprendedor corrigió sus observaciones",
+        mensaje: `"${empresa.nombre}" tiene correcciones listas para que las confirmes.`,
         empresaNombre: empresa.nombre,
         empresaId,
       });
     }
     return { ok: true, estado: "observaciones_atendidas" as const };
+  }
+
+  /**
+   * El mentor confirma en bloque que las correcciones del emprendedor quedaron bien:
+   * cierra cada observación "en_revision" como "atendida". Es el paso que le faltaba al
+   * flujo — antes `marcarAtendidas` (llamado por el emprendedor) ya las dejaba "atendida"
+   * directamente, sin que el mentor confirmara nada.
+   */
+  async confirmarAtendidas(user: AuthUser, empresaId: string) {
+    await this.empresas.obtener(user, empresaId);
+    const { count } = await this.prisma.observacion.updateMany({
+      where: { empresaId, estado: "en_revision" },
+      data: { estado: "atendida" },
+    });
+    return { ok: true, confirmadas: count };
   }
 
   async cerrarDeEmpresa(user: AuthUser, empresaId: string) {

@@ -90,10 +90,13 @@ interface ObservacionesStore {
   enviarRetroalimentacion: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
   /**
    * El emprendedor confirma que ya corrigió: marca todas sus observaciones abiertas
-   * como "atendida", avanza el estado del proyecto y notifica al mentor UNA vez.
-   * Devuelve el nuevo estado para que quien lo llama sincronice el store de empresas.
+   * como "en_revision" (a la espera de que el mentor las confirme, ver `confirmarTodasAtendidas`),
+   * avanza el estado del proyecto y notifica al mentor UNA vez. Devuelve el nuevo estado
+   * para que quien lo llama sincronice el store de empresas.
    */
   marcarTodasAtendidas: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
+  /** El mentor confirma en bloque que las correcciones del emprendedor quedaron bien: cierra cada "en_revision" como "atendida". */
+  confirmarTodasAtendidas: (empresaId: string) => Promise<void>;
 }
 
 function mapObservacion(o: Record<string, unknown>): Observacion {
@@ -193,7 +196,7 @@ export const useObservacionesStore = create<ObservacionesStore>()(
           );
           set({
             observaciones: get().observaciones.map((o) =>
-              o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "atendida" } : o
+              o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "en_revision" } : o
             ),
           });
           return resultado.estado;
@@ -201,10 +204,21 @@ export const useObservacionesStore = create<ObservacionesStore>()(
 
         set({
           observaciones: get().observaciones.map((o) =>
-            o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "atendida" } : o
+            o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "en_revision" } : o
           ),
         });
         return "observaciones_atendidas";
+      },
+
+      async confirmarTodasAtendidas(empresaId) {
+        if (!modoDemo()) {
+          await apiFetch(`/empresas/${empresaId}/observaciones/confirmar-atendidas`, { method: "POST" });
+        }
+        set({
+          observaciones: get().observaciones.map((o) =>
+            o.empresaId === empresaId && o.estado === "en_revision" ? { ...o, estado: "atendida" } : o
+          ),
+        });
       },
 
       async cerrarObservacionesDeEmpresa(empresaId) {

@@ -48,10 +48,17 @@ export class ObservacionesController {
   }
 
   @Post("marcar-atendidas")
-  @ApiOperation({ summary: "El emprendedor marca que ya corrigió" })
+  @ApiOperation({ summary: "El emprendedor marca que ya corrigió (queda en_revision, a la espera de que el mentor confirme)" })
   @ApiParam({ name: "empresaId" })
   marcarAtendidas(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
     return this.proxy.post(this.baseUrl, `/empresas/${empresaId}/observaciones/marcar-atendidas`, {}, user);
+  }
+
+  @Post("confirmar-atendidas")
+  @ApiOperation({ summary: "El mentor confirma en bloque que las correcciones del emprendedor quedaron bien" })
+  @ApiParam({ name: "empresaId" })
+  confirmarAtendidas(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
+    return this.proxy.post(this.baseUrl, `/empresas/${empresaId}/observaciones/confirmar-atendidas`, {}, user);
   }
 
   @Post("cerrar")
