@@ -28,8 +28,13 @@ export class ObservacionesService {
     });
     // Un borrador es invisible para todos salvo su propio autor (el mentor que
     // todavía no envía su retroalimentación) — así el emprendedor nunca ve
-    // comentarios a medio escribir.
-    return observaciones.filter((o) => o.estado !== "borrador" || o.autorId === user.id);
+    // comentarios a medio escribir. Espejo en la otra dirección: "resuelta" es
+    // invisible justo para el autor original (el mentor) — es el emprendedor marcando
+    // que ya corrigió, pero todavía no le manda el proyecto de vuelta con "Enviar
+    // cambios"; el mentor no debe enterarse hasta ese momento.
+    return observaciones.filter(
+      (o) => (o.estado !== "borrador" || o.autorId === user.id) && (o.estado !== "resuelta" || o.autorId !== user.id)
+    );
   }
 
   /**
@@ -105,11 +110,14 @@ export class ObservacionesService {
   }
 
   /**
-   * El emprendedor marca que ya corrigió TODO de una vez: pasa sus observaciones abiertas
-   * a "en_revision" (mismo estado que dejaría marcándolas una por una) y avanza el estado
-   * del proyecto para que le toque al mentor. Ojo: esto NO las cierra como "atendida" —
-   * eso lo confirma el mentor, una por una, con el estado "atendida" vía `actualizarEstado`
-   * (a propósito no hay una confirmación en bloque, para que el mentor revise cada una).
+   * El emprendedor termina de marcar comentarios como "resuelta" uno por uno y ahora manda
+   * TODO de una vez al mentor: pasa esas observaciones "resuelta" (y cualquier "pendiente"
+   * que se le haya escapado marcar) a "en_revision", y avanza el estado del proyecto para
+   * que le toque al mentor. A propósito NO toca "borrador" — si el mentor tiene un
+   * comentario nuevo a medio escribir sin enviar, se queda intacto. Y esto NO cierra nada
+   * como "atendida" — eso lo confirma el mentor, una por una, con el estado "atendida" vía
+   * `actualizarEstado` (a propósito no hay una confirmación en bloque, para que el mentor
+   * revise cada una).
    */
   async marcarAtendidas(user: AuthUser, empresaId: string) {
     const empresa = await this.empresas.obtener(user, empresaId);
@@ -117,7 +125,7 @@ export class ObservacionesService {
 
     await this.prisma.$transaction([
       this.prisma.observacion.updateMany({
-        where: { empresaId, estado: { not: "cerrada" } },
+        where: { empresaId, estado: { notIn: ["cerrada", "borrador"] } },
         data: { estado: "en_revision" },
       }),
       this.prisma.empresa.update({ where: { id: empresaId }, data: { estado: "observaciones_atendidas" } }),

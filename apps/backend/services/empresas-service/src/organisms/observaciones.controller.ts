@@ -6,7 +6,7 @@ import { IsIn } from "class-validator";
 import { ObservacionesService } from "../molecules/observaciones.service";
 import { CreateObservacionDto } from "../atoms/observacion.dto";
 
-const ESTADOS_OBSERVACION = ["pendiente", "en_revision", "atendida", "cerrada"] as const;
+const ESTADOS_OBSERVACION = ["pendiente", "resuelta", "en_revision", "atendida", "cerrada"] as const;
 
 class ActualizarEstadoObservacionDto {
   @ApiProperty({ enum: ESTADOS_OBSERVACION })
@@ -58,7 +58,7 @@ export class ObservacionesController {
   }
 
   @Post("marcar-atendidas")
-  @ApiOperation({ summary: "El emprendedor marca que ya corrigió (queda en_revision, a la espera de que el mentor confirme una por una) — notifica al mentor" })
+  @ApiOperation({ summary: "El emprendedor envía sus correcciones ('resuelta' -> en_revision, a la espera de que el mentor confirme una por una) — notifica al mentor" })
   @ApiParam({ name: "empresaId" })
   marcarAtendidas(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
     return this.observaciones.marcarAtendidas(user, empresaId);

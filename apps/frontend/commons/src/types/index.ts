@@ -21,9 +21,13 @@ export type EstadoHipotesis =
 
 // Estados de observación. "borrador": el mentor la dejó pero no ha enviado su
 // retroalimentación todavía — invisible para el emprendedor hasta que la envíe.
+// "resuelta": el emprendedor ya la marcó como corregida pero todavía no le manda el
+// proyecto de vuelta al mentor — invisible para el mentor hasta "Enviar cambios"
+// (espejo de "borrador", pero en la otra dirección).
 export type EstadoObservacion =
   | 'borrador'
   | 'pendiente'
+  | 'resuelta'
   | 'en_revision'
   | 'atendida'
   | 'cerrada';

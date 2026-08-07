@@ -89,12 +89,13 @@ interface ObservacionesStore {
    */
   enviarRetroalimentacion: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
   /**
-   * El emprendedor confirma que ya corrigió: marca todas sus observaciones abiertas
-   * como "en_revision" (a la espera de que el mentor las confirme una por una, con el
-   * botón "Confirmar resuelto" de cada observación — a propósito no hay un botón global,
-   * para que el mentor realmente revise cada corrección), avanza el estado del proyecto
-   * y notifica al mentor UNA vez. Devuelve el nuevo estado para que quien lo llama
-   * sincronice el store de empresas.
+   * El emprendedor manda TODO de una vez al mentor: pasa cada observación "resuelta" (las
+   * que fue marcando una por una con "Marcar como resuelto" — hasta ahora invisibles para
+   * el mentor, como un borrador en la otra dirección) a "en_revision", a la espera de que
+   * el mentor las confirme una por una con "Confirmar resuelto" (a propósito no hay un
+   * botón global, para que el mentor realmente revise cada corrección). Avanza el estado
+   * del proyecto y notifica al mentor UNA vez. Devuelve el nuevo estado para que quien lo
+   * llama sincronice el store de empresas.
    */
   marcarTodasAtendidas: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
 }
@@ -189,24 +190,21 @@ export const useObservacionesStore = create<ObservacionesStore>()(
       },
 
       async marcarTodasAtendidas(empresaId) {
+        // No toca "borrador": si el mentor tiene un comentario nuevo a medio escribir sin
+        // enviar, debe quedarse intacto (mismo cuidado que ya tiene el backend).
+        const liberar = (o: Observacion) =>
+          o.empresaId === empresaId && o.estado !== "cerrada" && o.estado !== "borrador" ? { ...o, estado: "en_revision" as const } : o;
+
         if (!modoDemo()) {
           const resultado = await apiFetch<{ estado: EstadoEmpresa }>(
             `/empresas/${empresaId}/observaciones/marcar-atendidas`,
             { method: "POST" }
           );
-          set({
-            observaciones: get().observaciones.map((o) =>
-              o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "en_revision" } : o
-            ),
-          });
+          set({ observaciones: get().observaciones.map(liberar) });
           return resultado.estado;
         }
 
-        set({
-          observaciones: get().observaciones.map((o) =>
-            o.empresaId === empresaId && o.estado !== "cerrada" ? { ...o, estado: "en_revision" } : o
-          ),
-        });
+        set({ observaciones: get().observaciones.map(liberar) });
         return "observaciones_atendidas";
       },
 

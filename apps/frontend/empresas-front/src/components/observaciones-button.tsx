@@ -12,6 +12,7 @@ import { useEmpresasStore } from "../store/empresas";
 const ESTADO_OBS_CONFIG: Record<EstadoObservacion, { label: string; color: string; bg: string }> = {
   borrador: { label: "Borrador — sin enviar", color: "var(--text-dim)", bg: "var(--border-hair)" },
   pendiente: { label: "Pendiente", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
+  resuelta: { label: "Resuelta — sin enviar", color: "var(--text-dim)", bg: "var(--border-hair)" },
   en_revision: { label: "En revisión", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
   atendida: { label: "Atendida", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   cerrada: { label: "Cerrada", color: "var(--text-dim)", bg: "var(--border-hair)" },
@@ -154,20 +155,11 @@ export function ObservacionesButton({
                         type="button"
                         onClick={async () => {
                           try {
-                            await actualizarEstadoObservacion(o.id, "en_revision");
-                            // En modo real el backend ya notifica al mentor al marcar "en_revision"
-                            // (ver ObservacionesService.actualizarEstado); en demo la simulamos aquí.
-                            if (modoDemo()) {
-                              agregarNotificacion({
-                                tipo: "cambio_emprendedor",
-                                destinatario: "mentor",
-                                titulo: "El emprendedor atendió un comentario",
-                                mensaje: `Hay cambios pendientes de revisar en "${empresaNombre}".`,
-                                empresaNombre,
-                                creadaEn: "Justo ahora",
-                              });
-                            }
-                            toast.success("Comentario marcado como listo.");
+                            // Queda en "resuelta": invisible para el mentor hasta que el
+                            // emprendedor mande TODO de vuelta con "Enviar cambios" — no
+                            // se notifica todavía (eso pasa recién en el envío en bloque).
+                            await actualizarEstadoObservacion(o.id, "resuelta");
+                            toast.success("Comentario marcado como resuelto.");
                           } catch {
                             toast.error("No se pudo actualizar la observación.");
                           }

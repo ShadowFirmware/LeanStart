@@ -15,7 +15,7 @@ export type EstadoHipotesis = "pendiente_validacion" | "validada" | "invalidada"
 
 // "borrador": el mentor la dejó pero no ha enviado su retroalimentación todavía —
 // invisible para el emprendedor hasta que el mentor la envíe (ver "enviar" más abajo).
-export type EstadoObservacion = "borrador" | "pendiente" | "en_revision" | "atendida" | "cerrada";
+export type EstadoObservacion = "borrador" | "pendiente" | "resuelta" | "en_revision" | "atendida" | "cerrada";
 
 export type GiroEmpresa =
   | "tecnologia"
