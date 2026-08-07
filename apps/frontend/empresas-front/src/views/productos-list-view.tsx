@@ -66,6 +66,10 @@ export function ProductosListView({
   // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
   const puedeEditar = !readOnly && !!empresa && emprendedorPuedeEditar(empresa.estado);
   const mentorPuedeComentar = permitirComentarios && !!empresa && mentorPuedeComentarEnEstado(empresa.estado);
+  // El emprendedor también puede escribir (responder) — sus mensajes nuevos quedan en
+  // "borrador" hasta que le da a "Enviar cambios", igual que los del mentor.
+  const emprendedorPuedeComentar = !readOnly && !!empresa && mentorPuedeComentarEnEstado(empresa.estado);
+  const puedeComentarHilo = mentorPuedeComentar || emprendedorPuedeComentar;
   const ocultarCorreccionesPendientes = false;
   const puedeVerObs = empresa ? puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios) : false;
   // Solo el emprendedor destaca y prioriza los productos con comentarios del mentor.
@@ -332,8 +336,9 @@ export function ProductosListView({
                       empresaId={id}
                       tipoElemento="producto"
                       elementoId={p.id}
-                      puedeComentar={mentorPuedeComentar}
+                      puedeComentar={puedeComentarHilo}
                       puedeMarcarEnRevision={!readOnly}
+                      puedeConfirmarResuelto={mentorPuedeComentar}
                       puedeVer={puedeVerObs}
                       ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
                       autorNombre={autorNombre}

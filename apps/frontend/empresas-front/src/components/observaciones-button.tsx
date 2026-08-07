@@ -23,10 +23,16 @@ interface ObservacionesButtonProps {
   empresaId: string;
   tipoElemento: TipoElementoObservacion;
   elementoId: string;
-  /** Cuando es true muestra el formulario para agregar una nueva observación (solo mentor). */
+  /** Cuando es true muestra el formulario para agregar una nueva observación (mentor o emprendedor, según a quién le toque). */
   puedeComentar?: boolean;
   /** Cuando es true permite marcar observaciones pendientes como "En revisión" (solo emprendedor). */
   puedeMarcarEnRevision?: boolean;
+  /**
+   * Cuando es true permite confirmar en "Atendida" una observación "En revisión" (solo
+   * mentor — es una acción distinta de `puedeComentar`, que ahora también aplica al
+   * emprendedor: él nunca debe poder confirmar su propia corrección).
+   */
+  puedeConfirmarResuelto?: boolean;
   /** Cuando es false, oculta por completo el hilo (aún no le corresponde verlo según el estado del proyecto). */
   puedeVer?: boolean;
   /**
@@ -44,6 +50,7 @@ export function ObservacionesButton({
   elementoId,
   puedeComentar = false,
   puedeMarcarEnRevision = false,
+  puedeConfirmarResuelto = false,
   puedeVer = true,
   ocultarCorreccionesPendientes = false,
   autorNombre = "Mentor",
@@ -179,7 +186,7 @@ export function ObservacionesButton({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {puedeComentar && estadoMostrado === "en_revision" && (
+                    {puedeConfirmarResuelto && estadoMostrado === "en_revision" && (
                       <button
                         type="button"
                         onClick={async () => {

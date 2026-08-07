@@ -215,6 +215,10 @@ export function CanvasView({
   const puedeEditar = !readOnly && emprendedorPuedeEditar(empresa.estado);
   // El mentor puede comentar durante toda la mentoría (colaboración en vivo).
   const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
+  // El emprendedor también puede escribir (responder) — sus mensajes nuevos quedan en
+  // "borrador" hasta que le da a "Enviar cambios", igual que los del mentor.
+  const emprendedorPuedeComentar = !readOnly && mentorPuedeComentarEnEstado(empresa.estado);
+  const puedeComentarHilo = mentorPuedeComentar || emprendedorPuedeComentar;
   // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
   const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
@@ -379,8 +383,9 @@ export function CanvasView({
                   empresaId={id}
                   tipoElemento="canvas"
                   elementoId={openBlock}
-                  puedeComentar={mentorPuedeComentar}
+                  puedeComentar={puedeComentarHilo}
                   puedeMarcarEnRevision={!readOnly}
+                  puedeConfirmarResuelto={mentorPuedeComentar}
                   puedeVer={puedeVerObs}
                   ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
                   autorNombre={autorNombre}

@@ -295,6 +295,10 @@ export function HipotesisEditView({
   const puedeEditarProyecto = !readOnly && emprendedorPuedeEditar(empresa.estado);
   // El mentor puede comentar/validar durante toda la mentoría (colaboración en vivo).
   const mentorPuedeComentar = Boolean(permitirComentarios) && mentorPuedeComentarEnEstado(empresa.estado);
+  // El emprendedor también puede escribir (responder) — sus mensajes nuevos quedan en
+  // "borrador" hasta que le da a "Enviar cambios", igual que los del mentor.
+  const emprendedorPuedeComentar = !readOnly && mentorPuedeComentarEnEstado(empresa.estado);
+  const puedeComentarHilo = mentorPuedeComentar || emprendedorPuedeComentar;
   // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
   const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, Boolean(permitirComentarios));
@@ -341,8 +345,9 @@ export function HipotesisEditView({
             empresaId={id}
             tipoElemento="hipotesis"
             elementoId={hid}
-            puedeComentar={mentorPuedeComentar}
+            puedeComentar={puedeComentarHilo}
             puedeMarcarEnRevision={!readOnly}
+            puedeConfirmarResuelto={mentorPuedeComentar}
             puedeVer={puedeVerObs}
             ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
             autorNombre={autorNombre}
