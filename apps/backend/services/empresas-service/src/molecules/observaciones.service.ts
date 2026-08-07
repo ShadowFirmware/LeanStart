@@ -33,17 +33,17 @@ export class ObservacionesService {
   }
 
   /**
-   * Sea quien sea (mentor o emprendedor), un comentario nuevo arranca como "borrador":
-   * solo su propio autor lo ve hasta que lo envía — el mentor con `enviarRetroalimentacion`,
-   * el emprendedor con `marcarAtendidas` ("Enviar cambios") — para que pueda dejar varios
-   * comentarios sueltos (en distintos bloques/productos) y mandarlos juntos, sin que la
-   * otra persona vea algo a medio escribir.
+   * El mentor deja la observación como "borrador": no la ve el emprendedor, no
+   * mueve el estado del proyecto ni notifica todavía — eso pasa recién cuando
+   * el mentor llama a `enviarRetroalimentacion`, para que pueda dejar varios
+   * comentarios sueltos (en distintos bloques/productos) y mandarlos juntos.
    */
   async crear(user: AuthUser, empresaId: string, autorNombre: string, dto: CreateObservacionDto) {
     await this.empresas.obtener(user, empresaId);
+    const esBorrador = user.rol === "mentor";
 
     return this.prisma.observacion.create({
-      data: { ...dto, empresaId, autorId: user.id, autorNombre, estado: "borrador" },
+      data: { ...dto, empresaId, autorId: user.id, autorNombre, estado: esBorrador ? "borrador" : "pendiente" },
     });
   }
 
@@ -105,15 +105,11 @@ export class ObservacionesService {
   }
 
   /**
-   * El emprendedor marca que ya corrigió TODO de una vez ("Enviar cambios"): pasa a
-   * "en_revision" tanto lo que ya estaba abierto (lo que el mentor había dejado, mismo
-   * estado que dejaría marcándolas una por una) COMO sus propios borradores — los mensajes
-   * nuevos que haya escrito, que hasta ahora solo él veía —, y avanza el estado del
-   * proyecto para que le toque al mentor. A propósito NO toca los borradores de OTRA
-   * persona (p. ej. si el mentor tiene uno a medio escribir sin enviar, se queda intacto).
-   * Ojo: esto NO cierra nada como "atendida" — eso lo confirma el mentor, uno por uno, con
-   * el estado "atendida" vía `actualizarEstado` (a propósito no hay confirmación en bloque,
-   * para que el mentor revise cada corrección).
+   * El emprendedor marca que ya corrigió TODO de una vez: pasa sus observaciones abiertas
+   * a "en_revision" (mismo estado que dejaría marcándolas una por una) y avanza el estado
+   * del proyecto para que le toque al mentor. Ojo: esto NO las cierra como "atendida" —
+   * eso lo confirma el mentor, una por una, con el estado "atendida" vía `actualizarEstado`
+   * (a propósito no hay una confirmación en bloque, para que el mentor revise cada una).
    */
   async marcarAtendidas(user: AuthUser, empresaId: string) {
     const empresa = await this.empresas.obtener(user, empresaId);
@@ -121,11 +117,7 @@ export class ObservacionesService {
 
     await this.prisma.$transaction([
       this.prisma.observacion.updateMany({
-        where: {
-          empresaId,
-          NOT: { estado: "cerrada" },
-          OR: [{ estado: { not: "borrador" } }, { estado: "borrador", autorId: user.id }],
-        },
+        where: { empresaId, estado: { not: "cerrada" } },
         data: { estado: "en_revision" },
       }),
       this.prisma.empresa.update({ where: { id: empresaId }, data: { estado: "observaciones_atendidas" } }),

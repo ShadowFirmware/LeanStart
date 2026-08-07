@@ -132,13 +132,12 @@ const FASE_CONFIG = {
 } as const;
 
 /* ─── Sección Hipótesis ─── */
-function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permitirComentarios, puedeConfirmarResuelto, ocultarCorreccionesPendientes, autorNombre, estadoEmpresa, puedeEditar }: {
+function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permitirComentarios, ocultarCorreccionesPendientes, autorNombre, estadoEmpresa, puedeEditar }: {
   empresaId: string;
   hipotesisList: import("../store/empresas").Hipotesis[];
   basePath: string;
   readOnly: boolean;
   permitirComentarios?: boolean;
-  puedeConfirmarResuelto?: boolean;
   ocultarCorreccionesPendientes?: boolean;
   autorNombre?: string;
   estadoEmpresa: EstadoEmpresa;
@@ -226,7 +225,6 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
                   elementoId={h.id}
                   puedeComentar={permitirComentarios}
                   puedeMarcarEnRevision={!readOnly}
-                  puedeConfirmarResuelto={puedeConfirmarResuelto}
                   puedeVer={puedeVerObs}
                   ocultarCorreccionesPendientes={Boolean(ocultarCorreccionesPendientes)}
                   autorNombre={autorNombre}
@@ -382,11 +380,6 @@ export function EmpresaDetailView({
   const puedeEditarProyecto = !readOnly && emprendedorPuedeEditar(empresa.estado);
   // El mentor puede comentar durante toda la mentoría (colaboración en vivo).
   const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
-  // El emprendedor también puede escribir (responder), no solo marcar como resuelto — sus
-  // mensajes nuevos quedan en "borrador" (invisibles para el mentor) hasta que le da a
-  // "Enviar cambios", igual que los del mentor quedan ocultos hasta "Enviar comentarios".
-  const emprendedorPuedeComentar = !readOnly && mentorPuedeComentarEnEstado(empresa.estado);
-  const puedeComentarHilo = mentorPuedeComentar || emprendedorPuedeComentar;
   // Colaboración en vivo: el mentor ve las correcciones del emprendedor al instante.
   const ocultarCorreccionesPendientes = false;
 
@@ -402,11 +395,6 @@ export function EmpresaDetailView({
   const productosTienenPendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "producto" && esPendienteParaMiRol(o));
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
   const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "borrador");
-  // Variante para el botón "Enviar cambios" del propio emprendedor: sus bordadores (las
-  // respuestas que todavía no manda) SON justo lo que está por enviar, no algo que le
-  // falte resolver — a diferencia de "todosComentariosResueltos" (que sí cuenta el
-  // borrador propio del MENTOR como pendiente en su propia vista) no debe bloquear aquí.
-  const emprendedorListoParaEnviar = !observacionesEmpresa.some((o) => o.estado === "pendiente");
 
   async function enviarAEvaluacion() {
     try {
@@ -765,9 +753,8 @@ export function EmpresaDetailView({
                       empresaId={id}
                       tipoElemento="general"
                       elementoId={id}
-                      puedeComentar={puedeComentarHilo}
+                      puedeComentar={mentorPuedeComentar}
                       puedeMarcarEnRevision={!readOnly}
-                      puedeConfirmarResuelto={mentorPuedeComentar}
                       puedeVer={puedeVerObs}
                       ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
                       autorNombre={autorNombre}
@@ -837,7 +824,7 @@ export function EmpresaDetailView({
               </>
             )}
 
-            {!readOnly && empresa.estado === "observaciones_pendientes" && emprendedorListoParaEnviar && (
+            {!readOnly && empresa.estado === "observaciones_pendientes" && todosComentariosResueltos && (
               <>
                 <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -1027,8 +1014,7 @@ export function EmpresaDetailView({
         hipotesisList={empresa.hipotesisList ?? []}
         basePath={basePath}
         readOnly={readOnly}
-        permitirComentarios={puedeComentarHilo}
-        puedeConfirmarResuelto={mentorPuedeComentar}
+        permitirComentarios={mentorPuedeComentar}
         ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
         autorNombre={autorNombre}
         estadoEmpresa={empresa.estado}

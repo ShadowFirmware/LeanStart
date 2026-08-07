@@ -154,10 +154,6 @@ function ProductoEditViewInner({
   // El emprendedor solo puede editar mientras el proyecto está en captura o le toca atender observaciones.
   const puedeEditar = !readOnly && emprendedorPuedeEditar(empresa.estado);
   const mentorPuedeComentar = permitirComentarios && mentorPuedeComentarEnEstado(empresa.estado);
-  // El emprendedor también puede escribir (responder) — sus mensajes nuevos quedan en
-  // "borrador" hasta que le da a "Enviar cambios", igual que los del mentor.
-  const emprendedorPuedeComentar = !readOnly && mentorPuedeComentarEnEstado(empresa.estado);
-  const puedeComentarHilo = mentorPuedeComentar || emprendedorPuedeComentar;
   const ocultarCorreccionesPendientes = false;
   const puedeVerObs = puedeVerObservaciones(empresa.estado, readOnly, permitirComentarios);
 
@@ -259,9 +255,8 @@ function ProductoEditViewInner({
                     empresaId={id}
                     tipoElemento="producto"
                     elementoId={pid}
-                    puedeComentar={puedeComentarHilo}
+                    puedeComentar={mentorPuedeComentar}
                     puedeMarcarEnRevision={!readOnly}
-                    puedeConfirmarResuelto={mentorPuedeComentar}
                     puedeVer={puedeVerObs}
                     ocultarCorreccionesPendientes={ocultarCorreccionesPendientes}
                     autorNombre={autorNombre}
