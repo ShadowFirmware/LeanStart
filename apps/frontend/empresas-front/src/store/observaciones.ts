@@ -90,13 +90,13 @@ interface ObservacionesStore {
   enviarRetroalimentacion: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
   /**
    * El emprendedor confirma que ya corrigió: marca todas sus observaciones abiertas
-   * como "en_revision" (a la espera de que el mentor las confirme, ver `confirmarTodasAtendidas`),
-   * avanza el estado del proyecto y notifica al mentor UNA vez. Devuelve el nuevo estado
-   * para que quien lo llama sincronice el store de empresas.
+   * como "en_revision" (a la espera de que el mentor las confirme una por una, con el
+   * botón "Confirmar resuelto" de cada observación — a propósito no hay un botón global,
+   * para que el mentor realmente revise cada corrección), avanza el estado del proyecto
+   * y notifica al mentor UNA vez. Devuelve el nuevo estado para que quien lo llama
+   * sincronice el store de empresas.
    */
   marcarTodasAtendidas: (empresaId: string) => Promise<EstadoEmpresa | undefined>;
-  /** El mentor confirma en bloque que las correcciones del emprendedor quedaron bien: cierra cada "en_revision" como "atendida". */
-  confirmarTodasAtendidas: (empresaId: string) => Promise<void>;
 }
 
 function mapObservacion(o: Record<string, unknown>): Observacion {
@@ -208,17 +208,6 @@ export const useObservacionesStore = create<ObservacionesStore>()(
           ),
         });
         return "observaciones_atendidas";
-      },
-
-      async confirmarTodasAtendidas(empresaId) {
-        if (!modoDemo()) {
-          await apiFetch(`/empresas/${empresaId}/observaciones/confirmar-atendidas`, { method: "POST" });
-        }
-        set({
-          observaciones: get().observaciones.map((o) =>
-            o.empresaId === empresaId && o.estado === "en_revision" ? { ...o, estado: "atendida" } : o
-          ),
-        });
       },
 
       async cerrarObservacionesDeEmpresa(empresaId) {

@@ -318,7 +318,6 @@ export function EmpresaDetailView({
   const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
   const enviarRetroalimentacion = useObservacionesStore((s) => s.enviarRetroalimentacion);
   const marcarTodasAtendidas = useObservacionesStore((s) => s.marcarTodasAtendidas);
-  const confirmarTodasAtendidas = useObservacionesStore((s) => s.confirmarTodasAtendidas);
   const reportarEmpresa = useReportesEmpresaStore((s) => s.reportarEmpresa);
   const empresa = empresas.find((e) => e.id === id);
 
@@ -435,16 +434,6 @@ export function EmpresaDetailView({
       toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
     } catch {
       toast.error("No se pudo enviar al mentor.");
-    }
-  }
-
-  /** El mentor confirma en bloque que las correcciones del emprendedor quedaron bien. */
-  async function confirmarObservacionesAtendidas() {
-    try {
-      await confirmarTodasAtendidas(id);
-      toast.success("Correcciones confirmadas como atendidas.");
-    } catch {
-      toast.error("No se pudieron confirmar las observaciones.");
     }
   }
 
@@ -880,29 +869,6 @@ export function EmpresaDetailView({
                   >
                     <UserCog className="w-3.5 h-3.5" />
                     {empresa.estado === "pendiente_mentoria" ? "Asignar mentor" : "Asignar evaluador"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {permitirComentarios && observacionesEmpresa.some((o) => o.estado === "en_revision") && (
-              <>
-                <div className="h-px mt-5 mb-4" style={{ backgroundColor: "var(--border-subtle)" }} />
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium" style={{ color: "var(--text-strong)" }}>Correcciones para revisar</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                      El emprendedor marcó sus observaciones como resueltas. Confírmalas si quedaron bien.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={confirmarObservacionesAtendidas}
-                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "var(--brand-fg)" }}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Marcar como atendidas
                   </button>
                 </div>
               </>
