@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { DEMO_ACCOUNTS } from "@leanstart/commons";
 import type { Role } from "@leanstart/commons";
 import type { Privilegio } from "@/types/next-auth";
 
@@ -30,6 +31,25 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // Sin backend real, en modo demo se permite loguearse con cuentas
+        // demo fijas (ver DEMO_ACCOUNTS en commons/src/lib/demo.ts) antes de
+        // intentar la API. Nunca se usan fuera de modo demo.
+        if (isDemoMode) {
+          const demoAccount = DEMO_ACCOUNTS.find(
+            (account) =>
+              account.email === credentials.email && account.password === credentials.password
+          );
+          if (demoAccount) {
+            return {
+              id: demoAccount.id,
+              name: demoAccount.name,
+              email: demoAccount.email,
+              rol: demoAccount.rol,
+              privilegios: [],
+            };
+          }
+        }
 
         try {
           const res = await fetch(

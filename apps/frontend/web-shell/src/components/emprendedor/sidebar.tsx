@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Building2, Bell, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Building2, Bell, Mic, LogOut, Menu, X } from "lucide-react";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useHasHydrated } from "@leanstart/commons";
 import { SidebarUser } from "@/components/perfil/sidebar-user";
@@ -40,6 +40,7 @@ export function EmprendedorSidebar({ userName, userEmail }: EmprendedorSidebarPr
     { href: "/emprendedor/dashboard",     label: "Dashboard",      icon: LayoutDashboard, badge: 0 },
     { href: "/emprendedor/empresas",      label: "Mis Empresas",   icon: Building2,       badge: 0 },
     { href: "/emprendedor/notificaciones", label: "Notificaciones", icon: Bell,           badge: noLeidas },
+    { href: "/emprendedor/alexa",         label: "Alexa",          icon: Mic,             badge: 0 },
   ];
 
   const SidebarInner = (

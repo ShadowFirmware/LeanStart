@@ -1,0 +1,668 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "guía de emprendedores",
+            "intents": [
+                {
+                    "name": "LoginIntent",
+                    "slots": [
+                        {
+                            "name": "nombreUsuario",
+                            "type": "AMAZON.SearchQuery",
+                            "samples": [
+                                "me llamo {nombreUsuario}",
+                                "mi nombre es {nombreUsuario}",
+                                "soy {nombreUsuario}",
+                                "{nombreUsuario}"
+                            ]
+                        },
+                        {
+                            "name": "semilla",
+                            "type": "AMAZON.FOUR_DIGIT_NUMBER",
+                            "samples": [
+                                "mi semilla es {semilla}",
+                                "la semilla es {semilla}",
+                                "{semilla}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "inicia sesión",
+                        "iniciar sesión",
+                        "quiero iniciar sesión",
+                        "quiero iniciar sesión con mi semilla",
+                        "iniciar sesión con mi semilla",
+                        "voy a iniciar sesión",
+                        "déjame iniciar sesión"
+                    ]
+                },
+                {
+                    "name": "StartProjectGuideIntent",
+                    "slots": [],
+                    "samples": [
+                        "abre guía de emprendedores",
+                        "inicia el asistente de mini empresas",
+                        "hola alexa vamos a hacer un proyecto",
+                        "comienza la guía de creación de empresas",
+                        "alexa lanza la skill de emprendimiento",
+                        "quiero crear mi mini empresa",
+                        "empecemos con el proyecto"
+                    ]
+                },
+                {
+                    "name": "OverviewPhasesIntent",
+                    "slots": [],
+                    "samples": [
+                        "ayuda con un proyecto",
+                        "ayuda con mi proyecto",
+                        "necesito ayuda con mi proyecto",
+                        "cuáles son los pasos para crear mi proyecto",
+                        "dame un resumen de todas las fases",
+                        "qué tengo que hacer para crear mi empresa",
+                        "explícame el flujo completo del proyecto",
+                        "cuáles son las fases de la plataforma",
+                        "cuál es el proceso completo",
+                        "cuántas fases tiene el proyecto",
+                        "dame el menú de fases"
+                    ]
+                },
+                {
+                    "name": "GetSpecificPhaseIntent",
+                    "slots": [
+                        {
+                            "name": "numeroFase",
+                            "type": "FASE_NUMBER",
+                            "samples": [
+                                "la fase {numeroFase}",
+                                "{numeroFase}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "ayúdame con el proyecto",
+                        "ayúdame en la creación del proyecto",
+                        "necesito ayuda con una fase",
+                        "necesito ayuda con una fase del proyecto",
+                        "en qué fase del proyecto me puedes ayudar",
+                        "quiero ayuda con una fase del proyecto",
+                        "ayúdame con una fase del proyecto",
+                        "tengo dudas sobre una fase del proyecto",
+                        "explícame una fase del proyecto",
+                        "no sé en qué fase del proyecto voy",
+                        "ayúdame en la fase {numeroFase} del proyecto",
+                        "ayúdame en la fase {numeroFase}",
+                        "ayúdame con la fase {numeroFase}",
+                        "explícame la fase {numeroFase} del proyecto",
+                        "explícame la fase {numeroFase}",
+                        "dame un ejemplo de la fase {numeroFase}",
+                        "estoy en la fase {numeroFase} del proyecto",
+                        "estoy en la fase {numeroFase}",
+                        "voy en la fase {numeroFase}",
+                        "es la fase {numeroFase} del proyecto",
+                        "es la fase {numeroFase}",
+                        "número de fase {numeroFase}",
+                        "dame la fase {numeroFase}",
+                        "{numeroFase}",
+                        "el {numeroFase}",
+                        "la {numeroFase}",
+                        "es el {numeroFase}",
+                        "es la {numeroFase}",
+                        "el número {numeroFase}",
+                        "número {numeroFase}",
+                        "fase {numeroFase}",
+                        "la fase número {numeroFase}"
+                    ]
+                },
+                {
+                    "name": "CanvasDeepDiveIntent",
+                    "slots": [
+                        {
+                            "name": "canvasStepName",
+                            "type": "CANVAS_STEP_NAME",
+                            "samples": [
+                                "{canvasStepName} del canvas",
+                                "la parte de {canvasStepName}",
+                                "{canvasStepName}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "profundicemos en el canvas",
+                        "ayúdame con una parte del canvas",
+                        "ayúdame con el lean canvas",
+                        "tengo dudas sobre una parte del canvas",
+                        "explícame una parte del canvas",
+                        "necesito ayuda con el canvas",
+                        "quiero ver una parte del canvas",
+                        "no sé qué parte del canvas necesito",
+                        "profundicemos en {canvasStepName} del canvas",
+                        "explícame {canvasStepName} del canvas",
+                        "ayúdame con {canvasStepName} del canvas",
+                        "dame un ejemplo de {canvasStepName} del canvas",
+                        "es {canvasStepName} del canvas",
+                        "voy en {canvasStepName} del canvas",
+                        "estoy en {canvasStepName} del canvas",
+                        "cómo lleno {canvasStepName} del canvas",
+                        "en la parte de {canvasStepName} del canvas",
+                        "{canvasStepName}",
+                        "la parte de {canvasStepName}",
+                        "es {canvasStepName}",
+                        "el {canvasStepName}"
+                    ]
+                },
+                {
+                    "name": "HypothesisDeepDiveIntent",
+                    "slots": [
+                        {
+                            "name": "hypothesisStepName",
+                            "type": "HYPOTHESIS_STEP_NAME",
+                            "samples": [
+                                "{hypothesisStepName}",
+                                "la parte de {hypothesisStepName}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "profundicemos en la hipótesis",
+                        "ayúdame con una parte de la hipótesis",
+                        "tengo dudas sobre la hipótesis",
+                        "explícame una parte de la hipótesis",
+                        "necesito ayuda con la hipótesis",
+                        "no sé qué parte de la hipótesis necesito",
+                        "profundicemos en {hypothesisStepName}",
+                        "explícame {hypothesisStepName}",
+                        "ayúdame con {hypothesisStepName}",
+                        "dame un ejemplo de {hypothesisStepName}",
+                        "cómo hago {hypothesisStepName}",
+                        "es {hypothesisStepName}",
+                        "voy en {hypothesisStepName}",
+                        "estoy en {hypothesisStepName}",
+                        "en la parte de {hypothesisStepName}",
+                        "{hypothesisStepName}",
+                        "la parte de {hypothesisStepName}",
+                        "el {hypothesisStepName}"
+                    ]
+                },
+                {
+                    "name": "GetProjectStatusIntent",
+                    "slots": [
+                        {
+                            "name": "nombreProyecto",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "estado de un proyecto",
+                        "estado de mi proyecto",
+                        "cómo va mi proyecto",
+                        "en qué etapa está mi proyecto",
+                        "cuál es el estado de mi proyecto",
+                        "cuál es el estatus de mi proyecto",
+                        "en qué parte del proceso de evaluación está mi proyecto",
+                        "ya evaluaron mi proyecto",
+                        "ya calificaron mi proyecto",
+                        "han regresado mi proyecto",
+                        "mi proyecto está siendo evaluado",
+                        "mi proyecto está siendo calificado",
+                        "dime el estado de mi proyecto",
+                        "consulta el estado de mi proyecto",
+                        "revisa el estatus de mi proyecto",
+                        "cómo va mi proyecto {nombreProyecto}",
+                        "en qué etapa está el proyecto {nombreProyecto}",
+                        "cuál es el estado del proyecto {nombreProyecto}",
+                        "cuál es el estatus del proyecto {nombreProyecto}",
+                        "revisa el estado de mi proyecto {nombreProyecto}",
+                        "dime el estado de mi proyecto {nombreProyecto}",
+                        "consulta el estado del proyecto {nombreProyecto}",
+                        "cómo va el proyecto {nombreProyecto}"
+                    ]
+                },
+                {
+                    "name": "GetMentorCommentsIntent",
+                    "slots": [
+                        {
+                            "name": "nombreProyecto",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "comentarios de un proyecto",
+                        "comentarios de mi proyecto",
+                        "cuántos comentarios tengo",
+                        "cuántos comentarios ha dejado mi mentor",
+                        "tengo comentarios nuevos",
+                        "hay comentarios de mi mentor",
+                        "cuántos comentarios hay en mi proyecto",
+                        "dime cuántos comentarios tengo",
+                        "revisa los comentarios de mi mentor",
+                        "consulta los comentarios de mi proyecto",
+                        "mi mentor dejó comentarios",
+                        "cuántas observaciones tengo del mentor",
+                        "cuántos comentarios tiene el proyecto {nombreProyecto}",
+                        "cuántos comentarios ha dejado mi mentor en {nombreProyecto}",
+                        "revisa los comentarios del proyecto {nombreProyecto}",
+                        "cuántas observaciones tiene el proyecto {nombreProyecto}",
+                        "dime cuántos comentarios tiene mi proyecto {nombreProyecto}"
+                    ]
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": [
+                        "qué puedo decirte",
+                        "cómo se usa esta skill",
+                        "necesito ayuda",
+                        "cuáles son mis opciones",
+                        "no sé qué hacer",
+                        "estoy perdido"
+                    ]
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": [
+                        "cancela",
+                        "mejor no",
+                        "olvídalo",
+                        "no gracias",
+                        "no quiero saber eso"
+                    ]
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": [
+                        "salir",
+                        "terminar",
+                        "adiós",
+                        "hasta luego",
+                        "cierra la aplicación"
+                    ]
+                },
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "FASE_NUMBER",
+                    "values": [
+                        {
+                            "id": "1",
+                            "name": {
+                                "value": "1",
+                                "synonyms": [
+                                    "uno",
+                                    "una",
+                                    "primero",
+                                    "primera",
+                                    "primera fase",
+                                    "fase uno",
+                                    "número uno",
+                                    "numero uno",
+                                    "el uno",
+                                    "el primero",
+                                    "la primera"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "2",
+                            "name": {
+                                "value": "2",
+                                "synonyms": [
+                                    "dos",
+                                    "segundo",
+                                    "segunda",
+                                    "segunda fase",
+                                    "fase dos",
+                                    "número dos",
+                                    "numero dos",
+                                    "el segundo",
+                                    "la segunda"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "3",
+                            "name": {
+                                "value": "3",
+                                "synonyms": [
+                                    "tres",
+                                    "tercero",
+                                    "tercera",
+                                    "tercera fase",
+                                    "fase tres",
+                                    "número tres",
+                                    "numero tres",
+                                    "el tercero",
+                                    "la tercera",
+                                    "fase del canvas",
+                                    "fase canvas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4",
+                            "name": {
+                                "value": "4",
+                                "synonyms": [
+                                    "cuatro",
+                                    "cuarto",
+                                    "cuarta",
+                                    "cuarta fase",
+                                    "fase cuatro",
+                                    "número cuatro",
+                                    "numero cuatro",
+                                    "el cuarto",
+                                    "la cuarta",
+                                    "fase de hipótesis",
+                                    "fase de la hipótesis",
+                                    "última fase",
+                                    "ultima fase",
+                                    "la última",
+                                    "la ultima"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "CANVAS_STEP_NAME",
+                    "values": [
+                        {
+                            "id": "problema",
+                            "name": {
+                                "value": "Problema",
+                                "synonyms": [
+                                    "problema",
+                                    "el problema",
+                                    "los problemas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "segmento_clientes",
+                            "name": {
+                                "value": "Segmento de Clientes",
+                                "synonyms": [
+                                    "segmento de clientes",
+                                    "segmentos de clientes",
+                                    "clientes",
+                                    "el segmento"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "propuesta_valor",
+                            "name": {
+                                "value": "Propuesta de Valor",
+                                "synonyms": [
+                                    "propuesta de valor",
+                                    "la propuesta de valor",
+                                    "valor"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "solucion",
+                            "name": {
+                                "value": "Solución",
+                                "synonyms": [
+                                    "solución",
+                                    "solucion",
+                                    "la solución"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "canales",
+                            "name": {
+                                "value": "Canales",
+                                "synonyms": [
+                                    "canales",
+                                    "los canales"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "fuentes_ingreso",
+                            "name": {
+                                "value": "Fuentes de Ingreso",
+                                "synonyms": [
+                                    "fuentes de ingreso",
+                                    "ingresos",
+                                    "ingreso",
+                                    "las fuentes de ingreso"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "estructura_costos",
+                            "name": {
+                                "value": "Estructura de Costos",
+                                "synonyms": [
+                                    "estructura de costos",
+                                    "costos",
+                                    "los costos",
+                                    "la estructura de costos"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "metricas_clave",
+                            "name": {
+                                "value": "Métricas Clave",
+                                "synonyms": [
+                                    "métricas clave",
+                                    "metricas clave",
+                                    "las métricas",
+                                    "métricas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "ventaja_injusta",
+                            "name": {
+                                "value": "Ventaja Injusta",
+                                "synonyms": [
+                                    "ventaja injusta",
+                                    "la ventaja injusta",
+                                    "ventaja"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "HYPOTHESIS_STEP_NAME",
+                    "values": [
+                        {
+                            "id": "validacion",
+                            "name": {
+                                "value": "Validación de Hipótesis",
+                                "synonyms": [
+                                    "validación de hipótesis",
+                                    "validacion de hipotesis",
+                                    "la validación",
+                                    "validar hipótesis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "diseno",
+                            "name": {
+                                "value": "Diseño del Experimento",
+                                "synonyms": [
+                                    "diseño del experimento",
+                                    "diseno del experimento",
+                                    "el experimento",
+                                    "diseñar el experimento"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "registro",
+                            "name": {
+                                "value": "Registro de Resultados",
+                                "synonyms": [
+                                    "registro de resultados",
+                                    "los resultados",
+                                    "resultados",
+                                    "registrar resultados"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "LoginIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "nombreUsuario",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.LoginIntent.nombreUsuario"
+                            }
+                        },
+                        {
+                            "name": "semilla",
+                            "type": "AMAZON.FOUR_DIGIT_NUMBER",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.LoginIntent.semilla"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GetSpecificPhaseIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "numeroFase",
+                            "type": "FASE_NUMBER",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.GetSpecificPhaseIntent.numeroFase"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "CanvasDeepDiveIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "canvasStepName",
+                            "type": "CANVAS_STEP_NAME",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.CanvasDeepDiveIntent.canvasStepName"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "HypothesisDeepDiveIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "hypothesisStepName",
+                            "type": "HYPOTHESIS_STEP_NAME",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.HypothesisDeepDiveIntent.hypothesisStepName"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.LoginIntent.nombreUsuario",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Para continuar necesito verificar tu identidad. ¿Cuál es tu nombre?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Antes de empezar, dime tu nombre."
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.LoginIntent.semilla",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Gracias. Ahora dime tu semilla de acceso, son 4 dígitos."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "¿Cuál es tu semilla de 4 dígitos?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.GetSpecificPhaseIntent.numeroFase",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Claro, ¿de qué fase del proyecto necesitas ayuda? Dime un número del 1 al 4."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Tenemos 4 fases en total. ¿Cuál número te interesa?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.CanvasDeepDiveIntent.canvasStepName",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Claro, dime el nombre de la parte del canvas, por ejemplo el problema, la propuesta de valor o los canales."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "¿En qué parte del canvas necesitas ayuda?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.HypothesisDeepDiveIntent.hypothesisStepName",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Claro, dime el nombre de la parte, por ejemplo la validación de hipótesis, el diseño del experimento o el registro de resultados."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "¿Qué parte de la hipótesis necesitas ver?"
+                    }
+                ]
+            }
+        ]
+    }
+}

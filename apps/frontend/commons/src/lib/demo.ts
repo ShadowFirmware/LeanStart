@@ -41,3 +41,26 @@ export const DEMO_USERS: Record<Role, DemoUser> = {
     rol: "administrador",
   },
 };
+
+export interface DemoAccount {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  rol: Role;
+}
+
+/**
+ * Cuentas demo con credenciales reales, para poder probar el login (correo +
+ * contraseña) con el Credentials provider de next-auth sin backend. Solo se
+ * usan si `DEMO_MODE` está activo (ver auth.ts en web-shell).
+ */
+export const DEMO_ACCOUNTS: DemoAccount[] = [
+  {
+    id: "demo-daniel",
+    name: "Daniel",
+    email: "daniel@example.com",
+    password: "12345678",
+    rol: "emprendedor",
+  },
+];

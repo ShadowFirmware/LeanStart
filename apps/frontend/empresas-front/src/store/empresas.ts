@@ -109,6 +109,44 @@ export interface Empresa {
   evaluadorId?: string;
 }
 
+// Empresas de ejemplo para la cuenta demo "daniel@example.com" (ver
+// DEMO_ACCOUNTS en commons/src/lib/demo.ts): ya tienen la fase 1 lista
+// (datos generales) para poder probar directo desde la fase 2 (productos).
+const SEED_EMPRESAS_DANIEL: Empresa[] = [
+  {
+    id: "seed-daniel-1",
+    nombre: "SnackEco",
+    giro: "sustentabilidad",
+    descripcion: "Snacks saludables a base de insectos, en empaques biodegradables.",
+    mercadoObjetivo: "Jóvenes universitarios conscientes del medio ambiente.",
+    ownerId: "demo-daniel",
+    estado: "borrador",
+    productosList: [],
+    canvasBloques: 0,
+    canvas: { ...DEFAULT_CANVAS },
+    hipotesisList: [],
+    creadaEn: "7 ago 2026",
+    updatedAt: "7 ago 2026",
+    progreso: { tieneProducto: false, tieneCanvas: false, tieneHipotesis: false },
+  },
+  {
+    id: "seed-daniel-2",
+    nombre: "TutorIA",
+    giro: "educacion",
+    descripcion: "Plataforma de tutorías personalizadas en línea para estudiantes de bachillerato.",
+    mercadoObjetivo: "Estudiantes de bachillerato que buscan reforzar materias difíciles.",
+    ownerId: "demo-daniel",
+    estado: "borrador",
+    productosList: [],
+    canvasBloques: 0,
+    canvas: { ...DEFAULT_CANVAS },
+    hipotesisList: [],
+    creadaEn: "7 ago 2026",
+    updatedAt: "7 ago 2026",
+    progreso: { tieneProducto: false, tieneCanvas: false, tieneHipotesis: false },
+  },
+];
+
 interface EmpresasStore {
   empresas: Empresa[];
   agregarEmpresa: (data: {
@@ -135,7 +173,7 @@ interface EmpresasStore {
 export const useEmpresasStore = create<EmpresasStore>()(
   persist(
     (set, get) => ({
-      empresas: [],
+      empresas: SEED_EMPRESAS_DANIEL,
 
       agregarEmpresa(data) {
         const id = crypto.randomUUID();
@@ -328,13 +366,22 @@ export const useEmpresasStore = create<EmpresasStore>()(
       // v1: el estado "evaluado" se eliminó — el evaluador ahora resuelve directo a
       // "publicado" o "devuelto" según el umbral de viabilidad. Los proyectos que ya
       // estaban en "evaluado" pasan a "publicado" una sola vez, al rehidratar.
-      version: 1,
+      // v2: se agregan las 2 empresas de ejemplo de la cuenta demo "daniel" (ver
+      // SEED_EMPRESAS_DANIEL) para navegadores que ya tenían datos guardados antes
+      // de que existiera esa cuenta.
+      version: 2,
       migrate: (persistedState) => {
         const state = persistedState as { empresas?: Array<Record<string, unknown>> } | undefined;
         if (state?.empresas) {
           state.empresas = state.empresas.map((e) =>
             e.estado === "evaluado" ? { ...e, estado: "publicado" } : e
           );
+
+          if (!state.empresas.some((e) => e.ownerId === "demo-daniel")) {
+            state.empresas.push(
+              ...(SEED_EMPRESAS_DANIEL as unknown as Array<Record<string, unknown>>)
+            );
+          }
         }
         return state;
       },
