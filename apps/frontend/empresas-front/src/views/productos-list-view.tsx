@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  usePagination, PaginationBar,
+  usePagination, PaginationBar, useAccion, useHasHydrated, ViewSkeleton,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, useObservacionesStore, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
@@ -52,6 +52,7 @@ export function ProductosListView({
 }: ProductosListViewProps = {}) {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const hydrated = useHasHydrated();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const eliminarProducto = useEmpresasStore((s) => s.eliminarProducto);
   const observaciones = useObservacionesStore((s) => s.observaciones);
@@ -109,24 +110,34 @@ export function ProductosListView({
     return arr;
   }, [productos, busqueda, filtroTipo, orden, destacarComentarios, pendientesPorProducto]);
 
+  // usePagination va ANTES de cualquier return temprano: con el store aún sin
+  // rehidratar `empresa` es undefined, y salir antes dejaba a React con menos
+  // hooks en el primer render que en el siguiente.
+  const { page, setPage, totalPages, pageItems: productosPagina, pageSize, totalItems } = usePagination(productosVisibles, {
+    resetKey: `${busqueda}|${filtroTipo}|${orden}`,
+  });
+  const borrado = useAccion();
+
+  // Esqueleto mientras rehidrata el store: sin él la lista aparecía en blanco.
+  if (!hydrated) return <ViewSkeleton variante="tarjetas" ancho="max-w-6xl" />;
   if (!empresa) return null;
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    try {
-      await eliminarProducto(id, deleteTarget.id);
-      toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
-    } catch {
-      toast.error("No se pudo eliminar el producto.");
-    }
+    await borrado.ejecutar(
+      async () => {
+        await eliminarProducto(id, deleteTarget.id);
+        toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
+      },
+      {
+        etiqueta: "Eliminando producto",
+        onError: () => toast.error("No se pudo eliminar el producto."),
+      }
+    );
     setDeleteTarget(null);
   }
 
   const hayFiltrosActivos = Boolean(busqueda) || filtroTipo !== TODOS;
-
-  const { page, setPage, totalPages, pageItems: productosPagina, pageSize, totalItems } = usePagination(productosVisibles, {
-    resetKey: `${busqueda}|${filtroTipo}|${orden}`,
-  });
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col gap-6">
@@ -450,9 +461,11 @@ export function ProductosListView({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={borrado.cargando}>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
+                loading={borrado.cargando}
+                loadingText="Eliminando…"
                 className="bg-red-500 hover:bg-red-600 text-white border-0"
               >
                 <Trash2 className="w-4 h-4" /> Eliminar

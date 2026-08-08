@@ -4,19 +4,19 @@ import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Pencil, ExternalLink, X as XIcon, Lightbulb, FlaskConical, BarChart3,
+  ArrowLeft, Pencil, ExternalLink, Lightbulb, FlaskConical, BarChart3,
   CheckCircle2, XCircle, Type, AlignLeft, Target, Paperclip, Flag, Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fileToDataUrl, compressImageToDataUrl } from "@leanstart/commons";
+import { Button, useAccion, useHasHydrated, ViewSkeleton } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 import { EvidenciaViewerButton, EvidenciaThumb } from "../components/evidencia-viewer";
+import { EvidenciaField } from "../components/evidencia-field";
 import { HipotesisWizard } from "../components/hipotesis-wizard";
-import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
+import { useEvidencia } from "../hooks/use-evidencia";
 import type { TipoExperimento, EstadoHipotesis } from "@leanstart/commons";
-import type { TipoEvidencia } from "../store/empresas";
 
 const TIPOS_EXPERIMENTO: { value: TipoExperimento; label: string; descripcion: string }[] = [
   { value: "encuesta",          label: "Encuesta",          descripcion: "Preguntas a un grupo de personas" },
@@ -118,6 +118,7 @@ export function HipotesisEditView({
   autorNombre,
 }: HipotesisEditViewProps = {}) {
   const { id, hid } = useParams<{ id: string; hid: string }>();
+  const hydrated = useHasHydrated();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const hipotesis = useMemo(
     () => empresa?.hipotesisList?.find((h) => h.id === hid),
@@ -126,7 +127,8 @@ export function HipotesisEditView({
   const actualizarHipotesis = useEmpresasStore((s) => s.actualizarHipotesis);
 
   const [editando, setEditando] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const guardado = useAccion();
+  const validacion = useAccion();
 
   // Fase 1
   const [titulo, setTitulo] = useState(hipotesis?.titulo ?? "");
@@ -141,18 +143,7 @@ export function HipotesisEditView({
 
   // Fase 3
   const [resultado, setResultado]       = useState(hipotesis?.resultados?.resultado ?? "");
-  const [tipoEvidencia, setTipoEvidencia] = useState<TipoEvidencia | "">(hipotesis?.resultados?.tipoEvidencia ?? "");
-  const [evidenciaDataUrl, setEvidenciaDataUrl] = useState(
-    hipotesis?.resultados?.tipoEvidencia && hipotesis.resultados.tipoEvidencia !== "url"
-      ? (hipotesis.resultados.evidencia ?? "")
-      : ""
-  );
-  const [evidenciaNombre, setEvidenciaNombre] = useState(hipotesis?.resultados?.evidenciaNombre ?? "");
-  const [evidenciaUrl, setEvidenciaUrl] = useState(
-    hipotesis?.resultados?.tipoEvidencia === "url"
-      ? (hipotesis.resultados.evidencia ?? "")
-      : ""
-  );
+  const evidencia = useEvidencia(hipotesis?.resultados);
   const [conclusion, setConclusion]     = useState(hipotesis?.resultados?.conclusion ?? "");
 
   function resetForm() {
@@ -165,14 +156,7 @@ export function HipotesisEditView({
     setCriterio(hipotesis.experimento?.criterioExito ?? "");
     setFechaObj(hipotesis.experimento?.fechaObjetivo ?? "");
     setResultado(hipotesis.resultados?.resultado ?? "");
-    setTipoEvidencia(hipotesis.resultados?.tipoEvidencia ?? "");
-    setEvidenciaDataUrl(
-      hipotesis.resultados?.tipoEvidencia && hipotesis.resultados.tipoEvidencia !== "url"
-        ? (hipotesis.resultados.evidencia ?? "")
-        : ""
-    );
-    setEvidenciaNombre(hipotesis.resultados?.evidenciaNombre ?? "");
-    setEvidenciaUrl(hipotesis.resultados?.tipoEvidencia === "url" ? (hipotesis.resultados.evidencia ?? "") : "");
+    evidencia.reiniciar(hipotesis.resultados);
     setConclusion(hipotesis.resultados?.conclusion ?? "");
   }
 
@@ -186,29 +170,9 @@ export function HipotesisEditView({
     setEditando(false);
   }
 
-  async function handleEvidenciaFile(file: File) {
-    // Validar tamaño (máx 3MB para PDFs/imágenes)
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("El archivo es muy grande. Máximo 3MB.");
-      return;
-    }
-    try {
-      const dataUrl = file.type.startsWith("image/")
-        ? await compressImageToDataUrl(file)
-        : await fileToDataUrl(file);
-      setEvidenciaDataUrl(dataUrl);
-      setEvidenciaNombre(file.name);
-      toast.success(`Archivo "${file.name}" cargado.`);
-    } catch {
-      toast.error("No se pudo leer el archivo.");
-    }
-  }
-
-  function limpiarEvidencia() {
-    setEvidenciaDataUrl("");
-    setEvidenciaNombre("");
-    setEvidenciaUrl("");
-  }
+  // Sin esta guarda, cada carga acusaba "hipótesis no existe" hasta que el store
+  // persistido terminaba de rehidratar.
+  if (!hydrated) return <ViewSkeleton variante="formulario" ancho="max-w-3xl" filas={4} />;
 
   if (!empresa || !hipotesis) {
     return (
@@ -227,12 +191,16 @@ export function HipotesisEditView({
       validada: "validada",
       invalidada: "invalidada",
     };
-    try {
-      await actualizarHipotesis(id, hid, { estado });
-      toast.success(`Hipótesis ${LABELS[estado]}.`);
-    } catch {
-      toast.error("No se pudo actualizar el estado de la hipótesis.");
-    }
+    await validacion.ejecutar(
+      async () => {
+        await actualizarHipotesis(id, hid, { estado });
+        toast.success(`Hipótesis ${LABELS[estado]}.`);
+      },
+      {
+        etiqueta: "Actualizando hipótesis",
+        onError: () => toast.error("No se pudo actualizar el estado de la hipótesis."),
+      }
+    );
   }
 
   async function guardar() {
@@ -249,41 +217,38 @@ export function HipotesisEditView({
       return;
     }
 
-    const evidenciaFinal = tipoEvidencia === "url" ? evidenciaUrl.trim() : evidenciaDataUrl;
-
     // Calcular nueva fase basada en qué tan completo está
     const tieneFase2 = descExp.trim() && objetivo.trim() && criterio.trim();
     const tieneFase3 = resultado.trim() && conclusion.trim();
     const nuevaFase: 1 | 2 | 3 = tieneFase3 ? 3 : tieneFase2 ? 2 : 1;
 
-    setLoading(true);
-    try {
-      await actualizarHipotesis(id, hid, {
-        titulo: titulo.trim(),
-        descripcion: descripcion.trim(),
-        experimento: {
-          tipo: tipoExp as TipoExperimento,
-          descripcion: descExp.trim(),
-          objetivo: objetivo.trim(),
-          criterioExito: criterio.trim(),
-          fechaObjetivo: fechaObj || undefined,
-        },
-        resultados: tieneFase3 ? {
-          resultado: resultado.trim(),
-          evidencia: evidenciaFinal || undefined,
-          evidenciaNombre: tipoEvidencia !== "url" ? evidenciaNombre || undefined : undefined,
-          tipoEvidencia: (tipoEvidencia as TipoEvidencia) || undefined,
-          conclusion: conclusion.trim(),
-        } : undefined,
-        fase: nuevaFase,
-      });
-      toast.success("Hipótesis actualizada correctamente.");
-      setEditando(false);
-    } catch {
-      toast.error("No se pudo actualizar la hipótesis.");
-    } finally {
-      setLoading(false);
-    }
+    await guardado.ejecutar(
+      async () => {
+        await actualizarHipotesis(id, hid, {
+          titulo: titulo.trim(),
+          descripcion: descripcion.trim(),
+          experimento: {
+            tipo: tipoExp as TipoExperimento,
+            descripcion: descExp.trim(),
+            objetivo: objetivo.trim(),
+            criterioExito: criterio.trim(),
+            fechaObjetivo: fechaObj || undefined,
+          },
+          resultados: tieneFase3 ? {
+            resultado: resultado.trim(),
+            ...evidencia.valor,
+            conclusion: conclusion.trim(),
+          } : undefined,
+          fase: nuevaFase,
+        });
+        toast.success("Hipótesis actualizada correctamente.");
+        setEditando(false);
+      },
+      {
+        etiqueta: "Guardando hipótesis",
+        onError: () => toast.error("No se pudo actualizar la hipótesis."),
+      }
+    );
   }
 
   const estadoCfg = ESTADO_HIPOTESIS_CONFIG[hipotesis.estado] ?? ESTADO_HIPOTESIS_CONFIG.pendiente_validacion;
@@ -445,24 +410,28 @@ export function HipotesisEditView({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <button
+                <Button
                   type="button"
-                  disabled={hipotesis.estado === "invalidada"}
+                  size="sm"
+                  disabled={hipotesis.estado === "invalidada" || validacion.cargando}
                   onClick={() => cambiarEstadoHipotesis("invalidada")}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-8 rounded-lg transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50"
+                  className="h-8 px-3 text-xs font-semibold"
                   style={{ backgroundColor: "rgba(239,68,68,0.12)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.25)" }}
                 >
                   <XCircle className="w-3.5 h-3.5" /> Invalidar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
                   disabled={hipotesis.estado === "validada"}
+                  loading={validacion.cargando}
+                  loadingText="Guardando…"
                   onClick={() => cambiarEstadoHipotesis("validada")}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-8 rounded-lg transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50 border-0"
+                  className="h-8 px-3 text-xs font-semibold border-0"
                   style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "#FBFBFC" }}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> Validar
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -631,127 +600,18 @@ export function HipotesisEditView({
               <Label icon={Paperclip}>Evidencia</Label>
               <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {(["pdf", "imagen", "documento", "url"] as TipoEvidencia[]).map((t) => {
-                const labels: Record<TipoEvidencia, string> = {
-                  pdf: "Archivo PDF", imagen: "Imagen", documento: "Word / Excel", url: "URL",
-                };
-                const active = tipoEvidencia === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => { setTipoEvidencia(active ? "" : t); limpiarEvidencia(); }}
-                    className="text-[11px] px-2.5 h-7 rounded-full font-medium transition-all"
-                    style={{
-                      color: active ? "var(--brand-accent)" : "var(--text-dim)",
-                      backgroundColor: active ? "rgba(154,98,250,0.15)" : "var(--hover-surface)",
-                      border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid var(--border-hair)",
-                    }}
-                  >
-                    {labels[t]}
-                  </button>
-                );
-              })}
-            </div>
-
-            {tipoEvidencia === "url" && (
-              <input
-                type="url"
-                placeholder="https://..."
-                value={evidenciaUrl}
-                maxLength={300}
-                onChange={(e) => setEvidenciaUrl(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg text-sm outline-none"
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
-              />
-            )}
-
-            {tipoEvidencia && tipoEvidencia !== "url" && !evidenciaDataUrl && (
-              <label
-                className="flex items-center gap-3 rounded-lg px-4 h-10 cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: "var(--hover-surface-2)",
-                  border: "1px dashed var(--border-hair)",
-                }}
-              >
-                <span className="text-sm truncate" style={{ color: "var(--text-dim)" }}>
-                  Seleccionar archivo…
-                </span>
-                <input
-                  type="file"
-                  accept={
-                    tipoEvidencia === "pdf" ? ".pdf"
-                    : tipoEvidencia === "imagen" ? "image/*"
-                    : ".doc,.docx,.xls,.xlsx,.csv"
-                  }
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleEvidenciaFile(file);
-                  }}
-                />
-              </label>
-            )}
-
-            {/* Preview del archivo cargado */}
-            {tipoEvidencia && tipoEvidencia !== "url" && evidenciaDataUrl && (
-              <div
-                className="rounded-xl p-3 flex items-start gap-3"
-                style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
-              >
-                <EvidenciaThumb
-                  tipoEvidencia={tipoEvidencia as TipoEvidencia}
-                  evidencia={evidenciaDataUrl}
-                  evidenciaNombre={evidenciaNombre}
-                  size="lg"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
-                    {evidenciaNombre || "Archivo cargado"}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                    {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : DOCUMENTO_SUBTIPO_LABEL[detectarDocumentoSubtipo(evidenciaNombre)]}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <EvidenciaViewerButton
-                      evidencia={evidenciaDataUrl}
-                      tipoEvidencia={tipoEvidencia as TipoEvidencia}
-                      evidenciaNombre={evidenciaNombre}
-                    />
-                    <label
-                      className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
-                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                    >
-                      Reemplazar
-                      <input
-                        type="file"
-                        accept={
-                          tipoEvidencia === "pdf" ? ".pdf"
-                          : tipoEvidencia === "imagen" ? "image/*"
-                          : ".doc,.docx,.xls,.xlsx,.csv"
-                        }
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleEvidenciaFile(file);
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={limpiarEvidencia}
-                      className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
-                      style={{ color: "#EF4444", backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
-                    >
-                      <XIcon className="w-3 h-3" /> Quitar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <EvidenciaField
+              tipo={evidencia.tipo}
+              onTipoChange={evidencia.cambiarTipo}
+              dataUrl={evidencia.dataUrl}
+              nombre={evidencia.nombre}
+              url={evidencia.url}
+              onUrlChange={evidencia.setUrl}
+              onArchivo={evidencia.cargarArchivo}
+              onLimpiar={evidencia.limpiar}
+              subiendo={evidencia.subiendo}
+              disabled={guardado.cargando}
+            />
           </div>
 
           <div>
@@ -774,24 +634,25 @@ export function HipotesisEditView({
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3">
-          <button
+          <Button
             type="button"
             onClick={cancelarEdicion}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 text-sm px-5 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={guardado.cargando}
+            className="h-9 px-5 text-sm justify-center"
             style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)" }}
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={guardar}
-            disabled={loading}
-            className="h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={guardado.cargando}
+            loadingText="Guardando…"
+            className="h-9 px-6 text-sm font-semibold border-0 justify-center"
             style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
-            {loading ? "Guardando..." : "Guardar cambios"}
-          </button>
+            Guardar cambios
+          </Button>
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Plus, Search, Building2, Package, Lightbulb, Trash2, Send, UserCog, User } from "lucide-react";
 import {
   Button,
@@ -10,34 +9,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  useUsuariosStore, useCurrentUser, useHasHydrated,
-  usePagination, PaginationBar,
+  useUsuariosStore, useCurrentUser, useHasHydrated, useAccion,
+  usePagination, PaginationBar, GIRO_LABELS, ESTADO_EMPRESA_CONFIG, EmpresaLogo, ViewSkeleton,
 } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
 import { useEmpresasStore, type Empresa, type Progreso } from "../store/empresas";
-
-const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
-  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
-  pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
-  en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  observaciones_pendientes: { label: "Obs. pendientes", color: "#F97316", bg: "rgba(249,115,22,0.12)" },
-  observaciones_atendidas: { label: "Obs. atendidas", color: "#14B8A6", bg: "rgba(20,184,166,0.12)" },
-  pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#EAB308", bg: "rgba(234,179,8,0.12)" },
-  en_evaluacion: { label: "En evaluación", color: "#6366F1", bg: "rgba(99,102,241,0.12)" },
-  publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
-  devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
-};
-
-const GIRO_LABELS: Record<GiroEmpresa, string> = {
-  tecnologia: "Tecnología",
-  educacion: "Educación",
-  salud: "Salud",
-  sustentabilidad: "Sustentabilidad",
-  alimentacion: "Alimentación",
-  comercio: "Comercio",
-  servicios: "Servicios",
-};
 
 const TODOS_LOS_ESTADOS = "todos";
 
@@ -145,6 +122,11 @@ export function EmpresasListView({
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nombre: string } | null>(null);
   const [asignarTarget, setAsignarTarget] = useState<{ empresa: Empresa; tipo: TipoAsignacion } | null>(null);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
+  const borrado = useAccion();
+  const asignacion = useAccion();
+  const envioMentoria = useAccion();
+  // Qué tarjeta está enviando a mentoría: el spinner va solo en su botón.
+  const [enviandoId, setEnviandoId] = useState<string | null>(null);
 
   const empresas = todasLasEmpresas.filter((e) => {
     const asignadoKey = soloAsignados === "mentor" ? "mentorId" : "evaluadorId";
@@ -159,13 +141,32 @@ export function EmpresasListView({
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    try {
-      await eliminarEmpresa(deleteTarget.id);
-      toast.success(`"${deleteTarget.nombre}" fue eliminada.`);
-    } catch {
-      toast.error("No se pudo eliminar la empresa.");
-    }
+    await borrado.ejecutar(
+      async () => {
+        await eliminarEmpresa(deleteTarget.id);
+        toast.success(`"${deleteTarget.nombre}" fue eliminada.`);
+      },
+      {
+        etiqueta: "Eliminando empresa",
+        onError: () => toast.error("No se pudo eliminar la empresa."),
+      }
+    );
     setDeleteTarget(null);
+  }
+
+  async function enviarAMentoria(empresa: Empresa) {
+    setEnviandoId(empresa.id);
+    await envioMentoria.ejecutar(
+      async () => {
+        await actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
+        toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
+      },
+      {
+        etiqueta: "Enviando a mentoría",
+        onError: () => toast.error("No se pudo enviar la empresa a mentoría."),
+      }
+    );
+    setEnviandoId(null);
   }
 
   function abrirAsignar(empresa: Empresa, tipo: TipoAsignacion) {
@@ -177,16 +178,20 @@ export function EmpresasListView({
     if (!asignarTarget || !usuarioSeleccionado) return;
     const { empresa, tipo } = asignarTarget;
     const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
-    try {
-      if (tipo === "mentor") {
-        await asignarMentor(empresa.id, usuarioSeleccionado);
-      } else {
-        await asignarEvaluador(empresa.id, usuarioSeleccionado);
+    await asignacion.ejecutar(
+      async () => {
+        if (tipo === "mentor") {
+          await asignarMentor(empresa.id, usuarioSeleccionado);
+        } else {
+          await asignarEvaluador(empresa.id, usuarioSeleccionado);
+        }
+        toast.success(`${tipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado a "${empresa.nombre}".`);
+      },
+      {
+        etiqueta: "Asignando",
+        onError: () => toast.error("No se pudo completar la asignación."),
       }
-      toast.success(`${tipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado a "${empresa.nombre}".`);
-    } catch {
-      toast.error("No se pudo completar la asignación.");
-    }
+    );
     setAsignarTarget(null);
   }
 
@@ -215,25 +220,7 @@ export function EmpresasListView({
 
   // Hasta que el store persistido rehidrate, servidor y primer render de cliente
   // muestran el mismo esqueleto neutro para evitar mismatches de hidratación.
-  if (!hydrated) {
-    return (
-      <div className="p-4 md:p-8 max-w-6xl mx-auto">
-        <div className="mb-8">
-          <div className="h-7 w-40 rounded-md animate-pulse" style={{ backgroundColor: "var(--border-subtle)" }} />
-          <div className="h-4 w-28 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "var(--hover-surface)" }} />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-40 rounded-xl animate-pulse"
-              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)" }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (!hydrated) return <ViewSkeleton variante="tarjetas" ancho="max-w-6xl" />;
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -295,7 +282,7 @@ export function EmpresasListView({
             onValueChange={(v) => setFiltroEstado(v ?? TODOS_LOS_ESTADOS)}
             items={[
               { value: TODOS_LOS_ESTADOS, label: "Todos los estados" },
-              ...(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][])
+              ...(Object.entries(ESTADO_EMPRESA_CONFIG) as [EstadoEmpresa, typeof ESTADO_EMPRESA_CONFIG[EstadoEmpresa]][])
                 .filter(([value]) => !estadosPermitidos || estadosPermitidos.includes(value))
                 .map(([value, cfg]) => ({ value, label: cfg.label })),
             ]}
@@ -308,7 +295,7 @@ export function EmpresasListView({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={TODOS_LOS_ESTADOS}>Todos los estados</SelectItem>
-              {(Object.entries(ESTADO_CONFIG) as [EstadoEmpresa, typeof ESTADO_CONFIG[EstadoEmpresa]][])
+              {(Object.entries(ESTADO_EMPRESA_CONFIG) as [EstadoEmpresa, typeof ESTADO_EMPRESA_CONFIG[EstadoEmpresa]][])
                 .filter(([value]) => !estadosPermitidos || estadosPermitidos.includes(value))
                 .map(([value, cfg]) => (
                   <SelectItem key={value} value={value}>{cfg.label}</SelectItem>
@@ -401,7 +388,7 @@ export function EmpresasListView({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {empresasPagina.map((empresa) => {
-            const estadoConfig = ESTADO_CONFIG[empresa.estado];
+            const estadoConfig = ESTADO_EMPRESA_CONFIG[empresa.estado];
             // El emprendedor solo puede eliminar mientras el proyecto está en captura o le toca atender observaciones.
             const puedeEditar = !readOnly && (
               empresa.estado === "borrador" ||
@@ -436,16 +423,7 @@ export function EmpresasListView({
               >
                 {/* Header: logo + nombre/giro + estado */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden"
-                    style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
-                  >
-                    {empresa.logoUrl ? (
-                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={48} height={48} className="object-contain w-full h-full p-1.5" unoptimized />
-                    ) : (
-                      empresa.nombre.charAt(0)
-                    )}
-                  </div>
+                  <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={48} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold leading-snug truncate" style={{ color: "var(--text-strong)" }}>
                       {empresa.nombre}
@@ -528,23 +506,23 @@ export function EmpresasListView({
                     style={{ borderTop: "1px solid var(--border-subtle)" }}
                   >
                     {empresa.estado === "borrador" && empresa.progreso?.tieneProducto && empresa.progreso?.tieneCanvas && empresa.progreso?.tieneHipotesis ? (
-                      <button
-                        onClick={async (e) => {
+                      <Button
+                        type="button"
+                        size="xs"
+                        onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          try {
-                            await actualizarEmpresa(empresa.id, { estado: "pendiente_mentoria" });
-                            toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
-                          } catch {
-                            toast.error("No se pudo enviar la empresa a mentoría.");
-                          }
+                          enviarAMentoria(empresa);
                         }}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-85"
+                        loading={envioMentoria.cargando && enviandoId === empresa.id}
+                        loadingText="Enviando…"
+                        disabled={envioMentoria.cargando}
+                        className="h-7 px-2.5 text-[11px] font-semibold border-0"
                         style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                       >
                         <Send className="w-3 h-3" />
                         Enviar a mentoría
-                      </button>
+                      </Button>
                     ) : (
                       <span />
                     )}
@@ -623,9 +601,11 @@ export function EmpresasListView({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={borrado.cargando}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
+              loading={borrado.cargando}
+              loadingText="Eliminando…"
               className="bg-red-500 hover:bg-red-600 text-white border-0"
             >
               <Trash2 className="w-4 h-4" /> Eliminar
@@ -674,6 +654,8 @@ export function EmpresasListView({
               <Button
                 type="button"
                 disabled={!usuarioSeleccionado}
+                loading={asignacion.cargando}
+                loadingText="Asignando…"
                 onClick={confirmarAsignar}
                 className="border-0"
                 style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}

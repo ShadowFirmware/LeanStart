@@ -8,7 +8,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Tag, Package, Wrench, AlignLeft, ListChecks, DollarSign, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@leanstart/commons";
+import { Button, useHasHydrated, ViewSkeleton } from "@leanstart/commons";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@leanstart/commons";
@@ -103,7 +103,7 @@ interface ProductoEditViewProps {
 
 export function ProductoEditView(props: ProductoEditViewProps = {}) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ViewSkeleton variante="formulario" ancho="max-w-2xl" filas={4} />}>
       <ProductoEditViewInner {...props} />
     </Suspense>
   );
@@ -116,6 +116,7 @@ function ProductoEditViewInner({
   autorNombre,
 }: ProductoEditViewProps) {
   const { id, pid } = useParams<{ id: string; pid: string }>();
+  const hydrated = useHasHydrated();
   const searchParams = useSearchParams();
   const actualizarProducto = useEmpresasStore((s) => s.actualizarProducto);
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
@@ -139,6 +140,9 @@ function ProductoEditViewInner({
       ? toFormValues(producto)
       : { nombre: "", descripcion: "", caracteristicas: "", precio: "" },
   });
+
+  // Hasta rehidratar el store no se puede afirmar que el producto no exista.
+  if (!hydrated) return <ViewSkeleton variante="formulario" ancho="max-w-2xl" filas={4} />;
 
   if (!empresa || !producto) {
     return (
@@ -621,11 +625,12 @@ function ProductoEditViewInner({
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              loading={loading}
+              loadingText="Guardando…"
               className="h-9 px-6 text-sm font-semibold border-0 justify-center"
               style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
-              {loading ? "Guardando..." : "Guardar cambios"}
+              Guardar cambios
             </Button>
           </div>
         </form>

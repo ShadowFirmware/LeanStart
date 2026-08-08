@@ -8,7 +8,7 @@ import {
   BarChart2, Share2, TrendingDown, TrendingUp, Plus, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { modoDemo } from "@leanstart/commons";
+import { Button, modoDemo, useAccion, useHasHydrated, ViewSkeleton } from "@leanstart/commons";
 import { useEmpresasStore, type CanvasData, DEFAULT_CANVAS } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -192,12 +192,14 @@ export function CanvasView({
   autorNombre,
 }: CanvasViewProps = {}) {
   const { id } = useParams<{ id: string }>();
+  const hydrated = useHasHydrated();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const actualizarCanvas = useEmpresasStore((s) => s.actualizarCanvas);
   const observaciones = useObservacionesStore((s) => s.observaciones);
   const cargarObservaciones = useObservacionesStore((s) => s.cargarObservaciones);
 
   const [openBlock, setOpenBlock] = useState<BlockKey | null>(null);
+  const guardado = useAccion();
   const [draft, setDraft] = useState<string | string[]>("");
 
   useEffect(() => {
@@ -205,6 +207,8 @@ export function CanvasView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Antes de rehidratar no hay empresa todavía: el esqueleto evita el flash en blanco.
+  if (!hydrated) return <ViewSkeleton variante="detalle" ancho="max-w-7xl" />;
   if (!empresa) return null;
 
   const canvas = empresa.canvas ?? DEFAULT_CANVAS;
@@ -249,11 +253,13 @@ export function CanvasView({
     const value = meta.type === "multi"
       ? (draft as string[]).filter((s) => s.trim())
       : draft as string;
-    try {
-      await actualizarCanvas(id, { [openBlock]: value });
-    } catch {
-      toast.error("No se pudo guardar el bloque del canvas.");
-    }
+    await guardado.ejecutar(
+      () => actualizarCanvas(id, { [openBlock]: value }),
+      {
+        etiqueta: "Guardando canvas",
+        onError: () => toast.error("No se pudo guardar el bloque del canvas."),
+      }
+    );
     setOpenBlock(null);
   }
 
@@ -484,26 +490,35 @@ export function CanvasView({
             {/* Modal footer */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               {!puedeEditar ? (
-                <button
+                <Button
+                  type="button"
                   onClick={() => setOpenBlock(null)}
-                  style={{ padding: "8px 18px", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", borderRadius: 10, color: "var(--text-strong)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                  className="h-9 px-4 text-[13px] rounded-[10px]"
+                  style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
                 >
                   Cerrar
-                </button>
+                </Button>
               ) : (
                 <>
-                  <button
+                  <Button
+                    type="button"
                     onClick={() => setOpenBlock(null)}
-                    style={{ padding: "8px 18px", backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", borderRadius: 10, color: "var(--text-strong)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                    disabled={guardado.cargando}
+                    className="h-9 px-4 text-[13px] rounded-[10px]"
+                    style={{ backgroundColor: "var(--border-subtle)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={handleSave}
-                    style={{ padding: "8px 20px", background: "var(--brand-gradient)", border: "none", borderRadius: 10, color: "var(--brand-fg)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                    loading={guardado.cargando}
+                    loadingText="Guardando…"
+                    className="h-9 px-5 text-[13px] font-semibold rounded-[10px] border-0"
+                    style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                   >
                     Guardar
-                  </button>
+                  </Button>
                 </>
               )}
             </div>

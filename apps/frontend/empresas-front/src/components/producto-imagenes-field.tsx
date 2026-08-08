@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { ImagePlus, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { compressImageToDataUrl } from "@leanstart/commons";
+import { compressImageToDataUrl, Spinner, useAccion } from "@leanstart/commons";
 
 const MAX_IMAGENES = 6;
 const RECOMENDADO = 3;
@@ -22,6 +22,7 @@ interface ProductoImagenesFieldProps {
  */
 export function ProductoImagenesField({ value, onChange, disabled = false }: ProductoImagenesFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const subida = useAccion();
   const faltantes = Math.max(0, RECOMENDADO - value.length);
 
   async function handleFiles(files: FileList | null) {
@@ -37,26 +38,29 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
       toast.warning(`Solo se agregaron ${espacio} imágen(es); alcanzaste el máximo de ${MAX_IMAGENES}.`);
     }
 
-    const nuevas: string[] = [];
-    for (const file of seleccionados) {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`"${file.name}" no es una imagen.`);
-        continue;
+    await subida.ejecutar(async () => {
+      const nuevas: string[] = [];
+      for (const file of seleccionados) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`"${file.name}" no es una imagen.`);
+          continue;
+        }
+        if (file.size > MAX_MB * 1024 * 1024) {
+          toast.error(`"${file.name}" supera los ${MAX_MB}MB.`);
+          continue;
+        }
+        try {
+          nuevas.push(await compressImageToDataUrl(file));
+        } catch {
+          toast.error(`No se pudo leer "${file.name}".`);
+        }
       }
-      if (file.size > MAX_MB * 1024 * 1024) {
-        toast.error(`"${file.name}" supera los ${MAX_MB}MB.`);
-        continue;
-      }
-      try {
-        nuevas.push(await compressImageToDataUrl(file));
-      } catch {
-        toast.error(`No se pudo leer "${file.name}".`);
-      }
-    }
 
-    if (nuevas.length > 0) {
-      onChange([...value, ...nuevas]);
-    }
+      if (nuevas.length > 0) {
+        onChange([...value, ...nuevas]);
+      }
+    }, { etiqueta: "Procesando imágenes" });
+
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -104,7 +108,9 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-colors"
+            disabled={subida.cargando}
+            aria-busy={subida.cargando || undefined}
+            className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               backgroundColor: "rgba(154,98,250,0.08)",
               border: "2px dashed rgba(154,98,250,0.3)",
@@ -113,8 +119,8 @@ export function ProductoImagenesField({ value, onChange, disabled = false }: Pro
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand-line)")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.3)")}
           >
-            <ImagePlus className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Agregar</span>
+            {subida.cargando ? <Spinner size={20} /> : <ImagePlus className="w-5 h-5" />}
+            <span className="text-[10px] font-medium">{subida.cargando ? "Procesando…" : "Agregar"}</span>
           </button>
         )}
       </div>

@@ -2,32 +2,8 @@
 
 import { Building2, ClipboardCheck, TrendingUp, Plus, CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { Button, useCurrentUser, useHasHydrated } from "@leanstart/commons";
-import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
+import { Button, useCurrentUser, useHasHydrated, ViewSkeleton, GIRO_LABELS, ESTADO_EMPRESA_CONFIG, EmpresaLogo } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
-
-const ESTADO_CONFIG: Record<EstadoEmpresa, { label: string; color: string; bg: string }> = {
-  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
-  pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
-  en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  observaciones_pendientes: { label: "Obs. pendientes", color: "#F97316", bg: "rgba(249,115,22,0.12)" },
-  observaciones_atendidas: { label: "Obs. atendidas", color: "#14B8A6", bg: "rgba(20,184,166,0.12)" },
-  pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#EAB308", bg: "rgba(234,179,8,0.12)" },
-  en_evaluacion: { label: "En evaluación", color: "#6366F1", bg: "rgba(99,102,241,0.12)" },
-  publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
-  devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
-};
-
-const GIRO_LABELS: Record<GiroEmpresa, string> = {
-  tecnologia: "Tecnología",
-  educacion: "Educación",
-  salud: "Salud",
-  sustentabilidad: "Sustentabilidad",
-  alimentacion: "Alimentación",
-  comercio: "Comercio",
-  servicios: "Servicios",
-};
 
 import type { Progreso } from "@leanstart/empresas-front";
 
@@ -103,6 +79,10 @@ export function DashboardView() {
     scoresPromediables.length > 0
       ? Math.round(scoresPromediables.reduce((acc, s) => acc + s, 0) / scoresPromediables.length)
       : 0;
+
+  // Esqueleto en vez de un tablero con todos los contadores en cero mientras
+  // el store persistido termina de rehidratar.
+  if (!hydrated) return <ViewSkeleton variante="tarjetas" ancho="max-w-5xl" />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
@@ -216,7 +196,7 @@ export function DashboardView() {
         ) : (
           <div className="flex flex-col gap-3">
             {recientes.map((empresa) => {
-              const estadoConfig = ESTADO_CONFIG[empresa.estado];
+              const estadoConfig = ESTADO_EMPRESA_CONFIG[empresa.estado];
               return (
                 <Link
                   key={empresa.id}
@@ -236,19 +216,7 @@ export function DashboardView() {
                       "var(--border-subtle)")
                   }
                 >
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 overflow-hidden"
-                    style={{
-                      backgroundColor: "var(--brand-tint)",
-                      color: "var(--brand)",
-                    }}
-                  >
-                    {empresa.logoUrl ? (
-                      <Image src={empresa.logoUrl} alt={empresa.nombre} width={36} height={36} className="object-contain w-full h-full p-1" unoptimized />
-                    ) : (
-                      empresa.nombre.charAt(0)
-                    )}
-                  </div>
+                  <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={36} radio="lg" className="mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>

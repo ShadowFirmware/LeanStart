@@ -8,6 +8,7 @@ import {
   Textarea, debounce, modoDemo,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  useHasHydrated, useAccion, ViewSkeleton,
 } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 import {
@@ -29,6 +30,8 @@ interface EvaluacionFormProps {
 /** Formulario de evaluación del proyecto (uso exclusivo del evaluador). */
 export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
   const router = useRouter();
+  const hydrated = useHasHydrated();
+  const { cargando: finalizando, ejecutar: ejecutarFinalizar } = useAccion();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === empresaId));
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
   const sincronizarLocal = useEmpresasStore((s) => s.sincronizarLocal);
@@ -75,6 +78,9 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
     fn(v);
   }
 
+  // La evaluación cruza cuatro stores persistidos: hasta que rehidraten se
+  // muestra el esqueleto en vez de una rúbrica vacía con score 0.
+  if (!hydrated) return <ViewSkeleton variante="detalle" ancho="max-w-6xl" conHeader={false} />;
   if (!empresa) return null;
 
   const puedeEvaluar = empresa.estado === "en_evaluacion";
@@ -91,44 +97,45 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
 
   async function finalizarEvaluacion() {
     if (!empresa) return;
-    try {
-      if (modoDemo()) {
-        await actualizarEmpresa(empresaId, {
-          estado: accionResultante,
-          scoreFinal: calculo.scoreFinal,
-          nivelNombre: calculo.nivel?.nombre,
-          nivelColor: calculo.nivel?.color,
-        });
-        toast.success(
-          accionResultante === "publicado"
-            ? `"${empresa.nombre}" fue evaluada y publicada.`
-            : `"${empresa.nombre}" fue devuelta al emprendedor.`
-        );
-      } else {
-        // El backend calcula el score con los criterios/niveles reales del servidor,
-        // transiciona la empresa y ya notifica al emprendedor — no hace falta repetir nada
-        // aquí, PERO el store de empresas en memoria no se entera solo (la transición pasó
-        // en empresas-service, llamado internamente por evaluaciones-service, nunca por una
-        // llamada directa de este store) — sin esto se queda con el estado/score viejos
-        // hasta recargar la lista.
-        const resultado = await finalizarReal(empresaId);
-        sincronizarLocal(empresaId, {
-          estado: resultado.accionResultante,
-          scoreFinal: resultado.scoreFinal,
-          nivelNombre: resultado.nivel?.nombre,
-          nivelColor: resultado.nivel?.color,
-        });
-        toast.success(
-          resultado.accionResultante === "publicado"
-            ? `"${empresa.nombre}" fue evaluada y publicada (score ${resultado.scoreFinal}%).`
-            : `"${empresa.nombre}" fue devuelta al emprendedor (score ${resultado.scoreFinal}%).`
-        );
-      }
-      setConfirmarOpen(false);
-      router.push("/evaluador/empresas");
-    } catch {
-      toast.error("No se pudo finalizar la evaluación.");
-    }
+    await ejecutarFinalizar(
+      async () => {
+        if (modoDemo()) {
+          await actualizarEmpresa(empresaId, {
+            estado: accionResultante,
+            scoreFinal: calculo.scoreFinal,
+            nivelNombre: calculo.nivel?.nombre,
+            nivelColor: calculo.nivel?.color,
+          });
+          toast.success(
+            accionResultante === "publicado"
+              ? `"${empresa.nombre}" fue evaluada y publicada.`
+              : `"${empresa.nombre}" fue devuelta al emprendedor.`
+          );
+        } else {
+          // El backend calcula el score con los criterios/niveles reales del servidor,
+          // transiciona la empresa y ya notifica al emprendedor — no hace falta repetir nada
+          // aquí, PERO el store de empresas en memoria no se entera solo (la transición pasó
+          // en empresas-service, llamado internamente por evaluaciones-service, nunca por una
+          // llamada directa de este store) — sin esto se queda con el estado/score viejos
+          // hasta recargar la lista.
+          const resultado = await finalizarReal(empresaId);
+          sincronizarLocal(empresaId, {
+            estado: resultado.accionResultante,
+            scoreFinal: resultado.scoreFinal,
+            nivelNombre: resultado.nivel?.nombre,
+            nivelColor: resultado.nivel?.color,
+          });
+          toast.success(
+            resultado.accionResultante === "publicado"
+              ? `"${empresa.nombre}" fue evaluada y publicada (score ${resultado.scoreFinal}%).`
+              : `"${empresa.nombre}" fue devuelta al emprendedor (score ${resultado.scoreFinal}%).`
+          );
+        }
+        setConfirmarOpen(false);
+        router.push("/evaluador/empresas");
+      },
+      { etiqueta: "Finalizando evaluación", onError: () => toast.error("No se pudo finalizar la evaluación.") }
+    );
   }
 
   if (!puedeEvaluar) {
@@ -266,6 +273,8 @@ export function EvaluacionForm({ empresaId }: EvaluacionFormProps) {
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={finalizarEvaluacion}
+                loading={finalizando}
+                loadingText="Finalizando…"
                 className="border-0"
                 style={
                   accionResultante === "publicado"

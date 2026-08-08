@@ -9,14 +9,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   useCurrentUser, useUsuariosStore,
-  usePagination, PaginationBar,
+  usePagination, PaginationBar, useHasHydrated, ViewSkeleton, GIRO_LABELS, EmpresaLogo,
 } from "@leanstart/commons";
 import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
 import { useCriteriosStore } from "../store/criterios";
 import { useViabilidadStore } from "../store/viabilidad";
 import { useEvaluacionesStore } from "../store/evaluaciones";
 import { useReportesGeneradosStore, type TipoReporte } from "../store/reportes-generados";
-import { calcularReporte, GIRO_LABELS } from "../lib/reporte";
+import { calcularReporte } from "../lib/reporte";
 import { ReporteDocumento } from "../components/reporte-documento";
 
 const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" };
@@ -42,37 +42,8 @@ const TIPO_CONFIG: Record<
   },
 };
 
-/** Logo de la empresa (o inicial) con tamaño configurable. */
-function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }) {
-  if (empresa.logoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return (
-      <img
-        src={empresa.logoUrl}
-        alt={empresa.nombre}
-        className="rounded-xl object-contain shrink-0"
-        style={{
-          width: size,
-          height: size,
-          padding: Math.max(2, Math.round(size * 0.12)),
-          backgroundColor: "var(--brand-tint)",
-          border: "1px solid var(--border-hair)",
-          boxSizing: "border-box",
-        }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-xl flex items-center justify-center font-bold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
-    >
-      {empresa.nombre.charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
 export function ReportesView() {
+  const hydrated = useHasHydrated();
   const empresas = useEmpresasStore((s) => s.empresas);
   const criterios = useCriteriosStore((s) => s.criterios);
   const niveles = useViabilidadStore((s) => s.niveles);
@@ -162,6 +133,10 @@ export function ReportesView() {
   const { page, setPage, totalPages, pageItems: historialPagina, pageSize, totalItems } = usePagination(historialFiltrado, {
     resetKey: `${busqueda}|${filtroTipo}`,
   });
+
+  // Un reporte combina cinco stores persistidos (empresas, criterios, viabilidad,
+  // evaluaciones, historial): sin esta guarda el historial parpadearía vacío.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={4} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -279,7 +254,7 @@ export function ReportesView() {
                 {/* Header: logo empresa + nombre + tipo de reporte */}
                 <div className="flex items-start gap-3 mb-4">
                   {empresa ? (
-                    <EmpresaLogo empresa={empresa} size={48} />
+                    <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={48} borde="sutil" />
                   ) : (
                     <div
                       className="rounded-xl flex items-center justify-center font-bold shrink-0"
@@ -417,7 +392,7 @@ export function ReportesView() {
                       onMouseEnter={(ev) => (ev.currentTarget.style.borderColor = "rgba(154,98,250,0.35)")}
                       onMouseLeave={(ev) => (ev.currentTarget.style.borderColor = "var(--border-hair)")}
                     >
-                      <EmpresaLogo empresa={e} size={36} />
+                      <EmpresaLogo nombre={e.nombre} logoUrl={e.logoUrl} size={36} borde="sutil" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{e.nombre}</p>
                         <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{GIRO_LABELS[e.giro]}</p>

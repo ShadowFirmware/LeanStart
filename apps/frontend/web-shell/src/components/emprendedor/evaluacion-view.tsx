@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { modoDemo } from "@leanstart/commons";
+import { modoDemo, useHasHydrated, ViewSkeleton, GIRO_LABELS } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 import {
   useCriteriosStore, useViabilidadStore, useEvaluacionesStore,
-  calcularReporte, REPORTE_GIRO_LABELS,
+  calcularReporte,
 } from "@leanstart/administrador-front";
 import { ResultadoEvaluacion } from "@leanstart/evaluador-front";
 
@@ -21,6 +21,7 @@ const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }>
  *  poder calificar ni editar nada — solo aparece una vez que la evaluación fue finalizada. */
 export function EmprendedorEvaluacionView() {
   const { id } = useParams<{ id: string }>();
+  const hydrated = useHasHydrated();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const criterios = useCriteriosStore((s) => s.criterios);
   const cargarCriterios = useCriteriosStore((s) => s.cargarCriterios);
@@ -35,6 +36,10 @@ export function EmprendedorEvaluacionView() {
     cargarEvaluacion(id).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // El resultado depende de tres stores persistidos; hasta que rehidraten se
+  // muestra el esqueleto en lugar de un "no existe" o un score en cero.
+  if (!hydrated) return <ViewSkeleton variante="detalle" ancho="max-w-6xl" />;
 
   if (!empresa) {
     return (
@@ -67,7 +72,7 @@ export function EmprendedorEvaluacionView() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>Evaluación del Proyecto</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-            {empresa.nombre} · {REPORTE_GIRO_LABELS[empresa.giro]}
+            {empresa.nombre} · {GIRO_LABELS[empresa.giro]}
           </p>
         </div>
         {estadoCfg && (

@@ -71,14 +71,35 @@ export class ViabilidadService {
     return this.niveles();
   }
 
-  async agregarNivel() {
+  /**
+   * Agrega un nivel. Si el DTO trae `hasta`, el nivel se inserta donde le toca
+   * según su límite superior (los tramos siguen siendo contiguos y crecientes);
+   * si no, se conserva el comportamiento histórico de partir en dos el último
+   * tramo. El último nivel siempre termina en 100, así que un nivel nuevo nunca
+   * puede quedar después de él.
+   */
+  async agregarNivel(dto?: { nombre?: string; color?: string; hasta?: number }) {
     const niveles = await this.niveles();
-    const lower = niveles.length >= 2 ? niveles[niveles.length - 2].hasta : 0;
-    const upper = niveles[niveles.length - 1]?.hasta ?? 100;
-    if (upper - lower < 2) return { creado: false, niveles };
+    const nombre = dto?.nombre?.trim() || "Nuevo nivel";
+    const color = dto?.color ?? PALETA_NIVELES[niveles.length % PALETA_NIVELES.length];
 
-    const mid = lower + Math.floor((upper - lower) / 2);
-    const posicion = Math.max(niveles.length - 1, 0);
+    let posicion: number;
+    let hasta: number;
+
+    if (dto?.hasta === undefined) {
+      const lower = niveles.length >= 2 ? niveles[niveles.length - 2].hasta : 0;
+      const upper = niveles[niveles.length - 1]?.hasta ?? 100;
+      if (upper - lower < 2) return { creado: false, niveles };
+      hasta = lower + Math.floor((upper - lower) / 2);
+      posicion = Math.max(niveles.length - 1, 0);
+    } else {
+      hasta = Math.round(dto.hasta);
+      // Cuántos niveles terminan antes que el nuevo: esa es su posición.
+      posicion = niveles.filter((n) => n.hasta < hasta).length;
+      const siguiente = niveles[posicion];
+      // Sin un nivel por encima, o con el límite ya ocupado, el tramo no cabe.
+      if (!siguiente || siguiente.hasta <= hasta) return { creado: false, niveles };
+    }
 
     await this.prisma.$transaction([
       // Corre el "orden" de todo lo que queda a partir de la posición de inserción.
@@ -86,12 +107,7 @@ export class ViabilidadService {
         this.prisma.nivelViabilidad.update({ where: { id: n.id }, data: { orden: posicion + idx + 1 } })
       ),
       this.prisma.nivelViabilidad.create({
-        data: {
-          nombre: "Nuevo nivel",
-          hasta: mid,
-          color: PALETA_NIVELES[niveles.length % PALETA_NIVELES.length],
-          orden: posicion,
-        },
+        data: { nombre, hasta, color, orden: posicion },
       }),
     ]);
 

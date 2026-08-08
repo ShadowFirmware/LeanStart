@@ -32,7 +32,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
-import { compressImageToDataUrl, modoDemo } from "@leanstart/commons";
+import { compressImageToDataUrl, modoDemo, useAccion, useHasHydrated, ViewSkeleton, GIRO_LABELS, ESTADO_EMPRESA_CONFIG } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -48,29 +48,11 @@ const GIROS: { value: GiroEmpresa; label: string }[] = [
   { value: "servicios", label: "Servicios" },
 ];
 
-const ESTADO_CONFIG = {
-  borrador: { label: "Borrador", color: "var(--brand)", bg: "var(--brand-tint)" },
-  pendiente_mentoria: { label: "Pendiente de mentoría", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
-  en_mentoria: { label: "En mentoría", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
-  observaciones_pendientes: { label: "Obs. pendientes", color: "#F97316", bg: "rgba(249,115,22,0.12)" },
-  observaciones_atendidas: { label: "Obs. atendidas", color: "#14B8A6", bg: "rgba(20,184,166,0.12)" },
-  pendiente_evaluacion: { label: "Pendiente de evaluación", color: "#EAB308", bg: "rgba(234,179,8,0.12)" },
-  en_evaluacion: { label: "En evaluación", color: "#6366F1", bg: "rgba(99,102,241,0.12)" },
-  publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
-  devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
-} as const;
-
 const ESTADO_HIPOTESIS_CONFIG = {
   pendiente_validacion: { label: "Pendiente", color: "var(--text-dim)", bg: "var(--border-subtle)" },
   validada: { label: "Validada", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   invalidada: { label: "Invalidada", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 } as const;
-
-const GIRO_LABELS: Record<GiroEmpresa, string> = {
-  tecnologia: "Tecnología", educacion: "Educación", salud: "Salud",
-  sustentabilidad: "Sustentabilidad", alimentacion: "Alimentación",
-  comercio: "Comercio", servicios: "Servicios",
-};
 
 const CANVAS_TOTAL = 9;
 
@@ -145,17 +127,22 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
 }) {
   const eliminarHipotesis = useEmpresasStore((s) => s.eliminarHipotesis);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; titulo: string } | null>(null);
+  const borrado = useAccion();
   const limite = hipotesisList.length >= 3;
   const puedeVerObs = puedeVerObservaciones(estadoEmpresa, readOnly, Boolean(permitirComentarios));
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    try {
-      await eliminarHipotesis(empresaId, deleteTarget.id);
-      toast.success("Hipótesis eliminada.");
-    } catch {
-      toast.error("No se pudo eliminar la hipótesis.");
-    }
+    await borrado.ejecutar(
+      async () => {
+        await eliminarHipotesis(empresaId, deleteTarget.id);
+        toast.success("Hipótesis eliminada.");
+      },
+      {
+        etiqueta: "Eliminando hipótesis",
+        onError: () => toast.error("No se pudo eliminar la hipótesis."),
+      }
+    );
     setDeleteTarget(null);
   }
 
@@ -264,9 +251,11 @@ function HipotesisSection({ empresaId, hipotesisList, basePath, readOnly, permit
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={borrado.cargando}>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
+                loading={borrado.cargando}
+                loadingText="Eliminando…"
                 className="bg-red-500 hover:bg-red-600 text-white border-0"
               >
                 <Trash2 className="w-4 h-4" /> Eliminar
@@ -308,6 +297,7 @@ export function EmpresaDetailView({
   contenidoAdicional,
 }: EmpresaDetailViewProps = {}) {
   const { id } = useParams<{ id: string }>();
+  const hydrated = useHasHydrated();
   const { empresas, actualizarEmpresa } = useEmpresasStore();
   const asignarMentor = useEmpresasStore((s) => s.asignarMentor);
   const asignarEvaluador = useEmpresasStore((s) => s.asignarEvaluador);
@@ -332,8 +322,11 @@ export function EmpresaDetailView({
   const [asignarTipo, setAsignarTipo] = useState<TipoAsignacion | null>(null);
   const [reportarOpen, setReportarOpen] = useState(false);
   const [motivoReporte, setMotivoReporte] = useState("");
-  const [enviandoReporte, setEnviandoReporte] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState("");
+  const reporte = useAccion();
+  const flujo = useAccion();       // enviar a mentoría / evaluación / comentarios
+  const asignacion = useAccion();
+  const guardado = useAccion();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
@@ -342,6 +335,11 @@ export function EmpresaDetailView({
       ? { nombre: empresa.nombre, giro: empresa.giro, descripcion: empresa.descripcion, mercadoObjetivo: empresa.mercadoObjetivo }
       : undefined,
   });
+
+  // Mientras el store persistido rehidrata, `empresas` está vacío: sin esta
+  // guarda toda entrada al detalle mostraba "Empresa no encontrada" por un
+  // instante antes de pintar los datos reales.
+  if (!hydrated) return <ViewSkeleton variante="detalle" ancho="max-w-5xl" />;
 
   if (!empresa) {
     return (
@@ -358,7 +356,7 @@ export function EmpresaDetailView({
     );
   }
 
-  const estadoConfig = ESTADO_CONFIG[empresa.estado];
+  const estadoConfig = ESTADO_EMPRESA_CONFIG[empresa.estado];
   // En vistas de consulta (Admin/Mentor/Evaluador) se muestra el emprendedor dueño de la empresa.
   const emprendedor = readOnly ? usuarios.find((u) => u.id === empresa.ownerId) : undefined;
   const logoActual = logoPreview ?? empresa.logoUrl;
@@ -396,45 +394,70 @@ export function EmpresaDetailView({
   const canvasTienePendiente = puedeVerObs && observacionesEmpresa.some((o) => o.tipoElemento === "canvas" && esPendienteParaMiRol(o));
   const todosComentariosResueltos = !observacionesEmpresa.some((o) => o.estado === "pendiente" || o.estado === "borrador");
 
+  async function enviarAMentoria() {
+    await flujo.ejecutar(
+      async () => {
+        await actualizarEmpresa(id, { estado: "pendiente_mentoria" });
+        toast.success(`"${empresa?.nombre}" fue enviada a mentoría.`);
+      },
+      {
+        etiqueta: "Enviando a mentoría",
+        onError: () => toast.error("No se pudo enviar la empresa a mentoría."),
+      }
+    );
+  }
+
   async function enviarAEvaluacion() {
-    try {
-      await actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
-      await cerrarObservacionesDeEmpresa(id);
-      toast.success(`"${empresa?.nombre}" fue enviada a evaluación.`);
-    } catch {
-      toast.error("No se pudo enviar la empresa a evaluación.");
-    }
+    await flujo.ejecutar(
+      async () => {
+        await actualizarEmpresa(id, { estado: "pendiente_evaluacion" });
+        await cerrarObservacionesDeEmpresa(id);
+        toast.success(`"${empresa?.nombre}" fue enviada a evaluación.`);
+      },
+      {
+        etiqueta: "Enviando a evaluación",
+        onError: () => toast.error("No se pudo enviar la empresa a evaluación."),
+      }
+    );
   }
 
   async function enviarComentariosEmprendedor() {
-    try {
-      // Libera los borradores del mentor (recién ahí el emprendedor los ve) y de paso
-      // mueve el estado del proyecto — antes esto solo hacía lo segundo, porque los
-      // comentarios ya eran visibles al instante desde que se creaban.
-      const estado = await enviarRetroalimentacion(id);
-      // Sin esto, el store de empresas se queda con el estado viejo en memoria (el cambio
-      // real lo hizo el backend dentro de "enviar", no una llamada a actualizarEmpresa) y
-      // el botón "Enviar comentarios" sigue visible/clickeable hasta recargar — pudiendo
-      // mandarlo dos veces.
-      if (estado) sincronizarLocal(id, { estado });
-      toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
-    } catch {
-      toast.error("No se pudieron enviar los comentarios.");
-    }
+    await flujo.ejecutar(
+      async () => {
+        // Libera los borradores del mentor (recién ahí el emprendedor los ve) y de paso
+        // mueve el estado del proyecto — antes esto solo hacía lo segundo, porque los
+        // comentarios ya eran visibles al instante desde que se creaban.
+        const estado = await enviarRetroalimentacion(id);
+        // Sin esto, el store de empresas se queda con el estado viejo en memoria (el cambio
+        // real lo hizo el backend dentro de "enviar", no una llamada a actualizarEmpresa) y
+        // el botón "Enviar comentarios" sigue visible/clickeable hasta recargar — pudiendo
+        // mandarlo dos veces.
+        if (estado) sincronizarLocal(id, { estado });
+        toast.success(`Se enviaron los comentarios a "${empresa?.nombre}".`);
+      },
+      {
+        etiqueta: "Enviando comentarios",
+        onError: () => toast.error("No se pudieron enviar los comentarios."),
+      }
+    );
   }
 
   async function enviarNuevamenteAlMentor() {
-    try {
-      // OJO: antes esto llamaba a actualizarEmpresa(id, {estado}) — pero UpdateEmpresaDto
-      // no tiene campo "estado", así que el ValidationPipe lo descartaba en silencio y el
-      // proyecto nunca avanzaba de estado por esta vía. marcarTodasAtendidas() sí lo hace
-      // (y de paso marca las observaciones y notifica al mentor una sola vez).
-      const estado = await marcarTodasAtendidas(id);
-      if (estado) sincronizarLocal(id, { estado });
-      toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
-    } catch {
-      toast.error("No se pudo enviar al mentor.");
-    }
+    await flujo.ejecutar(
+      async () => {
+        // OJO: antes esto llamaba a actualizarEmpresa(id, {estado}) — pero UpdateEmpresaDto
+        // no tiene campo "estado", así que el ValidationPipe lo descartaba en silencio y el
+        // proyecto nunca avanzaba de estado por esta vía. marcarTodasAtendidas() sí lo hace
+        // (y de paso marca las observaciones y notifica al mentor una sola vez).
+        const estado = await marcarTodasAtendidas(id);
+        if (estado) sincronizarLocal(id, { estado });
+        toast.success(`"${empresa?.nombre}" fue enviada nuevamente al mentor.`);
+      },
+      {
+        etiqueta: "Enviando al mentor",
+        onError: () => toast.error("No se pudo enviar al mentor."),
+      }
+    );
   }
 
   async function enviarReporte() {
@@ -442,17 +465,18 @@ export function EmpresaDetailView({
       toast.error("Describe el motivo con al menos 10 caracteres.");
       return;
     }
-    setEnviandoReporte(true);
-    try {
-      await reportarEmpresa(id, autorNombre ?? "Usuario", motivoReporte.trim());
-      toast.success("Reporte enviado. El administrador lo revisará.");
-      setReportarOpen(false);
-      setMotivoReporte("");
-    } catch {
-      toast.error("No se pudo enviar el reporte.");
-    } finally {
-      setEnviandoReporte(false);
-    }
+    await reporte.ejecutar(
+      async () => {
+        await reportarEmpresa(id, autorNombre ?? "Usuario", motivoReporte.trim());
+        toast.success("Reporte enviado. El administrador lo revisará.");
+        setReportarOpen(false);
+        setMotivoReporte("");
+      },
+      {
+        etiqueta: "Enviando reporte",
+        onError: () => toast.error("No se pudo enviar el reporte."),
+      }
+    );
   }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -491,14 +515,18 @@ export function EmpresaDetailView({
   }
 
   async function onSubmit(values: FormValues) {
-    try {
-      await actualizarEmpresa(id, { ...values, logoUrl: logoPreview ?? empresa?.logoUrl });
-      toast.success("Empresa actualizada correctamente.");
-      setLogoPreview(null);
-      setEditando(false);
-    } catch {
-      toast.error("No se pudo actualizar la empresa.");
-    }
+    await guardado.ejecutar(
+      async () => {
+        await actualizarEmpresa(id, { ...values, logoUrl: logoPreview ?? empresa?.logoUrl });
+        toast.success("Empresa actualizada correctamente.");
+        setLogoPreview(null);
+        setEditando(false);
+      },
+      {
+        etiqueta: "Guardando empresa",
+        onError: () => toast.error("No se pudo actualizar la empresa."),
+      }
+    );
   }
 
   function abrirAsignar(tipo: TipoAsignacion) {
@@ -509,16 +537,20 @@ export function EmpresaDetailView({
   async function confirmarAsignar() {
     if (!asignarTipo || !usuarioSeleccionado) return;
     const usuario = usuarios.find((u) => u.id === usuarioSeleccionado);
-    try {
-      if (asignarTipo === "mentor") {
-        await asignarMentor(id, usuarioSeleccionado);
-      } else {
-        await asignarEvaluador(id, usuarioSeleccionado);
+    await asignacion.ejecutar(
+      async () => {
+        if (asignarTipo === "mentor") {
+          await asignarMentor(id, usuarioSeleccionado);
+        } else {
+          await asignarEvaluador(id, usuarioSeleccionado);
+        }
+        toast.success(`${asignarTipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado.`);
+      },
+      {
+        etiqueta: "Asignando",
+        onError: () => toast.error("No se pudo completar la asignación."),
       }
-      toast.success(`${asignarTipo === "mentor" ? "Mentor" : "Evaluador"} "${usuario?.nombre}" asignado.`);
-    } catch {
-      toast.error("No se pudo completar la asignación.");
-    }
+    );
     setAsignarTipo(null);
   }
 
@@ -674,16 +706,19 @@ export function EmpresaDetailView({
               />
 
               <div className="flex justify-end gap-3 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={cancelarEdicion}
-                  className="inline-flex items-center gap-1.5 text-sm px-4 h-9 rounded-lg"
+                  disabled={guardado.cargando}
+                  className="h-9 px-4 text-sm"
                   style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                 >
                   <X className="w-3.5 h-3.5" /> Cancelar
-                </button>
+                </Button>
                 <Button
                   type="submit"
+                  loading={guardado.cargando}
+                  loadingText="Guardando…"
                   className="h-9 px-5 text-sm font-semibold border-0"
                   style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                 >
@@ -804,22 +839,17 @@ export function EmpresaDetailView({
                         : "Completaste todos los requisitos: producto, canvas e hipótesis."}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
-                    onClick={async () => {
-                      try {
-                        await actualizarEmpresa(id, { estado: "pendiente_mentoria" });
-                        toast.success(`"${empresa.nombre}" fue enviada a mentoría.`);
-                      } catch {
-                        toast.error("No se pudo enviar la empresa a mentoría.");
-                      }
-                    }}
-                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                    onClick={enviarAMentoria}
+                    loading={flujo.cargando}
+                    loadingText="Enviando…"
+                    className="h-9 px-4 text-sm font-semibold rounded-xl border-0 shrink-0 justify-center w-full sm:w-auto"
                     style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                   >
                     <Send className="w-3.5 h-3.5" />
                     Enviar a mentoría
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -834,15 +864,17 @@ export function EmpresaDetailView({
                       Atendiste todos los comentarios del mentor. Envía tu proyecto para que los revise de nuevo.
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
                     onClick={enviarNuevamenteAlMentor}
-                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                    loading={flujo.cargando}
+                    loadingText="Enviando…"
+                    className="h-9 px-4 text-sm font-semibold rounded-xl border-0 shrink-0 justify-center w-full sm:w-auto"
                     style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                   >
                     <Send className="w-3.5 h-3.5" />
                     Enviar cambios
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -889,25 +921,29 @@ export function EmpresaDetailView({
                     )}
                   </div>
                   {listoParaEvaluacion ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={enviarAEvaluacion}
-                      className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                      loading={flujo.cargando}
+                      loadingText="Enviando…"
+                      className="h-9 px-4 text-sm font-semibold rounded-xl border-0 shrink-0 justify-center w-full sm:w-auto"
                       style={{ background: "linear-gradient(135deg, #10B981 0%, #14B8A6 100%)", color: "var(--brand-fg)" }}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Enviar a evaluación
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
                       type="button"
                       onClick={enviarComentariosEmprendedor}
-                      className="inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 h-9 rounded-xl shrink-0 transition-opacity hover:opacity-90 w-full sm:w-auto"
+                      loading={flujo.cargando}
+                      loadingText="Enviando…"
+                      className="h-9 px-4 text-sm font-semibold rounded-xl border-0 shrink-0 justify-center w-full sm:w-auto"
                       style={{ background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)", color: "var(--brand-fg)" }}
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       Enviar comentarios
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>
@@ -1079,6 +1115,8 @@ export function EmpresaDetailView({
               <Button
                 type="button"
                 disabled={!usuarioSeleccionado}
+                loading={asignacion.cargando}
+                loadingText="Asignando…"
                 onClick={confirmarAsignar}
                 className="border-0"
                 style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
@@ -1113,13 +1151,15 @@ export function EmpresaDetailView({
             </Button>
             <Button
               type="button"
-              disabled={enviandoReporte || motivoReporte.trim().length < 10}
+              disabled={motivoReporte.trim().length < 10}
+              loading={reporte.cargando}
+              loadingText="Enviando…"
               onClick={enviarReporte}
               className="border-0"
               style={{ background: "linear-gradient(135deg, #EF4444 0%, #F97316 100%)", color: "#fff" }}
             >
               <Flag className="w-3.5 h-3.5" />
-              {enviandoReporte ? "Enviando..." : "Enviar reporte"}
+              Enviar reporte
             </Button>
           </DialogFooter>
         </DialogContent>

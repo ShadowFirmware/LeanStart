@@ -11,7 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  Input, Textarea,
+  Input, Textarea, useHasHydrated, ViewSkeleton, LoadingOverlay, Spinner, useAccion,
 } from "@leanstart/commons";
 import type { Role, Modulo, Accion } from "@leanstart/commons";
 import { modoDemo, useUsuariosStore } from "@leanstart/commons";
@@ -61,6 +61,7 @@ const SECCIONES: { value: Seccion; label: string }[] = [
 const GRID_COLS = "minmax(150px, 1.6fr) repeat(6, minmax(64px, 1fr))";
 
 export function RolesPrivilegiosView() {
+  const hydrated = useHasHydrated();
   const [seccion, setSeccion] = useState<Seccion>("roles");
   const descripciones = useRolesStore((s) => s.descripciones);
   const actualizarDescripcion = useRolesStore((s) => s.actualizarDescripcion);
@@ -91,8 +92,47 @@ export function RolesPrivilegiosView() {
   const toggleAccionColumna = usePrivilegiosStore((s) => s.toggleAccionColumna);
   const setTodos = usePrivilegiosStore((s) => s.setTodos);
 
+  // Cargar los privilegios del rol seleccionado es una ida y vuelta al backend:
+  // mientras tanto la matriz muestra su propio velo de carga en lugar de una
+  // cuadrícula vacía que parece "sin permisos".
+  const [cargandoPrivilegios, setCargandoPrivilegios] = useState(false);
+
+  /* ─── Escrituras sobre la matriz ───
+     Cada endpoint de privilegios responde con la matriz COMPLETA del rol, así
+     que dos cambios en vuelo a la vez se pisan: el que responde último borra al
+     otro. Por eso la matriz entera se bloquea mientras hay una escritura y el
+     spinner se pinta solo en el control que la disparó. `privilegioEnCurso`
+     guarda la clave de ese control ("cel:usuarios:ver", "mod:empresas"…). */
+  const cambioPrivilegio = useAccion();
+  const [privilegioEnCurso, setPrivilegioEnCurso] = useState<string | null>(null);
+  const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios;
+
+  async function aplicarPrivilegio(clave: string, operacion: () => Promise<void>) {
+    await cambioPrivilegio.ejecutar(
+      // Marcar dentro de la operación y no antes: si `ejecutar` descarta esta
+      // llamada por reentrada, el spinner del cambio que sí está corriendo no
+      // se mueve de sitio.
+      async () => {
+        setPrivilegioEnCurso(clave);
+        try {
+          await operacion();
+        } finally {
+          setPrivilegioEnCurso(null);
+        }
+      },
+      {
+        etiqueta: "Actualizando privilegios",
+        onError: () => toast.error("No se pudo actualizar los privilegios."),
+      }
+    );
+  }
+
   useEffect(() => {
-    if (!modoDemo()) cargarPrivilegios(rolPrivilegios).catch(() => toast.error("No se pudieron cargar los privilegios."));
+    if (modoDemo()) return;
+    setCargandoPrivilegios(true);
+    cargarPrivilegios(rolPrivilegios)
+      .catch(() => toast.error("No se pudieron cargar los privilegios."))
+      .finally(() => setCargandoPrivilegios(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rolPrivilegios]);
 
@@ -148,6 +188,10 @@ export function RolesPrivilegiosView() {
     toast.success(`Rol "${deleteTarget.nombre}" eliminado.`);
     setDeleteTarget(null);
   }
+
+  // Roles personalizados, descripciones y matriz de privilegios viven en stores
+  // persistidos: hasta que rehidraten se muestra el esqueleto.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={4} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
@@ -297,8 +341,12 @@ export function RolesPrivilegiosView() {
               return (
                 <button
                   key={rol}
+                  type="button"
                   onClick={() => setRolPrivilegios(rol)}
-                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0"
+                  // Cambiar de rol a mitad de una escritura movería el spinner a la
+                  // celda equivalente del rol nuevo, que no es la que se está guardando.
+                  disabled={cambioPrivilegio.cargando}
+                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
                   style={{
                     backgroundColor: isActive ? `${cfg.color}1F` : "var(--hover-surface-2)",
                     color: isActive ? "var(--text-strong)" : "var(--text-dim)",
@@ -323,8 +371,10 @@ export function RolesPrivilegiosView() {
               return (
                 <button
                   key={rol.id}
+                  type="button"
                   onClick={() => setRolPrivilegios(rol.id)}
-                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0"
+                  disabled={cambioPrivilegio.cargando}
+                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
                   style={{
                     backgroundColor: isActive ? `${rol.color}1F` : "var(--hover-surface-2)",
                     color: isActive ? "var(--text-strong)" : "var(--text-dim)",
@@ -370,27 +420,38 @@ export function RolesPrivilegiosView() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => setTodos(rolPrivilegios, true).catch(() => toast.error("No se pudo actualizar los privilegios."))}
-                    className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => aplicarPrivilegio("todos:otorgar", () => setTodos(rolPrivilegios, true))}
+                    loading={privilegioEnCurso === "todos:otorgar"}
+                    loadingText="Otorgando…"
+                    disabled={matrizBloqueada}
+                    className="text-xs font-medium px-3 h-8 rounded-lg"
                     style={{ color: "var(--brand-accent)", backgroundColor: "var(--brand-tint)", border: "1px solid rgba(154,98,250,0.25)" }}
                   >
                     Otorgar todo
-                  </button>
-                  <button
-                    onClick={() => setTodos(rolPrivilegios, false).catch(() => toast.error("No se pudo actualizar los privilegios."))}
-                    className="text-xs font-medium px-3 h-8 rounded-lg transition-colors"
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => aplicarPrivilegio("todos:quitar", () => setTodos(rolPrivilegios, false))}
+                    loading={privilegioEnCurso === "todos:quitar"}
+                    loadingText="Quitando…"
+                    disabled={matrizBloqueada}
+                    className="text-xs font-medium px-3 h-8 rounded-lg"
                     style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                   >
                     Quitar todo
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
           })()}
 
           {/* Matriz interactiva módulo × acción */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}>
+          <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}>
+            <LoadingOverlay show={cargandoPrivilegios} message="Cargando privilegios" />
             <div className="overflow-x-auto">
               <div className="min-w-[660px]">
                 {/* Encabezado: acciones (clic = alternar columna completa) */}
@@ -410,18 +471,25 @@ export function RolesPrivilegiosView() {
                     return (
                       <button
                         key={accion}
-                        onClick={() => toggleAccionColumna(rolPrivilegios, accion).catch(() => toast.error("No se pudo actualizar los privilegios."))}
-                        className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors"
+                        type="button"
+                        onClick={() => aplicarPrivilegio(`col:${accion}`, () => toggleAccionColumna(rolPrivilegios, accion))}
+                        disabled={matrizBloqueada}
+                        aria-busy={privilegioEnCurso === `col:${accion}` || undefined}
+                        className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         title={enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
                         style={{ color: enAlgunos ? "var(--brand-accent)" : "var(--text-dim)", backgroundColor: enTodos ? "rgba(154,98,250,0.08)" : "transparent" }}
                       >
                         <span className="text-[11px] font-semibold">{ACCION_LABELS[accion]}</span>
-                        <span
-                          className="text-[9px] px-1 rounded-full"
-                          style={{ color: "var(--text-dim)", backgroundColor: "var(--border-subtle)" }}
-                        >
-                          {MODULOS.filter((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion)).length}/{MODULOS.length}
-                        </span>
+                        {privilegioEnCurso === `col:${accion}` ? (
+                          <Spinner size={12} />
+                        ) : (
+                          <span
+                            className="text-[9px] px-1 rounded-full"
+                            style={{ color: "var(--text-dim)", backgroundColor: "var(--border-subtle)" }}
+                          >
+                            {MODULOS.filter((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion)).length}/{MODULOS.length}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -440,8 +508,11 @@ export function RolesPrivilegiosView() {
                       style={{ gridTemplateColumns: GRID_COLS, borderTop: i === 0 ? "none" : "1px solid var(--hover-surface)" }}
                     >
                       <button
-                        onClick={() => toggleModuloCompleto(rolPrivilegios, modulo).catch(() => toast.error("No se pudo actualizar los privilegios."))}
-                        className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
+                        type="button"
+                        onClick={() => aplicarPrivilegio(`mod:${modulo}`, () => toggleModuloCompleto(rolPrivilegios, modulo))}
+                        disabled={matrizBloqueada}
+                        aria-busy={privilegioEnCurso === `mod:${modulo}` || undefined}
+                        className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         style={{ backgroundColor: "var(--surface-profile)" }}
                         title={todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
                       >
@@ -449,7 +520,11 @@ export function RolesPrivilegiosView() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                           style={{ backgroundColor: todoActivo ? "rgba(154,98,250,0.18)" : "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.16)" }}
                         >
-                          <ModIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+                          {privilegioEnCurso === `mod:${modulo}` ? (
+                            <Spinner size={16} />
+                          ) : (
+                            <ModIcon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{modCfg.label}</p>
@@ -461,11 +536,16 @@ export function RolesPrivilegiosView() {
 
                       {ACCIONES.map((accion) => {
                         const activa = activas.includes(accion);
+                        const clave = `cel:${modulo}:${accion}`;
+                        const enCurso = privilegioEnCurso === clave;
                         return (
                           <button
                             key={accion}
-                            onClick={() => toggleAccion(rolPrivilegios, modulo, accion).catch(() => toast.error("No se pudo actualizar los privilegios."))}
-                            className="flex items-center justify-center py-3 group"
+                            type="button"
+                            onClick={() => aplicarPrivilegio(clave, () => toggleAccion(rolPrivilegios, modulo, accion))}
+                            disabled={matrizBloqueada}
+                            aria-busy={enCurso || undefined}
+                            className="flex items-center justify-center py-3 group disabled:cursor-not-allowed disabled:opacity-60"
                             aria-pressed={activa}
                             aria-label={`${activa ? "Quitar" : "Otorgar"} ${ACCION_LABELS[accion]} en ${modCfg.label}`}
                           >
@@ -477,7 +557,9 @@ export function RolesPrivilegiosView() {
                                 boxShadow: activa ? "0 2px 8px rgba(154,98,250,0.4)" : "none",
                               }}
                             >
-                              {activa ? (
+                              {enCurso ? (
+                                <Spinner size={14} />
+                              ) : activa ? (
                                 <Check className="w-4 h-4" style={{ color: "var(--brand-fg)" }} />
                               ) : (
                                 <span className="w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: "var(--brand)" }} />

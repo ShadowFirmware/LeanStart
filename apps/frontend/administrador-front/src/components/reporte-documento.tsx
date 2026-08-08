@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Printer, Download, Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { Button, useAccion, GIRO_LABELS } from "@leanstart/commons";
 import type { Empresa, CanvasData } from "@leanstart/empresas-front";
-import { GIRO_LABELS, type ReporteCalculo } from "../lib/reporte";
+import type { ReporteCalculo } from "../lib/reporte";
 
 const CANVAS_BLOCKS: { key: keyof CanvasData; label: string }[] = [
   { key: "problema", label: "Problema" },
@@ -63,56 +64,58 @@ function nombreArchivo(empresa: Empresa, esBoleta: boolean): string {
 export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comentarioEvaluador, guardado, onGuardar, onClose }: ReporteDocumentoProps) {
   const esBoleta = tipo === "boleta";
   const printRef = useRef<HTMLDivElement>(null);
-  const [generandoPdf, setGenerandoPdf] = useState(false);
-  const [guardando, setGuardando] = useState(false);
+  const descarga = useAccion();
+  const guardadoReporte = useAccion();
 
   async function descargarPDF() {
-    if (!printRef.current || generandoPdf) return;
-    setGenerandoPdf(true);
-    try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-        import("jspdf"),
-        import("html2canvas"),
-      ]);
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" });
-      const imgData = canvas.toDataURL("image/png");
+    if (!printRef.current) return;
+    await descarga.ejecutar(
+      async () => {
+        const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+          import("jspdf"),
+          import("html2canvas"),
+        ]);
+        const canvas = await html2canvas(printRef.current!, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" });
+        const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF({ unit: "mm", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const pdf = new jsPDF({ unit: "mm", format: "a4" });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
+        let heightLeft = imgHeight;
+        let position = 0;
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
-      }
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
 
-      pdf.save(nombreArchivo(empresa, esBoleta));
-    } catch {
-      toast.error("No se pudo generar el PDF.");
-    } finally {
-      setGenerandoPdf(false);
-    }
+        pdf.save(nombreArchivo(empresa, esBoleta));
+      },
+      {
+        etiqueta: "Generando PDF",
+        onError: () => toast.error("No se pudo generar el PDF."),
+      }
+    );
   }
 
   async function handleGuardar() {
-    setGuardando(true);
-    try {
-      await onGuardar();
-      toast.success("Reporte guardado en el historial.");
-      onClose();
-    } catch {
-      toast.error("No se pudo guardar el reporte.");
-    } finally {
-      setGuardando(false);
-    }
+    await guardadoReporte.ejecutar(
+      async () => {
+        await onGuardar();
+        toast.success("Reporte guardado en el historial.");
+        onClose();
+      },
+      {
+        etiqueta: "Guardando reporte",
+        onError: () => toast.error("No se pudo guardar el reporte."),
+      }
+    );
   }
 
   return (
@@ -133,32 +136,35 @@ export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comenta
           {esBoleta ? "Boleta de evaluación" : "Reporte Lean Canvas"} · {empresa.nombre}
         </span>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg"
+            disabled={descarga.cargando}
+            className="h-9 px-4 text-sm font-medium"
             style={{ backgroundColor: "transparent", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
           >
             <Printer className="w-4 h-4" /> Imprimir
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={descargarPDF}
-            disabled={generandoPdf}
-            className="inline-flex items-center gap-2 text-sm font-medium px-4 h-9 rounded-lg border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            loading={descarga.cargando}
+            loadingText="Generando…"
+            className="h-9 px-4 text-sm font-medium border-0"
             style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
           >
-            <Download className="w-4 h-4" /> {generandoPdf ? "Generando..." : "Descargar PDF"}
-          </button>
-          <button
+            <Download className="w-4 h-4" /> Descargar PDF
+          </Button>
+          <Button
             type="button"
+            size="icon-lg"
             onClick={onClose}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-lg"
+            className="rounded-lg"
             style={{ color: "var(--text-strong)", backgroundColor: "var(--border-subtle)" }}
             aria-label="Cerrar"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -221,23 +227,25 @@ export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comenta
             className="no-print w-full max-w-[820px] flex items-center justify-end gap-3 mt-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center gap-2 text-sm font-medium px-4 h-10 rounded-xl"
+              disabled={guardadoReporte.cargando}
+              className="h-10 px-4 text-sm font-medium rounded-xl"
               style={{ backgroundColor: "transparent", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleGuardar}
-              disabled={guardando}
-              className="inline-flex items-center gap-2 text-sm font-medium px-4 h-10 rounded-xl border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              loading={guardadoReporte.cargando}
+              loadingText="Guardando…"
+              className="h-10 px-4 text-sm font-medium rounded-xl border-0"
               style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
-              <Save className="w-4 h-4" /> {guardando ? "Guardando..." : "Guardar reporte"}
-            </button>
+              <Save className="w-4 h-4" /> Guardar reporte
+            </Button>
           </div>
         )}
       </div>

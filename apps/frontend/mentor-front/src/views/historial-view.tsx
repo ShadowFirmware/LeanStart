@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  MessageSquare, ClipboardList, CheckCircle2, Search,
+  MessageSquare, ClipboardList, CheckCircle2, Search, ChevronDown, ArrowRight,
   LayoutTemplate, Package, Lightbulb, Building2,
 } from "lucide-react";
 import { useEmpresasStore, useObservacionesStore, type CanvasData, type Observacion } from "@leanstart/empresas-front";
-import { useHasHydrated, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, usePagination, PaginationBar } from "@leanstart/commons";
+import { useHasHydrated, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, usePagination, PaginationBar, ViewSkeleton, EmpresaLogo } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
 
 const TODOS_LOS_ESTADOS = "todos";
@@ -76,6 +76,7 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
         empresaId: o.empresaId,
         fecha: o.creadaEn,
         empresaNombre: empresa?.nombre ?? "Empresa eliminada",
+        empresaLogoUrl: empresa?.logoUrl,
         modulo: o.tipoElemento,
         elemento,
         comentario: o.comentario,
@@ -100,9 +101,56 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
     return coincideBusqueda && coincideEstado && coincideModulo;
   });
 
-  const { page, setPage, totalPages, pageItems: registrosPagina, pageSize, totalItems } = usePagination(registrosFiltrados, {
+  /* ─── Agrupación por proyecto ───
+     Un mentor con veinte observaciones repartidas en tres empresas veía veinte
+     tarjetas seguidas repitiendo el nombre del proyecto: una lista larguísima
+     aunque estuviera paginada, porque la unidad de la página era la observación
+     y no el proyecto. Ahora la página lista proyectos —que es como el mentor
+     piensa su trabajo— y cada uno abre sus observaciones al desplegarlo. */
+  const grupos = useMemo(() => {
+    const porEmpresa = new Map<string, typeof registrosFiltrados>();
+    for (const registro of registrosFiltrados) {
+      const acumulado = porEmpresa.get(registro.empresaId);
+      if (acumulado) acumulado.push(registro);
+      else porEmpresa.set(registro.empresaId, [registro]);
+    }
+
+    return [...porEmpresa.entries()]
+      .map(([empresaId, items]) => ({
+        empresaId,
+        empresaNombre: items[0].empresaNombre,
+        empresaLogoUrl: items[0].empresaLogoUrl,
+        items,
+        atendidas: items.filter((r) => r.estado === "atendida" || r.estado === "cerrada").length,
+        pendientes: items.filter((r) => r.estado !== "atendida" && r.estado !== "cerrada").length,
+      }))
+      // Primero los proyectos que todavía esperan algo, y entre ellos los que
+      // más carga acumulan: lo que el mentor necesita atender queda arriba.
+      .sort((a, b) => b.pendientes - a.pendientes || b.items.length - a.items.length || a.empresaNombre.localeCompare(b.empresaNombre));
+  }, [registrosFiltrados]);
+
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+
+  function alternarGrupo(empresaId: string) {
+    setExpandidos((previos) => {
+      const siguiente = new Set(previos);
+      if (siguiente.has(empresaId)) siguiente.delete(empresaId);
+      else siguiente.add(empresaId);
+      return siguiente;
+    });
+  }
+
+  // Buscando un texto, esconder los resultados detrás de un clic sería absurdo:
+  // con búsqueda activa los grupos vienen abiertos.
+  const hayBusqueda = busqueda.trim().length > 0;
+
+  const { page, setPage, totalPages, pageItems: gruposPagina, pageSize, totalItems } = usePagination(grupos, {
+    pageSize: 8,
     resetKey: `${busqueda}|${filtroEstado}|${filtroModulo}`,
   });
+
+  // Esqueleto neutro hasta rehidratar: evita mostrar "sin observaciones" un instante.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={4} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
@@ -212,9 +260,17 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
 
       {/* Lista de observaciones */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--text-dim)" }}>
-          Observaciones realizadas
-        </p>
+        <div className="flex items-baseline justify-between gap-3 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-dim)" }}>
+            Observaciones por proyecto
+          </p>
+          {grupos.length > 0 && (
+            <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+              {registrosFiltrados.length} {registrosFiltrados.length === 1 ? "observación" : "observaciones"} en{" "}
+              {grupos.length} {grupos.length === 1 ? "proyecto" : "proyectos"}
+            </p>
+          )}
+        </div>
 
         {registrosFiltrados.length === 0 ? (
           <div
@@ -230,55 +286,108 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {registrosPagina.map((r) => {
-              const cfg = ESTADO_OBS_CONFIG[r.estado];
-              const moduloCfg = MODULO_CONFIG[r.modulo];
+            {gruposPagina.map((grupo) => {
+              const abierto = hayBusqueda || expandidos.has(grupo.empresaId);
               return (
-                <Link
-                  key={r.id}
-                  href={`/mentor/empresas/${r.empresaId}`}
-                  className="flex items-start gap-4 rounded-xl px-5 py-4 transition-[border-color]"
+                <div
+                  key={grupo.empresaId}
+                  className="rounded-xl overflow-hidden"
                   style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "rgba(154,98,250,0.25)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
+                  {/* Cabecera del proyecto: desplegar va aquí y abrir el proyecto
+                      en su propio enlace, al pie del grupo — anidar un <a> dentro
+                      de un <button> no es HTML válido y rompe el teclado. */}
+                  <button
+                    type="button"
+                    onClick={() => alternarGrupo(grupo.empresaId)}
+                    aria-expanded={abierto}
+                    className="flex w-full min-w-0 items-center gap-4 px-5 py-4 text-left"
                   >
-                    <moduloCfg.icon className="w-4.5 h-4.5" style={{ color: "var(--brand)" }} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>
-                          {r.empresaNombre}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                          {moduloCfg.label} · {r.elemento}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          className="text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
-                          style={{ color: cfg.color, backgroundColor: cfg.bg }}
-                        >
-                          {cfg.label}
-                        </span>
-                        <span className="text-[11px] whitespace-nowrap" style={{ color: "var(--text-faint)" }}>
-                          {r.fecha}
-                        </span>
-                      </div>
+                    <EmpresaLogo nombre={grupo.empresaNombre} logoUrl={grupo.empresaLogoUrl} size={40} radio="lg" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>
+                        {grupo.empresaNombre}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+                        {grupo.items.length} {grupo.items.length === 1 ? "observación" : "observaciones"}
+                        {grupo.pendientes > 0 && ` · ${grupo.pendientes} sin atender`}
+                        {grupo.atendidas > 0 && ` · ${grupo.atendidas} ${grupo.atendidas === 1 ? "atendida" : "atendidas"}`}
+                      </p>
                     </div>
-                    <p
-                      className="text-sm mt-2 leading-relaxed break-words"
-                      style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}
-                    >
-                      {r.comentario}
-                    </p>
-                  </div>
-                </Link>
+                    {grupo.pendientes > 0 && (
+                      <span
+                        className="text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
+                        style={{ color: "#F59E0B", backgroundColor: "rgba(245,158,11,0.12)" }}
+                      >
+                        {grupo.pendientes} pendiente{grupo.pendientes === 1 ? "" : "s"}
+                      </span>
+                    )}
+                    <ChevronDown
+                      className="w-4 h-4 shrink-0 transition-transform"
+                      style={{ color: "var(--text-dim)", transform: abierto ? "rotate(180deg)" : "none" }}
+                      aria-hidden
+                    />
+                  </button>
+
+                  {abierto && (
+                    <div className="flex flex-col" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                      {grupo.items.map((r, i) => {
+                        const cfg = ESTADO_OBS_CONFIG[r.estado];
+                        const moduloCfg = MODULO_CONFIG[r.modulo];
+                        return (
+                          <div
+                            key={r.id}
+                            className="flex items-start gap-3 px-5 py-3"
+                            style={{ borderTop: i === 0 ? "none" : "1px solid var(--hover-surface)" }}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                              style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
+                            >
+                              <moduloCfg.icon className="w-4 h-4" style={{ color: "var(--brand)" }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3 flex-wrap">
+                                <p className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>
+                                  {moduloCfg.label} · {r.elemento}
+                                </p>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span
+                                    className="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                                    style={{ color: cfg.color, backgroundColor: cfg.bg }}
+                                  >
+                                    {cfg.label}
+                                  </span>
+                                  <span className="text-[11px] whitespace-nowrap" style={{ color: "var(--text-faint)" }}>
+                                    {r.fecha}
+                                  </span>
+                                </div>
+                              </div>
+                              {/* Recortado a dos líneas: un comentario de 500 caracteres
+                                  no puede estirar la fila del resto. */}
+                              <p
+                                className="text-sm mt-1 leading-relaxed break-words line-clamp-2"
+                                style={{ color: "var(--muted-foreground)", overflowWrap: "anywhere" }}
+                                title={r.comentario}
+                              >
+                                {r.comentario}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <Link
+                        href={`/mentor/empresas/${grupo.empresaId}`}
+                        className="flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-medium transition-colors"
+                        style={{ color: "var(--brand)", borderTop: "1px solid var(--hover-surface)" }}
+                      >
+                        Abrir proyecto
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -290,7 +399,7 @@ export function MentorHistorialView({ autorNombre = "Mentor Demo" }: MentorHisto
           onPageChange={setPage}
           totalItems={totalItems}
           pageSize={pageSize}
-          itemLabel={totalItems === 1 ? "observación" : "observaciones"}
+          itemLabel={totalItems === 1 ? "proyecto" : "proyectos"}
         />
       </div>
     </div>

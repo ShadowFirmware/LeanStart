@@ -13,7 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-  Input, Textarea, debounce,
+  Input, Textarea, debounce, useHasHydrated, useAccion, ViewSkeleton,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useCriteriosStore, type Criterio } from "../store/criterios";
@@ -37,6 +37,20 @@ const inputStyle = {
   border: "1px solid var(--border-hair)",
   color: "var(--text-strong)",
 };
+
+const cardStyle = {
+  backgroundColor: "var(--surface-profile)",
+  boxShadow: "var(--shadow-card)",
+  border: "1px solid var(--border-subtle)",
+};
+
+/* Paleta de la barra de reparto: cada criterio conserva su color entre la barra
+   resumen y la franja de su tarjeta, para poder relacionarlos de un vistazo. */
+const PALETA_CRITERIOS = ["#9A62FA", "#3B82F6", "#10B981", "#F59E0B", "#EC4899", "#14B8A6", "#F97316", "#6366F1"];
+
+function colorCriterio(indice: number): string {
+  return PALETA_CRITERIOS[indice % PALETA_CRITERIOS.length];
+}
 
 /* ─── Stepper de peso: editar el % directo en la tarjeta, sin abrir el diálogo ─── */
 function PesoStepper({ criterio, maxPeso }: { criterio: Criterio; maxPeso: number }) {
@@ -117,6 +131,7 @@ function PesoStepper({ criterio, maxPeso }: { criterio: Criterio; maxPeso: numbe
 }
 
 export function CriteriosEvaluacionView() {
+  const hydrated = useHasHydrated();
   const criterios = useCriteriosStore((s) => s.criterios);
   const agregarCriterio = useCriteriosStore((s) => s.agregarCriterio);
   const editarCriterio = useCriteriosStore((s) => s.editarCriterio);
@@ -125,6 +140,9 @@ export function CriteriosEvaluacionView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Criterio | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Criterio | null>(null);
+
+  const { cargando: guardando, ejecutar: ejecutarGuardado } = useAccion();
+  const { cargando: eliminando, ejecutar: ejecutarEliminado } = useAccion();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -163,40 +181,58 @@ export function CriteriosEvaluacionView() {
       });
       return;
     }
-    try {
-      if (editTarget) {
-        await editarCriterio(editTarget.id, data);
-        toast.success(`"${data.nombre}" fue actualizado.`);
-      } else {
-        await agregarCriterio(data);
-        toast.success(`"${data.nombre}" fue creado correctamente.`);
+    await ejecutarGuardado(
+      async () => {
+        if (editTarget) {
+          await editarCriterio(editTarget.id, data);
+          toast.success(`"${data.nombre}" fue actualizado.`);
+        } else {
+          await agregarCriterio(data);
+          toast.success(`"${data.nombre}" fue creado correctamente.`);
+        }
+        setDialogOpen(false);
+      },
+      {
+        etiqueta: editTarget ? "Guardando criterio" : "Creando criterio",
+        onError: () => toast.error("No se pudo guardar el criterio."),
       }
-      setDialogOpen(false);
-    } catch {
-      toast.error("No se pudo guardar el criterio.");
-    }
+    );
   }
 
   async function confirmarEliminar() {
     if (!deleteTarget) return;
-    try {
-      await eliminarCriterio(deleteTarget.id);
-      toast.success(`"${deleteTarget.nombre}" fue eliminado.`);
-    } catch {
-      toast.error("No se pudo eliminar el criterio.");
-    }
+    const objetivo = deleteTarget;
+    await ejecutarEliminado(
+      async () => {
+        await eliminarCriterio(objetivo.id);
+        toast.success(`"${objetivo.nombre}" fue eliminado.`);
+      },
+      { etiqueta: "Eliminando criterio", onError: () => toast.error("No se pudo eliminar el criterio.") }
+    );
     setDeleteTarget(null);
   }
+
+  // Esqueleto neutro hasta rehidratar el store persistido: sin él, la rúbrica
+  // aparecía vacía ("Aún no hay criterios") durante el primer render.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={4} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Criterios de Evaluación</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-            {criterios.length} {criterios.length === 1 ? "criterio registrado" : "criterios registrados"}
-          </p>
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}
+          >
+            <ClipboardList className="w-5 h-5" style={{ color: "var(--brand)" }} />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold" style={{ color: "var(--text-strong)" }}>Criterios de Evaluación</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
+              {criterios.length} {criterios.length === 1 ? "criterio registrado" : "criterios registrados"} · rúbrica al {pesoTotal}%
+            </p>
+          </div>
         </div>
         <Button
           onClick={abrirCrear}
@@ -210,53 +246,76 @@ export function CriteriosEvaluacionView() {
         </Button>
       </div>
 
-      {/* Resumen de peso total */}
-      <div
-        className="rounded-xl p-5"
-        style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex items-center justify-between mb-2">
+      {/* Resumen de peso total: barra segmentada por criterio, no una sola masa */}
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <div className="flex items-center justify-between gap-3 mb-2">
           <span className="text-xs font-medium" style={{ color: "var(--text-dim)" }}>
             Peso total de la rúbrica
           </span>
-          <span className="text-xs font-semibold" style={{ color: estadoColor }}>
+          <span className="text-xs font-semibold text-right" style={{ color: estadoColor }}>
             {pesoTotal}% · {estadoLabel}
           </span>
         </div>
-        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-hair)" }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${Math.min(pesoTotal, 100)}%`, backgroundColor: estadoColor }}
-          />
+
+        <div className="flex w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-hair)" }}>
+          {criterios.map((criterio, i) => (
+            <div
+              key={criterio.id}
+              className="h-full transition-all"
+              style={{
+                width: `${Math.min(criterio.peso, 100)}%`,
+                backgroundColor: colorCriterio(i),
+                borderRight: "1px solid var(--surface-profile)",
+              }}
+              title={`${criterio.nombre}: ${criterio.peso}%`}
+            />
+          ))}
         </div>
-        <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>
-          Los pesos de todos los criterios deben sumar exactamente 100% para que la rúbrica sea válida.
-        </p>
+
+        {estado !== "completo" && (
+          <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>
+            Los pesos de todos los criterios deben sumar exactamente 100% para que la rúbrica sea válida.
+          </p>
+        )}
       </div>
 
       {/* Lista de criterios */}
       {criterios.length === 0 ? (
-        <div
-          className="rounded-xl p-14 text-center"
-          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-        >
-          <ClipboardList className="w-9 h-9 mx-auto mb-3" style={{ color: "var(--text-faint)" }} />
+        <div className="rounded-xl p-14 text-center" style={cardStyle}>
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: "var(--brand-tint)", border: "1px solid var(--brand-tint-strong)" }}
+          >
+            <ClipboardList className="w-5 h-5" style={{ color: "var(--brand)" }} />
+          </div>
           <p className="text-sm font-medium mb-1" style={{ color: "var(--text-strong)" }}>Aún no hay criterios</p>
-          <p className="text-sm" style={{ color: "var(--text-dim)" }}>Crea el primer criterio de la rúbrica para comenzar.</p>
+          <p className="text-sm mb-5" style={{ color: "var(--text-dim)" }}>Crea el primer criterio de la rúbrica para comenzar.</p>
+          <Button
+            onClick={abrirCrear}
+            className="h-9 px-4 text-sm font-medium border-0"
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
+          >
+            <Plus className="w-4 h-4" />
+            Agregar criterio
+          </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {criterios.map((criterio) => (
+          {criterios.map((criterio, i) => (
             <div
               key={criterio.id}
-              className="flex items-start gap-4 rounded-xl p-5"
-              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+              className="relative flex items-start gap-4 rounded-xl p-5 pl-6 overflow-hidden transition-shadow hover:shadow-lg"
+              style={cardStyle}
             >
+              {/* Franja del color con el que aparece en la barra de arriba */}
+              <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: colorCriterio(i) }} aria-hidden />
+
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)" }}
+                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold"
+                style={{ backgroundColor: "rgba(154,98,250,0.10)", border: "1px solid rgba(154,98,250,0.16)", color: "var(--brand)" }}
+                aria-hidden
               >
-                <ClipboardList className="w-5 h-5" style={{ color: "var(--brand)" }} />
+                {i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
@@ -290,6 +349,19 @@ export function CriteriosEvaluacionView() {
                 <p className="text-sm mt-1 leading-relaxed" style={{ color: "var(--text-dim)" }}>
                   {criterio.descripcion}
                 </p>
+
+                {/* Aporte del criterio a la calificación final */}
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: "var(--border-hair)" }}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${Math.min(criterio.peso, 100)}%`, backgroundColor: colorCriterio(i) }}
+                    />
+                  </div>
+                  <span className="text-[11px] shrink-0" style={{ color: "var(--text-faint)" }}>
+                    {criterio.peso}% del total
+                  </span>
+                </div>
               </div>
             </div>
           ))}
@@ -378,6 +450,8 @@ export function CriteriosEvaluacionView() {
                 </Button>
                 <Button
                   type="submit"
+                  loading={guardando}
+                  loadingText={editTarget ? "Guardando…" : "Creando…"}
                   className="border-0"
                   style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                 >
@@ -404,6 +478,8 @@ export function CriteriosEvaluacionView() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmarEliminar}
+              loading={eliminando}
+              loadingText="Eliminando…"
               className="bg-red-500 hover:bg-red-600 text-white border-0"
             >
               <Trash2 className="w-4 h-4" /> Eliminar

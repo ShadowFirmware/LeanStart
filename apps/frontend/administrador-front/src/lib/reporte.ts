@@ -1,18 +1,7 @@
 import type { Empresa } from "@leanstart/empresas-front";
-import type { GiroEmpresa } from "@leanstart/commons";
 import type { Criterio } from "../store/criterios";
 import type { NivelViabilidad } from "../store/viabilidad";
 import type { EvaluacionEmpresa } from "../store/evaluaciones";
-
-export const GIRO_LABELS: Record<GiroEmpresa, string> = {
-  tecnologia: "Tecnología",
-  educacion: "Educación",
-  salud: "Salud",
-  sustentabilidad: "Sustentabilidad",
-  alimentacion: "Alimentación",
-  comercio: "Comercio",
-  servicios: "Servicios",
-};
 
 export interface CriterioCalculado {
   id: string;

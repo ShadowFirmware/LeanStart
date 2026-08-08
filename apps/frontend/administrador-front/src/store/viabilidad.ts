@@ -12,6 +12,13 @@ export interface NivelViabilidad {
 
 const PALETA_NIVELES = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#9A62FA", "#EC4899", "#14B8A6", "#F97316"];
 
+export interface NuevoNivel {
+  nombre?: string;
+  color?: string;
+  /** Límite superior inclusivo (1-99). El último nivel siempre termina en 100. */
+  hasta?: number;
+}
+
 interface ViabilidadStore {
   /** Peso (%) que aporta la evaluación al score final. El resto lo aporta la validación de hipótesis. */
   pesoEvaluacion: number;
@@ -23,7 +30,12 @@ interface ViabilidadStore {
   actualizarHastaNivel: (id: string, hasta: number) => Promise<void>;
   editarNivel: (id: string, data: { nombre: string; color: string }) => Promise<void>;
   actualizarUmbralPublicacion: (umbral: number) => Promise<void>;
-  agregarNivel: () => Promise<boolean>;
+  /**
+   * Agrega un nivel. Con `datos.hasta` el nivel se inserta en la posición que
+   * le corresponde según su límite superior; sin él se parte en dos el último
+   * tramo (comportamiento histórico). Devuelve `false` si el tramo no cabe.
+   */
+  agregarNivel: (datos?: NuevoNivel) => Promise<boolean>;
   eliminarNivel: (id: string) => Promise<void>;
   reordenarNivel: (desde: number, hasta: number) => Promise<void>;
 }
@@ -100,28 +112,41 @@ export const useViabilidadStore = create<ViabilidadStore>()(
         });
       },
 
-      async agregarNivel() {
+      async agregarNivel(datos) {
         if (!modoDemo()) {
           const { creado, niveles } = await apiFetch<{ creado: boolean; niveles: NivelViabilidad[] }>("/viabilidad/niveles", {
             method: "POST",
+            body: JSON.stringify(datos ?? {}),
+            etiquetaCarga: "Agregando nivel",
           });
           set({ niveles });
           return creado;
         }
 
         const niveles = get().niveles;
-        const lower = niveles.length >= 2 ? niveles[niveles.length - 2].hasta : 0;
-        const upper = niveles[niveles.length - 1]?.hasta ?? 100;
-        if (upper - lower < 2) return false;
-        const mid = lower + Math.floor((upper - lower) / 2);
-        const nuevo: NivelViabilidad = {
-          id: crypto.randomUUID(),
-          nombre: "Nuevo nivel",
-          hasta: mid,
-          color: PALETA_NIVELES[niveles.length % PALETA_NIVELES.length],
-        };
+        const nombre = datos?.nombre?.trim() || "Nuevo nivel";
+        const color = datos?.color ?? PALETA_NIVELES[niveles.length % PALETA_NIVELES.length];
+
+        let posicion: number;
+        let hasta: number;
+
+        if (datos?.hasta === undefined) {
+          const lower = niveles.length >= 2 ? niveles[niveles.length - 2].hasta : 0;
+          const upper = niveles[niveles.length - 1]?.hasta ?? 100;
+          if (upper - lower < 2) return false;
+          hasta = lower + Math.floor((upper - lower) / 2);
+          posicion = Math.max(niveles.length - 1, 0);
+        } else {
+          hasta = Math.round(datos.hasta);
+          posicion = niveles.filter((n) => n.hasta < hasta).length;
+          const siguiente = niveles[posicion];
+          // Sin un nivel por encima, o con ese límite ya ocupado, el tramo no cabe.
+          if (!siguiente || siguiente.hasta <= hasta) return false;
+        }
+
+        const nuevo: NivelViabilidad = { id: crypto.randomUUID(), nombre, hasta, color };
         const copia = [...niveles];
-        copia.splice(Math.max(niveles.length - 1, 0), 0, nuevo);
+        copia.splice(posicion, 0, nuevo);
         set({ niveles: copia });
         return true;
       },
@@ -186,6 +211,6 @@ export const useViabilidadStore = create<ViabilidadStore>()(
         });
       },
     }),
-    { name: "leanstart-viabilidad" }
+    { name: "leanstart-viabilidad", skipHydration: true }
   )
 );

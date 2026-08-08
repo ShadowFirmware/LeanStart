@@ -6,6 +6,7 @@ import { Toaster } from "@leanstart/commons";
 import { Providers } from "@/components/providers";
 import { LiveSync } from "@/components/live-sync";
 import { InactivityLogout } from "@/components/inactivity-logout";
+import { IndicadorCarga } from "@/components/indicador-carga";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <Providers>
           <LiveSync />
           <InactivityLogout />
+          <IndicadorCarga />
           <TooltipProvider>
             {children}
             <Toaster />

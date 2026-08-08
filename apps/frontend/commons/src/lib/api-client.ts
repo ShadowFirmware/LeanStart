@@ -1,4 +1,5 @@
 import { getSession, signOut } from "next-auth/react";
+import { useCargaStore } from "../store/carga";
 
 /**
  * Interruptor de modo demo (mismo flag que `DEMO_MODE` en `./demo.ts`, expuesto
@@ -38,14 +39,37 @@ interface ApiFetchOptions extends RequestInit {
    * poder pedir algo tan básico como la galería pública.
    */
   skipAuth?: boolean;
+  /**
+   * Texto del indicador global de carga mientras la llamada está en vuelo.
+   * Solo aplica a escrituras (todo lo que no sea GET). `null` la excluye del
+   * indicador, para llamadas de fondo que el usuario no ha pedido (logout,
+   * polling…).
+   */
+  etiquetaCarga?: string | null;
 }
 
 /**
  * Llama al api-gateway adjuntando el Bearer token de la sesión activa (si existe).
  * Lanza un Error con el mensaje real del backend cuando la respuesta no es ok,
  * en vez de un "Failed to fetch" genérico.
+ *
+ * Toda escritura se anuncia en el registro global de carga, de modo que el
+ * indicador "Guardando cambios…" del shell aparece en cualquier módulo sin que
+ * la vista tenga que acordarse de pintarlo.
  */
 export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Promise<T> {
+  const metodo = (options?.method ?? "GET").toUpperCase();
+  const seguir = metodo !== "GET" && options?.etiquetaCarga !== null;
+
+  if (seguir) useCargaStore.getState().iniciar(options?.etiquetaCarga ?? undefined);
+  try {
+    return await ejecutarFetch<T>(path, options);
+  } finally {
+    if (seguir) useCargaStore.getState().terminar();
+  }
+}
+
+async function ejecutarFetch<T>(path: string, options?: ApiFetchOptions): Promise<T> {
   const token = options?.skipAuth
     ? undefined
     : (await getSession() as { accessToken?: string } | null)?.accessToken;
@@ -80,5 +104,5 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
  */
 export async function cerrarSesionBackend(): Promise<void> {
   if (modoDemo()) return;
-  await apiFetch("/auth/logout", { method: "POST" }).catch(() => {});
+  await apiFetch("/auth/logout", { method: "POST", etiquetaCarga: null }).catch(() => {});
 }

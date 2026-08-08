@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { modoDemo, useUsuariosStore, usePerfilStore } from "@leanstart/commons";
 import {
   useCriteriosStore, useEvaluacionesStore, usePrivilegiosStore,
-  useReportesGeneradosStore, useViabilidadStore,
+  useReportesGeneradosStore, useViabilidadStore, useRolesStore,
 } from "@leanstart/administrador-front";
 
 /**
@@ -33,7 +33,18 @@ const STORES = [
   { key: "leanstart-evaluaciones", store: useEvaluacionesStore },
   { key: "leanstart-privilegios", store: usePrivilegiosStore },
   { key: "leanstart-reportes-generados", store: useReportesGeneradosStore },
+  { key: "leanstart-criterios", store: useCriteriosStore },
+  { key: "leanstart-roles", store: useRolesStore },
+  { key: "leanstart-viabilidad", store: useViabilidadStore },
 ] as const;
+
+/**
+ * En el navegador la rehidratación inicial corre en un layout effect, que se
+ * ejecuta tras el commit pero ANTES de pintar: así las vistas nunca alcanzan a
+ * mostrarse con los stores vacíos (el "empresa no encontrada" fugaz). En el
+ * render del servidor no hay layout effects, de ahí el intercambio.
+ */
+const useEfectoDePintado = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export function LiveSync() {
   const { data: session, status } = useSession();
@@ -41,7 +52,7 @@ export function LiveSync() {
   const userId = session?.user?.id;
 
   // Rehidratación inicial (una vez, tras montar en el cliente).
-  useEffect(() => {
+  useEfectoDePintado(() => {
     STORES.forEach(({ store }) => void store.persist?.rehydrate());
   }, []);
 

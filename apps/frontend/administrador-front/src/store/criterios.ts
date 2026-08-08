@@ -75,6 +75,9 @@ export const useCriteriosStore = create<CriteriosStore>()(
         set({ criterios: get().criterios.filter((c) => c.id !== id) });
       },
     }),
-    { name: "leanstart-criterios" }
+    // skipHydration: la rehidratación inicial la dispara <LiveSync/> tras montar,
+    // igual que el resto de stores. Sin esto el store se rehidrataba al importar
+    // el módulo y el primer render de cliente no coincidía con el del servidor.
+    { name: "leanstart-criterios", skipHydration: true }
   )
 );

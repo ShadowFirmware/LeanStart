@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Bell, MessageSquare, ClipboardCheck, CheckCircle2, RotateCcw, Building2, PencilLine, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { useHasHydrated, usePagination, PaginationBar } from "@leanstart/commons";
+import { Button, useAccion, useHasHydrated, usePagination, PaginationBar, ViewSkeleton } from "@leanstart/commons";
 import { useNotificacionesStore, type TipoNotificacion, type DestinatarioNotificacion } from "../store/notificaciones";
 
 const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -14,6 +14,9 @@ const TIPO_CONFIG: Record<TipoNotificacion, { icon: React.ElementType; color: st
   proyecto_devuelto:   { icon: RotateCcw,      color: "#EF4444", bg: "rgba(239,68,68,0.12)",    label: "Devuelto" },
   proyecto_asignado:   { icon: UserPlus,       color: "#3B82F6", bg: "rgba(59,130,246,0.12)",   label: "Proyecto asignado" },
 };
+
+/** Marcado de salida en vuelo, a nivel de módulo para que sobreviva al desmontaje. */
+let salidaPendiente: ReturnType<typeof setTimeout> | null = null;
 
 interface NotificacionesViewProps {
   /** Rol cuyas notificaciones se muestran. */
@@ -29,44 +32,42 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   const { page, setPage, totalPages, pageItems: notificacionesPagina, pageSize, totalItems } = usePagination(notificaciones);
+  const marcado = useAccion();
 
   async function marcarTodasLeidas() {
-    try {
-      await marcarTodasLeidasStore();
-    } catch {
-      toast.error("No se pudieron marcar las notificaciones como leídas.");
-    }
+    await marcado.ejecutar(marcarTodasLeidasStore, {
+      etiqueta: "Marcando notificaciones",
+      onError: () => toast.error("No se pudieron marcar las notificaciones como leídas."),
+    });
   }
 
-  // Como en la mensajería de un teléfono: con solo entrar a este apartado, lo que
-  // haya sin leer se marca como leído, sin que el usuario tenga que hacer nada más.
+  // El marcado va al SALIR, no al entrar: mientras el usuario está en este apartado las
+  // no leídas se siguen viendo resaltadas (para eso vino), y el contador se limpia solo
+  // cuando navega a otra página. Se lee de un ref para que el efecto no se re-dispare
+  // cada vez que cambia la cuenta.
+  // Sin hidratar todavía no sabemos qué hay realmente sin leer (el store arranca con los
+  // datos de demo), así que en ese caso no se marca nada.
+  const noLeidasRef = useRef(0);
+  noLeidasRef.current = hydrated ? noLeidas : 0;
+
   useEffect(() => {
-    if (hydrated && noLeidas > 0) {
-      marcarTodasLeidasStore().catch(() => {});
+    // Un remontaje inmediato cancela el marcado: en desarrollo React StrictMode monta,
+    // limpia y vuelve a montar los efectos, y sin esto se marcaría todo al entrar.
+    if (salidaPendiente) {
+      clearTimeout(salidaPendiente);
+      salidaPendiente = null;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, noLeidas]);
+    return () => {
+      if (noLeidasRef.current === 0) return;
+      salidaPendiente = setTimeout(() => {
+        salidaPendiente = null;
+        marcarTodasLeidasStore().catch(() => {});
+      }, 0);
+    };
+  }, [marcarTodasLeidasStore]);
 
   // Esqueleto neutro hasta rehidratar el store persistido (evita mismatch de hidratación).
-  if (!hydrated) {
-    return (
-      <div className="p-4 md:p-8 max-w-2xl mx-auto">
-        <div className="mb-8">
-          <div className="h-7 w-48 rounded-md animate-pulse" style={{ backgroundColor: "var(--border-subtle)" }} />
-          <div className="h-4 w-24 rounded-md mt-2 animate-pulse" style={{ backgroundColor: "var(--hover-surface)" }} />
-        </div>
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 rounded-xl animate-pulse"
-              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-subtle)" }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-2xl" />;
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
@@ -81,16 +82,16 @@ export function NotificacionesView({ destinatario = "emprendedor" }: Notificacio
           </p>
         </div>
         {noLeidas > 0 && (
-          <button
+          <Button
             type="button"
             onClick={marcarTodasLeidas}
-            className="text-xs px-3 h-8 rounded-lg transition-colors w-full sm:w-auto shrink-0"
+            loading={marcado.cargando}
+            loadingText="Marcando…"
+            className="h-8 px-3 text-xs w-full sm:w-auto shrink-0 justify-center"
             style={{ color: "var(--brand)", border: "1px solid var(--brand-tint-strong)", backgroundColor: "rgba(154,98,250,0.06)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--brand-tint)")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(154,98,250,0.06)")}
           >
             Marcar todas como leídas
-          </button>
+          </Button>
         )}
       </div>
 

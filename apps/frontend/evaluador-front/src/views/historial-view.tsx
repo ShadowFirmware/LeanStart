@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { History, Search, ClipboardCheck, Percent, Award } from "lucide-react";
-import { useEmpresasStore, type Empresa } from "@leanstart/empresas-front";
-import { useHasHydrated, usePagination, PaginationBar } from "@leanstart/commons";
+import { useEmpresasStore } from "@leanstart/empresas-front";
+import { useHasHydrated, usePagination, PaginationBar, ViewSkeleton, GIRO_LABELS, EmpresaLogo } from "@leanstart/commons";
 import type { EstadoEmpresa } from "@leanstart/commons";
 import {
   useCriteriosStore, useViabilidadStore, useEvaluacionesStore,
-  calcularReporte, REPORTE_GIRO_LABELS,
+  calcularReporte,
 } from "@leanstart/administrador-front";
 
 const ESTADOS_HISTORIAL: EstadoEmpresa[] = ["publicado", "devuelto"];
@@ -17,36 +17,6 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }
   publicado: { label: "Publicado", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
   devuelto: { label: "Devuelto", color: "#EF4444", bg: "rgba(239,68,68,0.12)" },
 };
-
-/** Logo de la empresa (o inicial). */
-function EmpresaLogo({ empresa, size = 40 }: { empresa: Empresa; size?: number }) {
-  if (empresa.logoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return (
-      <img
-        src={empresa.logoUrl}
-        alt={empresa.nombre}
-        className="rounded-lg object-contain shrink-0"
-        style={{
-          width: size,
-          height: size,
-          padding: Math.max(2, Math.round(size * 0.12)),
-          backgroundColor: "var(--brand-tint)",
-          border: "1px solid var(--border-hair)",
-          boxSizing: "border-box",
-        }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-lg flex items-center justify-center font-bold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
-    >
-      {empresa.nombre.charAt(0).toUpperCase()}
-    </div>
-  );
-}
 
 export function EvaluadorHistorialView() {
   const hydrated = useHasHydrated();
@@ -81,6 +51,9 @@ export function EvaluadorHistorialView() {
   const { page, setPage, totalPages, pageItems: registrosPagina, pageSize, totalItems } = usePagination(registrosFiltrados, {
     resetKey: busqueda,
   });
+
+  // Esqueleto neutro hasta rehidratar: evita mostrar "sin evaluaciones" un instante.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={4} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
@@ -167,13 +140,13 @@ export function EvaluadorHistorialView() {
                   onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)")}
                 >
                   <div className="flex items-start gap-3">
-                    <EmpresaLogo empresa={empresa} size={40} />
+                    <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={40} radio="lg" borde="sutil" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
                           <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                            {REPORTE_GIRO_LABELS[empresa.giro]} · {fecha}
+                            {GIRO_LABELS[empresa.giro]} · {fecha}
                           </p>
                         </div>
                         <span

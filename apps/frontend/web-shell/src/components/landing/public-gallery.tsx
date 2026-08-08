@@ -4,18 +4,8 @@ import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, BadgeCheck, Award } from "lucide-react";
 import { useEmpresasStore } from "@leanstart/empresas-front";
-import { useHasHydrated, apiFetch, modoDemo } from "@leanstart/commons";
+import { useHasHydrated, apiFetch, modoDemo, GIRO_LABELS, EmpresaLogo } from "@leanstart/commons";
 import type { GiroEmpresa } from "@leanstart/commons";
-
-const GIRO_LABELS: Record<GiroEmpresa, string> = {
-  tecnologia: "Tecnología",
-  educacion: "Educación",
-  salud: "Salud",
-  sustentabilidad: "Sustentabilidad",
-  alimentacion: "Alimentación",
-  comercio: "Comercio",
-  servicios: "Servicios",
-};
 
 const AUTOPLAY_MS = 4200;
 
@@ -39,37 +29,6 @@ function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
     scoreFinal: (e.scoreFinal as number) ?? undefined,
     logoUrl: (e.logoUrl as string) ?? undefined,
   };
-}
-
-/** Logo de la empresa (o inicial) para la vitrina pública. */
-function EmpresaLogo({ empresa }: { empresa: EmpresaPublica }) {
-  if (empresa.logoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={empresa.logoUrl}
-        alt={empresa.nombre}
-        className="rounded-2xl object-contain shrink-0"
-        style={{
-          width: 88, height: 88, padding: 10,
-          backgroundColor: "rgba(154,98,250,0.10)",
-          border: "1px solid var(--brand-tint-strong)",
-        }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-2xl flex items-center justify-center font-bold shrink-0"
-      style={{
-        width: 88, height: 88, fontSize: 34,
-        backgroundColor: "var(--brand-tint)", color: "var(--brand)",
-        border: "1px solid var(--brand-tint-strong)",
-      }}
-    >
-      {empresa.nombre.charAt(0).toUpperCase()}
-    </div>
-  );
 }
 
 export function PublicGallery() {
@@ -199,7 +158,7 @@ export function PublicGallery() {
                     />
 
                     <div style={{ boxShadow: isActive ? "0 8px 24px rgba(154,98,250,0.25)" : "none", borderRadius: 16 }}>
-                      <EmpresaLogo empresa={empresa} />
+                      <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={88} radio="2xl" borde="marca" />
                     </div>
                     <div>
                       <p className="text-2xl md:text-3xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>

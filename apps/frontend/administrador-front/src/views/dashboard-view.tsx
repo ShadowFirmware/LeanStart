@@ -4,7 +4,7 @@ import {
   Users, Building2, GraduationCap, ClipboardCheck,
   UserCog, Star, FileEdit, Activity, LayoutGrid, Rocket, UsersRound, UserPlus,
 } from "lucide-react";
-import { useUsuariosStore, useHasHydrated } from "@leanstart/commons";
+import { useUsuariosStore, useHasHydrated, ViewSkeleton } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
 
 // "pendiente_mentoria"/"pendiente_evaluacion" NO cuentan como "en mentoría"/"en evaluación"
@@ -120,6 +120,10 @@ export function AdminDashboardView() {
 
   const totalProyectos =
     stats.proyectosEnMentoria + stats.proyectosEnEvaluacion + stats.proyectosPendientesAsignacion + stats.empresasEnBorrador;
+
+  // Esqueleto en vez de un tablero con todos los contadores en cero mientras
+  // los stores persistidos terminan de rehidratar.
+  if (!hydrated) return <ViewSkeleton variante="tarjetas" ancho="max-w-5xl" />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6">

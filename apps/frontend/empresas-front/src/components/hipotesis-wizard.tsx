@@ -11,13 +11,11 @@ import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  fileToDataUrl,
-  compressImageToDataUrl,
+  Spinner,
 } from "@leanstart/commons";
 import { useEmpresasStore, type Hipotesis } from "../store/empresas";
-import { EvidenciaViewerButton } from "./evidencia-viewer";
-import { detectarDocumentoSubtipo, DOCUMENTO_SUBTIPO_LABEL } from "../lib/documento-tipo";
-import { iconoEvidencia } from "../lib/evidencia-icono";
+import { EvidenciaField } from "./evidencia-field";
+import { useEvidencia } from "../hooks/use-evidencia";
 import type { TipoExperimento } from "@leanstart/commons";
 import type { TipoEvidencia } from "../store/empresas";
 
@@ -142,18 +140,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
 
   // Fase 3
   const [resultado, setResultado] = useState(hipotesisExistente?.resultados?.resultado ?? "");
-  const [tipoEvidencia, setTipoEvidencia] = useState<TipoEvidencia | "">(hipotesisExistente?.resultados?.tipoEvidencia ?? "");
-  const [evidenciaDataUrl, setEvidenciaDataUrl] = useState(
-    hipotesisExistente?.resultados?.tipoEvidencia && hipotesisExistente.resultados.tipoEvidencia !== "url"
-      ? (hipotesisExistente.resultados.evidencia ?? "")
-      : ""
-  );
-  const [evidenciaNombre, setEvidenciaNombre] = useState(hipotesisExistente?.resultados?.evidenciaNombre ?? "");
-  const [evidenciaUrl, setEvidenciaUrl] = useState(
-    hipotesisExistente?.resultados?.tipoEvidencia === "url"
-      ? (hipotesisExistente.resultados.evidencia ?? "")
-      : ""
-  );
+  const evidencia = useEvidencia(hipotesisExistente?.resultados);
   const [conclusion, setConclusion] = useState(hipotesisExistente?.resultados?.conclusion ?? "");
 
   // Errores
@@ -165,29 +152,6 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
   // "Guardar y salir" y "Finalizar" navegan al guardar, pero mientras la
   // petición está en curso ambos botones deben verse deshabilitados/cargando.
   const [loading, setLoading] = useState(false);
-
-  async function handleEvidenciaFile(file: File) {
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("El archivo es muy grande. Máximo 3MB.");
-      return;
-    }
-    try {
-      const dataUrl = file.type.startsWith("image/")
-        ? await compressImageToDataUrl(file)
-        : await fileToDataUrl(file);
-      setEvidenciaDataUrl(dataUrl);
-      setEvidenciaNombre(file.name);
-      toast.success(`Archivo "${file.name}" cargado.`);
-    } catch {
-      toast.error("No se pudo leer el archivo.");
-    }
-  }
-
-  function limpiarEvidencia() {
-    setEvidenciaDataUrl("");
-    setEvidenciaNombre("");
-    setEvidenciaUrl("");
-  }
 
   // El límite de 3 hipótesis solo aplica al crear una nueva, no al continuar una existente.
   const limite = esNueva && totalHipotesis >= 3;
@@ -248,9 +212,6 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
   // `fase` decide el estado visible (Creación/Experimento/Completa); `incluirResultados`
   // solo persiste lo ya escrito en el paso 3 sin marcar la hipótesis como completa.
   async function guardarTodo(fase: 1 | 2 | 3, incluirResultados: boolean = fase === 3) {
-    const evidenciaFinal =
-      tipoEvidencia === "url" ? evidenciaUrl.trim() : evidenciaDataUrl || undefined;
-
     const payload = {
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
@@ -265,9 +226,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
       },
       resultados: incluirResultados ? {
         resultado: resultado.trim(),
-        evidencia: evidenciaFinal || undefined,
-        evidenciaNombre: tipoEvidencia !== "url" ? evidenciaNombre || undefined : undefined,
-        tipoEvidencia: (tipoEvidencia as TipoEvidencia) || undefined,
+        ...evidencia.valor,
         conclusion: conclusion.trim(),
       } : undefined,
     };
@@ -277,12 +236,6 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
     } else {
       await agregarHipotesis(empresaId, payload);
     }
-  }
-
-  function evidenciaIncompleta() {
-    if (!tipoEvidencia) return false;
-    if (tipoEvidencia === "url") return !evidenciaUrl.trim();
-    return !evidenciaDataUrl;
   }
 
   async function ejecutarFinalizar() {
@@ -304,7 +257,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
       toast.error("Completa los campos requeridos.");
       return;
     }
-    if (evidenciaIncompleta()) {
+    if (evidencia.incompleta) {
       setConfirmEvidenciaVacia(true);
       return;
     }
@@ -559,10 +512,12 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                       type="button"
                       onClick={guardarParcial}
                       disabled={loading}
-                      className="text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-busy={loading || undefined}
+                      className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
-                      {loading ? "Guardando..." : "Guardar y salir"}
+                      {loading && <Spinner size={13} />}
+                      {loading ? "Guardando…" : "Guardar y salir"}
                     </button>
                     <button
                       type="button"
@@ -617,138 +572,18 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                     <Label icon={Paperclip}>Evidencia</Label>
                     <span className="text-xs" style={{ color: "var(--text-faint)" }}>Opcional</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {(["pdf", "imagen", "documento", "url"] as TipoEvidencia[]).map((t) => {
-                      const labels: Record<TipoEvidencia, string> = {
-                        pdf: "Archivo PDF", imagen: "Imagen", documento: "Word / Excel", url: "URL",
-                      };
-                      const active = tipoEvidencia === t;
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => { setTipoEvidencia(active ? "" : t); limpiarEvidencia(); }}
-                          className="text-[11px] px-2.5 h-7 rounded-full font-medium transition-all"
-                          style={{
-                            color: active ? "var(--brand-accent)" : "var(--text-dim)",
-                            backgroundColor: active ? "rgba(154,98,250,0.15)" : "var(--hover-surface)",
-                            border: active ? "1px solid rgba(154,98,250,0.35)" : "1px solid var(--border-hair)",
-                          }}
-                        >
-                          {labels[t]}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {tipoEvidencia === "url" && (
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={evidenciaUrl}
-                      maxLength={300}
-                      onChange={(e) => setEvidenciaUrl(e.target.value)}
-                      className="w-full h-9 px-3 rounded-lg text-sm outline-none"
-                      style={inputStyle}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.5)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
-                    />
-                  )}
-
-                  {tipoEvidencia && tipoEvidencia !== "url" && !evidenciaDataUrl && (
-                    <label
-                      className="flex items-center gap-3 rounded-lg px-4 h-10 cursor-pointer transition-colors"
-                      style={{
-                        backgroundColor: "var(--hover-surface-2)",
-                        border: "1px dashed var(--border-hair)",
-                      }}
-                    >
-                      <span className="text-sm truncate" style={{ color: "var(--text-dim)" }}>Seleccionar archivo…</span>
-                      <input
-                        type="file"
-                        accept={
-                          tipoEvidencia === "pdf" ? ".pdf"
-                          : tipoEvidencia === "imagen" ? "image/*"
-                          : ".doc,.docx,.xls,.xlsx,.csv"
-                        }
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleEvidenciaFile(file);
-                        }}
-                      />
-                    </label>
-                  )}
-
-                  {/* Preview cargado */}
-                  {tipoEvidencia && tipoEvidencia !== "url" && evidenciaDataUrl && (
-                    <div
-                      className="rounded-xl p-3 flex items-start gap-3"
-                      style={{ backgroundColor: "rgba(154,98,250,0.06)", border: "1px solid var(--brand-tint-strong)" }}
-                    >
-                      {tipoEvidencia === "imagen" ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={evidenciaDataUrl}
-                          alt={evidenciaNombre || "Evidencia"}
-                          className="w-auto h-auto max-w-[160px] max-h-[160px] rounded-lg object-contain shrink-0"
-                          style={{ border: "1px solid var(--border-hair)" }}
-                        />
-                      ) : (
-                        <div
-                          className="w-20 h-20 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                        >
-                          {(() => {
-                            const Icon = iconoEvidencia(tipoEvidencia as TipoEvidencia, evidenciaNombre);
-                            return <Icon className="w-8 h-8" style={{ color: "var(--brand-accent)" }} />;
-                          })()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium break-words" style={{ color: "var(--text-strong)", overflowWrap: "anywhere" }}>
-                          {evidenciaNombre || "Archivo cargado"}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                          {tipoEvidencia === "imagen" ? "Imagen" : tipoEvidencia === "pdf" ? "PDF" : DOCUMENTO_SUBTIPO_LABEL[detectarDocumentoSubtipo(evidenciaNombre)]}
-                        </p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <EvidenciaViewerButton
-                            evidencia={evidenciaDataUrl}
-                            tipoEvidencia={tipoEvidencia as TipoEvidencia}
-                            evidenciaNombre={evidenciaNombre}
-                          />
-                          <label
-                            className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md cursor-pointer transition-colors"
-                            style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                          >
-                            Reemplazar
-                            <input
-                              type="file"
-                              accept={
-                                tipoEvidencia === "pdf" ? ".pdf"
-                                : tipoEvidencia === "imagen" ? "image/*"
-                                : ".doc,.docx,.xls,.xlsx,.csv"
-                              }
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleEvidenciaFile(file);
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={limpiarEvidencia}
-                            className="inline-flex items-center gap-1 text-[11px] px-2.5 h-7 rounded-md transition-colors"
-                            style={{ color: "#EF4444", backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
-                          >
-                            <XIcon className="w-3 h-3" /> Quitar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <EvidenciaField
+                    tipo={evidencia.tipo}
+                    onTipoChange={evidencia.cambiarTipo}
+                    dataUrl={evidencia.dataUrl}
+                    nombre={evidencia.nombre}
+                    url={evidencia.url}
+                    onUrlChange={evidencia.setUrl}
+                    onArchivo={evidencia.cargarArchivo}
+                    onLimpiar={evidencia.limpiar}
+                    subiendo={evidencia.subiendo}
+                    disabled={loading}
+                  />
                 </Field>
 
                 <Field>
@@ -785,19 +620,23 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
                       type="button"
                       onClick={guardarParcial}
                       disabled={loading}
-                      className="text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-busy={loading || undefined}
+                      className="inline-flex items-center justify-center gap-2 text-sm px-4 h-9 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
                     >
-                      {loading ? "Guardando..." : "Guardar y salir"}
+                      {loading && <Spinner size={13} />}
+                      {loading ? "Guardando…" : "Guardar y salir"}
                     </button>
                     <button
                       type="button"
                       onClick={finalizarPaso3}
                       disabled={loading}
-                      className="h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-busy={loading || undefined}
+                      className="inline-flex items-center justify-center gap-2 h-9 px-6 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                     >
-                      {loading ? "Finalizando..." : "Finalizar"}
+                      {loading && <Spinner size={13} />}
+                      {loading ? "Finalizando…" : "Finalizar"}
                     </button>
                   </div>
                 </div>
@@ -816,7 +655,7 @@ export function HipotesisWizard({ empresaId, empresaNombre, hipotesisExistente }
               Evidencia sin cargar
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Seleccionaste {tipoEvidencia ? tipoEvidenciaLabel[tipoEvidencia as TipoEvidencia] : "una evidencia"} pero no la cargaste. ¿Quieres continuar sin adjuntarla o prefieres regresar a agregarla?
+              Seleccionaste {evidencia.tipo ? tipoEvidenciaLabel[evidencia.tipo] : "una evidencia"} pero no la cargaste. ¿Quieres continuar sin adjuntarla o prefieres regresar a agregarla?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

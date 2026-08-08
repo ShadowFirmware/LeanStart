@@ -48,9 +48,9 @@ export class ViabilidadController {
   }
 
   @Post("niveles")
-  @ApiOperation({ summary: "Agregar un nivel" })
-  agregarNivel(@CurrentUser() user: AuthUser) {
-    return this.proxy.post(this.baseUrl, "/viabilidad/niveles", {}, user);
+  @ApiOperation({ summary: "Agregar un nivel (nombre/color/límite opcionales)" })
+  agregarNivel(@CurrentUser() user: AuthUser, @Body() body: Record<string, unknown>) {
+    return this.proxy.post(this.baseUrl, "/viabilidad/niveles", body ?? {}, user);
   }
 
   @Delete("niveles/:id")

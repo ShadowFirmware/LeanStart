@@ -14,7 +14,7 @@ import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  usePagination, PaginationBar,
+  usePagination, PaginationBar, useHasHydrated, useAccion, ViewSkeleton,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useUsuariosStore, type Role, type Usuario, type EstadoUsuario } from "@leanstart/commons";
@@ -63,6 +63,7 @@ const inputStyle = {
 };
 
 export function UsuariosView() {
+  const hydrated = useHasHydrated();
   const usuarios = useUsuariosStore((s) => s.usuarios);
   const crearUsuario = useUsuariosStore((s) => s.crearUsuario);
   const editarUsuario = useUsuariosStore((s) => s.editarUsuario);
@@ -74,6 +75,8 @@ export function UsuariosView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Usuario | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const { cargando: guardando, ejecutar: ejecutarGuardado } = useAccion();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -113,19 +116,23 @@ export function UsuariosView() {
       form.setError("password", { message: "La contraseña es obligatoria" });
       return;
     }
-    try {
-      if (editTarget) {
-        const { password, ...resto } = values;
-        await editarUsuario(editTarget.id, password ? { ...resto, password } : resto);
-        toast.success(`"${values.nombre}" fue actualizado.`);
-      } else {
-        await crearUsuario(values as FormValues & { password: string });
-        toast.success(`"${values.nombre}" fue creado correctamente.`);
+    await ejecutarGuardado(
+      async () => {
+        if (editTarget) {
+          const { password, ...resto } = values;
+          await editarUsuario(editTarget.id, password ? { ...resto, password } : resto);
+          toast.success(`"${values.nombre}" fue actualizado.`);
+        } else {
+          await crearUsuario(values as FormValues & { password: string });
+          toast.success(`"${values.nombre}" fue creado correctamente.`);
+        }
+        setDialogOpen(false);
+      },
+      {
+        etiqueta: editTarget ? "Guardando usuario" : "Creando usuario",
+        onError: () => toast.error("No se pudo guardar el usuario."),
       }
-      setDialogOpen(false);
-    } catch {
-      toast.error("No se pudo guardar el usuario.");
-    }
+    );
   }
 
   async function toggleEstado(usuario: Usuario) {
@@ -141,6 +148,9 @@ export function UsuariosView() {
       toast.error("No se pudo actualizar el estado del usuario.");
     }
   }
+
+  // Esqueleto neutro mientras rehidrata el store persistido de usuarios.
+  if (!hydrated) return <ViewSkeleton variante="lista" ancho="max-w-5xl" filas={5} />;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
@@ -420,6 +430,8 @@ export function UsuariosView() {
                 </Button>
                 <Button
                   type="submit"
+                  loading={guardando}
+                  loadingText={editTarget ? "Guardando…" : "Creando…"}
                   className="border-0"
                   style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
                 >

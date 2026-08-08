@@ -3,8 +3,8 @@
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useHasHydrated, ViewSkeleton, GIRO_LABELS } from "@leanstart/commons";
 import { useEmpresasStore } from "@leanstart/empresas-front";
-import { REPORTE_GIRO_LABELS } from "@leanstart/administrador-front";
 import { EvaluacionForm } from "../components/evaluacion-form";
 
 const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }> = {
@@ -16,6 +16,7 @@ const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }>
 export function EvaluadorEvaluacionView() {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
+  const hydrated = useHasHydrated();
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
 
   // Esta página se sirve tanto desde /evaluador/empresas/[id]/evaluar como desde
@@ -23,6 +24,10 @@ export function EvaluadorEvaluacionView() {
   const enHistorial = pathname.startsWith("/evaluador/historial");
   const backHref = enHistorial ? "/evaluador/historial" : `/evaluador/empresas/${id}`;
   const backLabel = enHistorial ? "Historial" : empresa?.nombre;
+
+  // Hasta que rehidrate el store no sabemos si la empresa existe: mostrar el
+  // esqueleto en vez de un falso "no existe".
+  if (!hydrated) return <ViewSkeleton variante="formulario" ancho="max-w-6xl" filas={4} />;
 
   if (!empresa) {
     return (
@@ -54,7 +59,7 @@ export function EvaluadorEvaluacionView() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold break-words" style={{ color: "var(--text-strong)" }}>Evaluación del Proyecto</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-            {empresa.nombre} · {REPORTE_GIRO_LABELS[empresa.giro]}
+            {empresa.nombre} · {GIRO_LABELS[empresa.giro]}
           </p>
         </div>
         {estadoCfg && (

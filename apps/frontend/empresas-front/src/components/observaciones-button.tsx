@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { Popover, PopoverTrigger, PopoverContent, Textarea, Button, modoDemo } from "@leanstart/commons";
+import { Popover, PopoverTrigger, PopoverContent, Textarea, Button, useAccion, modoDemo } from "@leanstart/commons";
 import type { EstadoObservacion } from "@leanstart/commons";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useObservacionesStore, type TipoElementoObservacion } from "../store/observaciones";
@@ -55,6 +55,10 @@ export function ObservacionesButton({
   const empresaNombre = useEmpresasStore((s) => s.empresas.find((e) => e.id === empresaId)?.nombre ?? "tu proyecto");
   const agregarNotificacion = useNotificacionesStore((s) => s.agregarNotificacion);
   const [draft, setDraft] = useState("");
+  const envio = useAccion();
+  const cambioEstado = useAccion();
+  // Qué observación está cambiando de estado: el spinner va solo en su botón.
+  const [obsEnCurso, setObsEnCurso] = useState<string | null>(null);
 
   const hilo = observaciones.filter(
     (o) => o.empresaId === empresaId && o.tipoElemento === tipoElemento && o.elementoId === elementoId
@@ -65,25 +69,44 @@ export function ObservacionesButton({
 
   async function enviar() {
     if (!draft.trim()) return;
-    try {
-      await agregarObservacion({ empresaId, tipoElemento, elementoId, autorNombre, comentario: draft.trim() });
-      // En modo real el backend ya crea esta notificación al guardar la observación
-      // (ver ObservacionesService.crear); en demo la simulamos aquí, entre pestañas.
-      if (modoDemo()) {
-        agregarNotificacion({
-          tipo: "comentario_mentor",
-          destinatario: "emprendedor",
-          titulo: "Nuevo comentario de tu mentor",
-          mensaje: `${autorNombre} dejó un comentario en "${empresaNombre}".`,
-          empresaNombre,
-          creadaEn: "Justo ahora",
-        });
+    await envio.ejecutar(
+      async () => {
+        await agregarObservacion({ empresaId, tipoElemento, elementoId, autorNombre, comentario: draft.trim() });
+        // En modo real el backend ya crea esta notificación al guardar la observación
+        // (ver ObservacionesService.crear); en demo la simulamos aquí, entre pestañas.
+        if (modoDemo()) {
+          agregarNotificacion({
+            tipo: "comentario_mentor",
+            destinatario: "emprendedor",
+            titulo: "Nuevo comentario de tu mentor",
+            mensaje: `${autorNombre} dejó un comentario en "${empresaNombre}".`,
+            empresaNombre,
+            creadaEn: "Justo ahora",
+          });
+        }
+        setDraft("");
+        toast.success("Observación agregada.");
+      },
+      {
+        etiqueta: "Guardando observación",
+        onError: () => toast.error("No se pudo agregar la observación."),
       }
-      setDraft("");
-      toast.success("Observación agregada.");
-    } catch {
-      toast.error("No se pudo agregar la observación.");
-    }
+    );
+  }
+
+  async function cambiarEstado(obsId: string, estado: EstadoObservacion, exito: string) {
+    setObsEnCurso(obsId);
+    await cambioEstado.ejecutar(
+      async () => {
+        await actualizarEstadoObservacion(obsId, estado);
+        toast.success(exito);
+      },
+      {
+        etiqueta: "Actualizando observación",
+        onError: () => toast.error("No se pudo actualizar la observación."),
+      }
+    );
+    setObsEnCurso(null);
   }
 
   return (
@@ -151,43 +174,39 @@ export function ObservacionesButton({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>{o.creadaEn}</span>
                     {puedeMarcarEnRevision && estadoMostrado === "pendiente" && (
-                      <button
+                      <Button
                         type="button"
-                        onClick={async () => {
-                          try {
-                            // Queda en "resuelta": invisible para el mentor hasta que el
-                            // emprendedor mande TODO de vuelta con "Enviar cambios" — no
-                            // se notifica todavía (eso pasa recién en el envío en bloque).
-                            await actualizarEstadoObservacion(o.id, "resuelta");
-                            toast.success("Comentario marcado como resuelto.");
-                          } catch {
-                            toast.error("No se pudo actualizar la observación.");
-                          }
-                        }}
-                        className="flex items-center gap-1.5 shrink-0"
+                        variant="ghost"
+                        size="xs"
+                        // Queda en "resuelta": invisible para el mentor hasta que el
+                        // emprendedor mande TODO de vuelta con "Enviar cambios" — no
+                        // se notifica todavía (eso pasa recién en el envío en bloque).
+                        onClick={() => cambiarEstado(o.id, "resuelta", "Comentario marcado como resuelto.")}
+                        loading={cambioEstado.cargando && obsEnCurso === o.id}
+                        loadingText="Guardando…"
+                        disabled={cambioEstado.cargando}
+                        className="shrink-0 px-1.5 text-[11px] font-medium"
                         style={{ color: "#10B981" }}
                       >
-                        <span className="text-[11px] font-medium">Marcar como resuelto</span>
+                        Marcar como resuelto
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     )}
                     {puedeComentar && estadoMostrado === "en_revision" && (
-                      <button
+                      <Button
                         type="button"
-                        onClick={async () => {
-                          try {
-                            await actualizarEstadoObservacion(o.id, "atendida");
-                            toast.success("Comentario confirmado como atendido.");
-                          } catch {
-                            toast.error("No se pudo actualizar la observación.");
-                          }
-                        }}
-                        className="flex items-center gap-1.5 shrink-0"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => cambiarEstado(o.id, "atendida", "Comentario confirmado como atendido.")}
+                        loading={cambioEstado.cargando && obsEnCurso === o.id}
+                        loadingText="Guardando…"
+                        disabled={cambioEstado.cargando}
+                        className="shrink-0 px-1.5 text-[11px] font-medium"
                         style={{ color: "#10B981" }}
                       >
-                        <span className="text-[11px] font-medium">Confirmar resuelto</span>
+                        Confirmar resuelto
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -212,6 +231,8 @@ export function ObservacionesButton({
               size="sm"
               onClick={enviar}
               disabled={!draft.trim()}
+              loading={envio.cargando}
+              loadingText="Agregando…"
               className="self-end h-8 px-3 text-xs border-0"
               style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >

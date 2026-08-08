@@ -406,14 +406,15 @@ export function EmpresaNewView() {
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
+                loading={loading}
+                loadingText="Registrando…"
                 className="h-9 px-6 text-sm font-semibold border-0"
                 style={{
                   background: "var(--brand-gradient)",
                   color: "var(--brand-fg)",
                 }}
               >
-                {loading ? "Registrando..." : "Registrar empresa"}
+                Registrar empresa
               </Button>
             </div>
           </div>

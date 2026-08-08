@@ -30,3 +30,4 @@ export type { ReporteEmpresa } from "./store/reportes-empresa";
 
 // Componentes compartidos
 export { ObservacionesButton } from "./components/observaciones-button";
+export { ProyectosAsignadosDashboard } from "./components/proyectos-asignados-dashboard";

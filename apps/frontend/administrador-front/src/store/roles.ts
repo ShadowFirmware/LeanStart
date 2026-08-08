@@ -55,6 +55,6 @@ export const useRolesStore = create<RolesStore>()(
         set({ personalizados: get().personalizados.filter((r) => r.id !== id) });
       },
     }),
-    { name: "leanstart-roles" }
+    { name: "leanstart-roles", skipHydration: true }
   )
 );

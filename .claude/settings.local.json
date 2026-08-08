@@ -40,7 +40,8 @@
       "Bash(tee /tmp/npm-install.log)",
       "PowerShell(Get-Process *)",
       "PowerShell(Stop-Process *)",
-      "Bash(npm run *)"
+       "Bash(npm run *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

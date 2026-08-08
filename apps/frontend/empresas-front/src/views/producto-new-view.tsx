@@ -8,7 +8,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { ArrowLeft, Package, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@leanstart/commons";
+import { Button, useHasHydrated, ViewSkeleton } from "@leanstart/commons";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@leanstart/commons";
@@ -46,6 +46,7 @@ const cardStyle = { backgroundColor: "var(--surface-profile)", boxShadow: "var(-
 export function ProductoNewView() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const hydrated = useHasHydrated();
   const agregarProducto = useEmpresasStore((s) => s.agregarProducto);
   const empresa = useEmpresasStore((s) => s.empresas.find((e) => e.id === id));
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,7 @@ export function ProductoNewView() {
     defaultValues: { nombre: "", descripcion: "", caracteristicas: "", precio: "" },
   });
 
+  if (!hydrated) return <ViewSkeleton variante="formulario" ancho="max-w-2xl" filas={4} />;
   if (!empresa) return null;
 
   async function onSubmit(values: FormValues) {
@@ -280,11 +282,12 @@ export function ProductoNewView() {
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              loading={loading}
+              loadingText="Guardando…"
               className="h-9 px-6 text-sm font-semibold border-0"
               style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
             >
-              {loading ? "Guardando..." : "Guardar producto"}
+              Guardar producto
             </Button>
           </div>
 

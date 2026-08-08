@@ -12,7 +12,7 @@ import type { ControllerRenderProps } from "react-hook-form";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input, Button,
-  useCurrentUser, usePerfilStore, useHasHydrated, compressImageToDataUrl,
+  useCurrentUser, usePerfilStore, useHasHydrated, useAccion, compressImageToDataUrl,
   type Role,
 } from "@leanstart/commons";
 
@@ -35,6 +35,7 @@ export function PerfilView() {
   const hydrated = useHasHydrated();
   const overrides = usePerfilStore((s) => (currentUser ? s.perfiles[currentUser.id] : undefined));
   const actualizarPerfil = usePerfilStore((s) => s.actualizarPerfil);
+  const { cargando: guardandoPerfil, ejecutar: ejecutarGuardado } = useAccion();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
@@ -91,16 +92,18 @@ export function PerfilView() {
 
   async function onSubmit(values: PerfilFormValues) {
     if (!currentUser) return;
-    try {
-      await actualizarPerfil(currentUser.id, {
-        nombre: values.nombre.trim(),
-        correo: values.correo.trim(),
-        avatarUrl,
-      });
-      toast.success("Perfil actualizado correctamente.");
-    } catch {
-      toast.error("No se pudo actualizar el perfil.");
-    }
+    const usuarioId = currentUser.id;
+    await ejecutarGuardado(
+      async () => {
+        await actualizarPerfil(usuarioId, {
+          nombre: values.nombre.trim(),
+          correo: values.correo.trim(),
+          avatarUrl,
+        });
+        toast.success("Perfil actualizado correctamente.");
+      },
+      { etiqueta: "Guardando perfil", onError: () => toast.error("No se pudo actualizar el perfil.") }
+    );
   }
 
   const inputStyle = {
@@ -230,6 +233,8 @@ export function PerfilView() {
               <Button
                 type="submit"
                 disabled={subiendoAvatar}
+                loading={guardandoPerfil}
+                loadingText="Guardando…"
                 className="h-10 rounded-xl font-semibold text-sm border-0"
                 style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
               >

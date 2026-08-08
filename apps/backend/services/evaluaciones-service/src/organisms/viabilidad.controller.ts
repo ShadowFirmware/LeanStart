@@ -6,6 +6,7 @@ import {
   ActualizarHastaNivelDto,
   ActualizarPesoDto,
   ActualizarUmbralDto,
+  AgregarNivelDto,
   EditarNivelDto,
   ReordenarNivelDto,
 } from "../atoms/viabilidad.dto";
@@ -50,9 +51,9 @@ export class ViabilidadController {
   }
 
   @Post("niveles")
-  @ApiOperation({ summary: "Agregar un nivel (inserta un punto medio antes del último)" })
-  agregarNivel() {
-    return this.viabilidad.agregarNivel();
+  @ApiOperation({ summary: "Agregar un nivel (con nombre/color/límite; sin cuerpo parte en dos el último tramo)" })
+  agregarNivel(@Body() dto: AgregarNivelDto) {
+    return this.viabilidad.agregarNivel(dto);
   }
 
   @Delete("niveles/:id")

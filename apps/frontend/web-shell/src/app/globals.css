@@ -135,6 +135,7 @@
   --border-hair:       rgba(20, 18, 40, 0.10);
   --input-surface:     #FFFFFF;
   --overlay:           rgba(20, 18, 40, 0.35);
+  --overlay-loading:   rgba(255, 255, 255, 0.72);
   --shadow-elevated:   0 0 0 1px rgba(20, 18, 40, 0.04) inset, 0 24px 48px rgba(20, 18, 40, 0.12);
   --shadow-card:       0 1px 2px rgba(20, 18, 45, 0.04), 0 4px 14px rgba(20, 18, 45, 0.06);
   --shadow-card-hover: 0 2px 6px rgba(20, 18, 45, 0.07), 0 14px 32px rgba(20, 18, 45, 0.11);
@@ -199,6 +200,7 @@
   --border-hair:       rgba(255, 255, 255, 0.08);
   --input-surface:     rgba(255, 255, 255, 0.04);
   --overlay:           rgba(0, 0, 0, 0.60);
+  --overlay-loading:   rgba(13, 12, 16, 0.72);
   --shadow-elevated:   0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 32px 64px rgba(0, 0, 0, 0.40);
   --shadow-card:       0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.22);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.40), 0 16px 34px rgba(0, 0, 0, 0.32);
