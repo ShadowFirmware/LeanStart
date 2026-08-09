@@ -1,0 +1,15 @@
+{
+  "name": "@leanstart/alexa-skill",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Skill de Alexa (Asistente de Emprendimiento). Se sirve como endpoint HTTPS propio vía ngrok (server.js); exports.handler en index.js queda listo por si algún día se despliega en AWS Lambda.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-express-adapter": "^2.14.0",
+    "express": "^4.19.2"
+  }
+}

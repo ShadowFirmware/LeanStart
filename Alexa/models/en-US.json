@@ -1,0 +1,639 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "entrepreneur guide",
+            "intents": [
+                {
+                    "name": "LoginIntent",
+                    "slots": [
+                        {
+                            "name": "nombreUsuario",
+                            "type": "AMAZON.SearchQuery",
+                            "samples": [
+                                "my name is {nombreUsuario}",
+                                "i am {nombreUsuario}",
+                                "this is {nombreUsuario}",
+                                "{nombreUsuario}"
+                            ]
+                        },
+                        {
+                            "name": "semilla",
+                            "type": "AMAZON.FOUR_DIGIT_NUMBER",
+                            "samples": [
+                                "my seed is {semilla}",
+                                "the seed is {semilla}",
+                                "{semilla}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "log in",
+                        "log me in",
+                        "i want to log in",
+                        "i want to log in with my seed",
+                        "log in with my seed",
+                        "i'm going to log in",
+                        "let me log in"
+                    ]
+                },
+                {
+                    "name": "StartProjectGuideIntent",
+                    "slots": [],
+                    "samples": [
+                        "open entrepreneur guide",
+                        "start the mini company assistant",
+                        "alexa let's do a project",
+                        "start the company creation guide",
+                        "alexa launch the entrepreneurship skill",
+                        "i want to create my mini company",
+                        "let's start the project"
+                    ]
+                },
+                {
+                    "name": "OverviewPhasesIntent",
+                    "slots": [],
+                    "samples": [
+                        "help with a project",
+                        "help with my project",
+                        "i need help with my project",
+                        "what are the steps to create my project",
+                        "give me a summary of all the phases",
+                        "what do i have to do to create my company",
+                        "explain the full project flow",
+                        "what are the platform's phases",
+                        "what's the full process",
+                        "how many phases does the project have",
+                        "give me the phase menu"
+                    ]
+                },
+                {
+                    "name": "GetSpecificPhaseIntent",
+                    "slots": [
+                        {
+                            "name": "numeroFase",
+                            "type": "FASE_NUMBER",
+                            "samples": [
+                                "phase {numeroFase}",
+                                "{numeroFase}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "help me with the project",
+                        "help me with creating the project",
+                        "i need help with a phase",
+                        "i need help with a phase of the project",
+                        "which phase of the project can you help me with",
+                        "i want help with a phase of the project",
+                        "help me with a phase of the project",
+                        "i have questions about a phase of the project",
+                        "explain a phase of the project",
+                        "i don't know which phase of the project i'm on",
+                        "help me on phase {numeroFase} of the project",
+                        "help me on phase {numeroFase}",
+                        "help me with phase {numeroFase}",
+                        "explain phase {numeroFase} of the project",
+                        "explain phase {numeroFase}",
+                        "give me an example of phase {numeroFase}",
+                        "i'm on phase {numeroFase} of the project",
+                        "i'm on phase {numeroFase}",
+                        "i'm at phase {numeroFase}",
+                        "it's phase {numeroFase} of the project",
+                        "it's phase {numeroFase}",
+                        "phase number {numeroFase}",
+                        "give me phase {numeroFase}",
+                        "{numeroFase}",
+                        "number {numeroFase}",
+                        "the phase number {numeroFase}"
+                    ]
+                },
+                {
+                    "name": "CanvasDeepDiveIntent",
+                    "slots": [
+                        {
+                            "name": "canvasStepName",
+                            "type": "CANVAS_STEP_NAME",
+                            "samples": [
+                                "{canvasStepName} of the canvas",
+                                "the part about {canvasStepName}",
+                                "{canvasStepName}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "let's go deeper into the canvas",
+                        "help me with a part of the canvas",
+                        "help me with the lean canvas",
+                        "i have questions about a part of the canvas",
+                        "explain a part of the canvas",
+                        "i need help with the canvas",
+                        "i want to see a part of the canvas",
+                        "i don't know which part of the canvas i need",
+                        "let's go deeper into {canvasStepName} of the canvas",
+                        "explain {canvasStepName} of the canvas",
+                        "help me with {canvasStepName} of the canvas",
+                        "give me an example of {canvasStepName} of the canvas",
+                        "it's {canvasStepName} of the canvas",
+                        "i'm on {canvasStepName} of the canvas",
+                        "i'm at {canvasStepName} of the canvas",
+                        "how do i fill in {canvasStepName} of the canvas",
+                        "on the part about {canvasStepName} of the canvas",
+                        "{canvasStepName}",
+                        "the part about {canvasStepName}",
+                        "it's {canvasStepName}"
+                    ]
+                },
+                {
+                    "name": "HypothesisDeepDiveIntent",
+                    "slots": [
+                        {
+                            "name": "hypothesisStepName",
+                            "type": "HYPOTHESIS_STEP_NAME",
+                            "samples": [
+                                "{hypothesisStepName}",
+                                "the part about {hypothesisStepName}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "let's go deeper into the hypothesis",
+                        "help me with a part of the hypothesis",
+                        "i have questions about the hypothesis",
+                        "explain a part of the hypothesis",
+                        "i need help with the hypothesis",
+                        "i don't know which part of the hypothesis i need",
+                        "let's go deeper into {hypothesisStepName}",
+                        "explain {hypothesisStepName}",
+                        "help me with {hypothesisStepName}",
+                        "give me an example of {hypothesisStepName}",
+                        "how do i do {hypothesisStepName}",
+                        "it's {hypothesisStepName}",
+                        "i'm on {hypothesisStepName}",
+                        "i'm at {hypothesisStepName}",
+                        "on the part about {hypothesisStepName}",
+                        "{hypothesisStepName}",
+                        "the part about {hypothesisStepName}"
+                    ]
+                },
+                {
+                    "name": "GetProjectStatusIntent",
+                    "slots": [
+                        {
+                            "name": "nombreProyecto",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "status of a project",
+                        "status of my project",
+                        "how's my project going",
+                        "what stage is my project at",
+                        "what's the status of my project",
+                        "what's the state of my project",
+                        "what part of the evaluation process is my project in",
+                        "has my project been evaluated",
+                        "has my project been graded",
+                        "has my project been returned",
+                        "my project is being evaluated",
+                        "my project is being graded",
+                        "tell me the status of my project",
+                        "check the status of my project",
+                        "check the status of my project please",
+                        "how's my project {nombreProyecto} going",
+                        "what stage is the project {nombreProyecto} at",
+                        "what's the status of the project {nombreProyecto}",
+                        "what's the state of the project {nombreProyecto}",
+                        "check the status of my project {nombreProyecto}",
+                        "tell me the status of my project {nombreProyecto}",
+                        "check the status of the project {nombreProyecto}",
+                        "how's the project {nombreProyecto} going"
+                    ]
+                },
+                {
+                    "name": "GetMentorCommentsIntent",
+                    "slots": [
+                        {
+                            "name": "nombreProyecto",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "comments on a project",
+                        "comments on my project",
+                        "how many comments do i have",
+                        "how many comments has my mentor left",
+                        "do i have new comments",
+                        "are there comments from my mentor",
+                        "how many comments are there on my project",
+                        "tell me how many comments i have",
+                        "check my mentor's comments",
+                        "check the comments on my project",
+                        "my mentor left comments",
+                        "how many notes do i have from the mentor",
+                        "how many comments does the project {nombreProyecto} have",
+                        "how many comments has my mentor left on {nombreProyecto}",
+                        "check the comments on the project {nombreProyecto}",
+                        "how many notes does the project {nombreProyecto} have",
+                        "tell me how many comments my project {nombreProyecto} has"
+                    ]
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": [
+                        "what can i say",
+                        "how do i use this skill",
+                        "i need help",
+                        "what are my options",
+                        "i don't know what to do",
+                        "i'm lost"
+                    ]
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": [
+                        "cancel",
+                        "never mind",
+                        "forget it",
+                        "no thanks",
+                        "i don't want to know that"
+                    ]
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": [
+                        "exit",
+                        "quit",
+                        "goodbye",
+                        "see you later",
+                        "close the app"
+                    ]
+                },
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "FASE_NUMBER",
+                    "values": [
+                        {
+                            "id": "1",
+                            "name": {
+                                "value": "1",
+                                "synonyms": [
+                                    "one",
+                                    "first",
+                                    "phase one",
+                                    "number one",
+                                    "the first",
+                                    "the first one"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "2",
+                            "name": {
+                                "value": "2",
+                                "synonyms": [
+                                    "two",
+                                    "second",
+                                    "phase two",
+                                    "number two",
+                                    "the second",
+                                    "the second one"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "3",
+                            "name": {
+                                "value": "3",
+                                "synonyms": [
+                                    "three",
+                                    "third",
+                                    "phase three",
+                                    "number three",
+                                    "the third",
+                                    "the third one",
+                                    "canvas phase"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4",
+                            "name": {
+                                "value": "4",
+                                "synonyms": [
+                                    "four",
+                                    "fourth",
+                                    "phase four",
+                                    "number four",
+                                    "the fourth",
+                                    "the fourth one",
+                                    "hypothesis phase",
+                                    "last phase",
+                                    "the last one",
+                                    "the last phase"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "CANVAS_STEP_NAME",
+                    "values": [
+                        {
+                            "id": "problema",
+                            "name": {
+                                "value": "Problem",
+                                "synonyms": [
+                                    "problem",
+                                    "the problem",
+                                    "the problems"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "segmento_clientes",
+                            "name": {
+                                "value": "Customer Segment",
+                                "synonyms": [
+                                    "customer segment",
+                                    "customer segments",
+                                    "customers",
+                                    "the segment"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "propuesta_valor",
+                            "name": {
+                                "value": "Value Proposition",
+                                "synonyms": [
+                                    "value proposition",
+                                    "the value proposition",
+                                    "value"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "solucion",
+                            "name": {
+                                "value": "Solution",
+                                "synonyms": [
+                                    "solution",
+                                    "the solution"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "canales",
+                            "name": {
+                                "value": "Channels",
+                                "synonyms": [
+                                    "channels",
+                                    "the channels"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "fuentes_ingreso",
+                            "name": {
+                                "value": "Revenue Streams",
+                                "synonyms": [
+                                    "revenue streams",
+                                    "revenue",
+                                    "income",
+                                    "the revenue streams"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "estructura_costos",
+                            "name": {
+                                "value": "Cost Structure",
+                                "synonyms": [
+                                    "cost structure",
+                                    "costs",
+                                    "the costs",
+                                    "the cost structure"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "metricas_clave",
+                            "name": {
+                                "value": "Key Metrics",
+                                "synonyms": [
+                                    "key metrics",
+                                    "the metrics",
+                                    "metrics"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "ventaja_injusta",
+                            "name": {
+                                "value": "Unfair Advantage",
+                                "synonyms": [
+                                    "unfair advantage",
+                                    "the unfair advantage",
+                                    "advantage"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "HYPOTHESIS_STEP_NAME",
+                    "values": [
+                        {
+                            "id": "validacion",
+                            "name": {
+                                "value": "Hypothesis Validation",
+                                "synonyms": [
+                                    "hypothesis validation",
+                                    "the validation",
+                                    "validate the hypothesis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "diseno",
+                            "name": {
+                                "value": "Experiment Design",
+                                "synonyms": [
+                                    "experiment design",
+                                    "the experiment",
+                                    "design the experiment"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "registro",
+                            "name": {
+                                "value": "Results Log",
+                                "synonyms": [
+                                    "results log",
+                                    "the results",
+                                    "results",
+                                    "log the results"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "LoginIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "nombreUsuario",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.LoginIntent.nombreUsuario"
+                            }
+                        },
+                        {
+                            "name": "semilla",
+                            "type": "AMAZON.FOUR_DIGIT_NUMBER",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.LoginIntent.semilla"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "GetSpecificPhaseIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "numeroFase",
+                            "type": "FASE_NUMBER",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.GetSpecificPhaseIntent.numeroFase"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "CanvasDeepDiveIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "canvasStepName",
+                            "type": "CANVAS_STEP_NAME",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.CanvasDeepDiveIntent.canvasStepName"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "HypothesisDeepDiveIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "hypothesisStepName",
+                            "type": "HYPOTHESIS_STEP_NAME",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.HypothesisDeepDiveIntent.hypothesisStepName"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.LoginIntent.nombreUsuario",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "To continue I need to verify your identity. What's your name?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Before we start, tell me your name."
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.LoginIntent.semilla",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Thanks. Now tell me your access seed, it's 4 digits."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "What's your 4-digit seed?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.GetSpecificPhaseIntent.numeroFase",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Sure, which phase of the project do you need help with? Tell me a number from 1 to 4."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "We have 4 phases in total. Which number are you interested in?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.CanvasDeepDiveIntent.canvasStepName",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Sure, tell me the name of the part of the canvas, for example the problem, the value proposition, or the channels."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Which part of the canvas do you need help with?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.HypothesisDeepDiveIntent.hypothesisStepName",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Sure, tell me the name of the part, for example hypothesis validation, experiment design, or results log."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Which part of the hypothesis do you need to see?"
+                    }
+                ]
+            }
+        ]
+    }
+}

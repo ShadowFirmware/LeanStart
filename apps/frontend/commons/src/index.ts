@@ -35,8 +35,8 @@ export { usePagination } from "./hooks/use-pagination";
 export { useAccion } from "./hooks/use-accion";
 
 // Modo demo / identidad
-export { DEMO_MODE, DEMO_USERS } from "./lib/demo";
-export type { DemoUser } from "./lib/demo";
+export { DEMO_MODE, DEMO_USERS, DEMO_ACCOUNTS } from "./lib/demo";
+export type { DemoUser, DemoAccount } from "./lib/demo";
 
 // Store
 export { useUsuariosStore } from "./store/usuarios";

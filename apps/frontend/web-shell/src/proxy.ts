@@ -18,14 +18,21 @@ const ROLE_PREFIXES: Record<Role, string> = {
 };
 
 export default auth((req) => {
-  // Bypass de autenticación SOLO en modo demo explícito (NEXT_PUBLIC_DEMO_MODE=true).
-  // Nunca depende de NODE_ENV: un despliegue sin el flag exige sesión real.
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    return NextResponse.next();
-  }
-
   const { pathname } = req.nextUrl;
   const session = req.auth;
+
+  // Bypass de autenticación SOLO en modo demo explícito (NEXT_PUBLIC_DEMO_MODE=true):
+  // no exige sesión para entrar a rutas protegidas (useCurrentUser cae a un usuario
+  // demo por ruta). Pero si SÍ hay una sesión real (p. ej. alguien entró con
+  // credenciales reales, como la cuenta demo de Daniel), respetamos el flujo normal
+  // de "sácalo de /login hacia su rol" — si no, tras loguearse con éxito no pasa
+  // nada visible, porque este bypass nunca redirige.
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+    if (pathname === "/login" && session?.user?.rol) {
+      return NextResponse.redirect(new URL(ROLE_HOME[session.user.rol], req.url));
+    }
+    return NextResponse.next();
+  }
 
   // Rutas públicas
   if (pathname === "/login" || pathname === "/" || pathname === "/registro") {

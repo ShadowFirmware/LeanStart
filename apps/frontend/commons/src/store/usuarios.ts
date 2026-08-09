@@ -34,6 +34,7 @@ const SEED_USUARIOS: Usuario[] = [
   { id: "seed-3", nombre: "Carlos Ruiz", correo: "mentor@gmail.com", rol: "mentor", estado: "activo", creadoEn: "5 ene 2026" },
   { id: "seed-4", nombre: "Ana López", correo: "evaluador@gmail.com", rol: "evaluador", estado: "activo", creadoEn: "8 ene 2026" },
   { id: "seed-5", nombre: "María Fernández", correo: "maria@gmail.com", rol: "emprendedor", estado: "activo", creadoEn: "12 ene 2026" },
+  { id: "demo-daniel", nombre: "Daniel", correo: "daniel@example.com", rol: "emprendedor", estado: "activo", creadoEn: "7 ago 2026" },
 ];
 
 function mapUsuario(u: Record<string, unknown>): Usuario {
