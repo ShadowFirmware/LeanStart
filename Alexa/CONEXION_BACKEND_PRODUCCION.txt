@@ -1,0 +1,270 @@
+===========================================================================
+ CONEXIÓN DE LA SKILL DE ALEXA CON EL BACKEND (APLICACIÓN YA DESPLEGADA)
+===========================================================================
+
+Este documento cubre lo necesario para que la skill deje de hablar con el
+backend "de juguete" (seed-service, datos en memoria, ngrok) y pase a
+hablar con el backend real de LeanStart ya desplegado (NestJS + PostgreSQL
+en AWS, según el README raíz), con la skill también corriendo en un
+endpoint permanente (no ngrok).
+
+No es una guía "paso a paso ejecútalo ya": varias decisiones (Lambda vs
+servidor propio, dominio, etc.) dependen de cómo se termine desplegando el
+resto del proyecto. Úsalo como checklist.
+
+---------------------------------------------------------------------------
+1. QUÉ CAMBIA RESPECTO AL MODO SIMULADO
+---------------------------------------------------------------------------
+
+  Simulado (dev)                       Producción
+  ------------------------------       ------------------------------
+  seed-service (Express, memoria)      Backend real NestJS + PostgreSQL
+  Alexa/server.js + ngrok              AWS Lambda (recomendado) o un
+                                        servidor propio con dominio y
+                                        certificado TLS reales
+  ALEXA_VERIFY_REQUESTS puede ser      ALEXA_VERIFY_REQUESTS siempre en
+  false para probar con curl           true (verificación de firma real)
+  CORS abierto ("*") en el backend     CORS restringido a los orígenes
+                                        reales (app web, Alexa no manda
+                                        Origin así que no aplica igual,
+                                        pero el resto de la API sí)
+  Datos de prueba (Daniel, SnackEco)   Datos reales de usuarios/proyectos
+
+---------------------------------------------------------------------------
+2. EL CONTRATO CON EL BACKEND REAL YA ESTÁ IMPLEMENTADO
+---------------------------------------------------------------------------
+
+  Alexa/index.js ya habla directamente con el api-gateway del backend real
+  (no con seed-service) usando access tokens JWT reales. Esto se construyó
+  en la rama `feature/alexa-seed-login` (basada en origin/Back), porque el
+  backend real solo sabía autenticar con email+password vía JWT — pedirle a
+  alguien su contraseña en voz alta es justo el problema que el sistema de
+  semilla evita, así que se reconstruyó el puente de "semilla -> JWT" del
+  lado del backend en vez de cambiar el login de la skill.
+
+  Piezas agregadas en el backend (apps/backend, rama feature/alexa-seed-login):
+    - services/auth-service/prisma/schema.prisma: modelo `SemillaAlexa`
+      (código de 4 dígitos, un solo uso, expira a los 15 min) + su
+      migración (prisma/migrations/20260809190000_add_semillas_alexa).
+    - services/auth-service: `SeedsAlexaService` (generar/validar) y dos
+      endpoints nuevos en AuthController: POST /auth/seeds/generate
+      (requiere usuario ya logueado, @CurrentUser) y POST /auth/seeds/validate
+      (público; si la semilla es válida, reutiliza
+      AuthService.buildAuthResponse para emitir un access token JWT igual
+      al de un login normal, pero con vida más corta: 2h en vez de 7d).
+    - api-gateway: los mismos dos endpoints proxificados en AuthController,
+      más `SeedRateLimitGuard` (Redis, keyed por IP, NO por el código —
+      limita fuerza bruta sobre los ~10 000 códigos posibles de 4 dígitos).
+
+  Contrato que Alexa/index.js ya consume (ver validateSeedWithBackend,
+  fetchEmpresasForUser, fetchObservacionesForEmpresa):
+
+  POST {SEED_API_URL}/auth/seeds/validate
+    Body:     { "nombre": string, "seed": string }
+    200 OK    { "valid": true,
+                "auth": { "accessToken": string,
+                          "user": { "id", "nombre", "email", "rol" } } }
+    200 OK    { "valid": false, "reason": "USER_NOT_FOUND" | "SEED_MISMATCH"
+                | "SEED_ALREADY_USED" | "SEED_EXPIRED" | "UNKNOWN" }
+    (nota: el backend responde 200 también en el caso inválido — el campo
+    "valid" es lo que decide, la skill ya lo trata así)
+
+  GET {SEED_API_URL}/empresas                       (Authorization: Bearer)
+    200 OK  [ { "id", "nombre",
+                "estado": "borrador" | "pendiente_mentoria" | "en_mentoria" |
+                          "observaciones_pendientes" | "observaciones_atendidas" |
+                          "pendiente_evaluacion" | "en_evaluacion" |
+                          "publicado" | "devuelto", ... } ]
+    401     si el token expiró o es inválido -> la skill limpia la sesión y
+            pide iniciar sesión de nuevo (buildSessionExpiredResponse)
+
+  GET {SEED_API_URL}/empresas/:empresaId/observaciones   (Authorization: Bearer)
+    200 OK  [ { "id", "autorNombre", "comentario", ... } ]
+
+  SEED_API_URL en este modo debe apuntar al api-gateway (no a
+  auth-service/empresas-service directamente: esos están protegidos por
+  `x-internal-key` y solo el gateway lo conoce).
+
+  Si el equipo de backend cambia estos endpoints (nombres de campo,
+  estructura), hay que actualizar Alexa/index.js en los mismos puntos:
+  validateSeedWithBackend(), fetchEmpresasForUser(),
+  fetchObservacionesForEmpresa(), y resources.ESTADO_LABELS si cambian los
+  valores de "estado".
+
+---------------------------------------------------------------------------
+3. VARIABLE DE ENTORNO A ACTUALIZAR
+---------------------------------------------------------------------------
+
+  SEED_API_URL
+    Debe apuntar a la URL pública HTTPS del api-gateway real, por ejemplo:
+      https://api.leanstart.com
+    (nunca http:// en producción; Alexa y buenas prácticas exigen TLS. Es
+    el mismo puerto/dominio que usa la app web para hablar con el gateway,
+    normalmente el AUTH_SERVICE_URL/EMPRESAS_SERVICE_URL del gateway NO
+    aplican aquí — esos son internos, la skill habla con el gateway público)
+
+  Dónde se configura depende de dónde corra la skill (ver sección 4):
+    - Lambda: pestaña "Configuration" > "Environment variables".
+    - Servidor propio: variables de entorno del proceso (systemd, Docker,
+      pm2 ecosystem file, etc.), NUNCA hardcodeadas en el código ni en un
+      archivo versionado en git.
+
+  ALEXA_VERIFY_REQUESTS
+    No se debe definir como "false" en el endpoint que quede registrado
+    en el Developer Console. Déjala sin definir (usa el default true) o
+    ponla explícitamente en "true".
+
+---------------------------------------------------------------------------
+4. DÓNDE CORRE LA SKILL (elegir una opción)
+---------------------------------------------------------------------------
+
+  OPCIÓN A: AWS Lambda (recomendado para producción)
+  ---------------------------------------------------
+  Alexa/index.js ya exporta `exports.handler = skillBuilder.lambda();`,
+  listo para esto.
+
+  1. Empaquetar Alexa/ (index.js + package.json + node_modules de
+     producción -sin devDependencies-) en un .zip, o usar una pipeline de
+     CI/CD (SAM, Serverless Framework, CDK) para desplegarlo.
+  2. Crear la función Lambda:
+     - Runtime: Node.js (usar una versión soportada, ver "engines" si se
+       agrega a package.json, o la versión de Node con la que se probó).
+     - Handler: index.handler
+     - Memoria: 128-256 MB suele bastar (la skill no hace cómputo
+       pesado, solo llamadas HTTP cortas).
+     - Timeout: al menos 8-10s (Alexa da hasta ~8s de margen real antes
+       de descartar la respuesta; dejar margen para la llamada al
+       backend).
+  3. Variables de entorno de la función: SEED_API_URL (ver sección 3).
+  4. Permisos: agregar un "Trigger" de tipo "Alexa Skills Kit" en la
+     configuración de la Lambda, y en el Developer Console, en
+     Build > Endpoint, seleccionar "AWS Lambda ARN" y pegar el ARN de la
+     función (en vez de la URL de ngrok).
+  5. Logs: console.log/console.error ya están en todo el código
+     (Alexa/index.js) y llegarán automáticamente a CloudWatch Logs de la
+     función; ahí es donde se debe monitorear en producción (no hay
+     terminal local que ver).
+
+  OPCIÓN B: Servidor propio (mantener Alexa/server.js)
+  ------------------------------------------------------
+  Solo tiene sentido si ya existe infraestructura corriendo (EC2, ECS,
+  un droplet, etc.) donde valga la pena mantener este servidor Express en
+  vez de migrar a Lambda.
+
+  1. Desplegar Alexa/server.js en un host con IP/dominio propio y
+     mantenerlo siempre corriendo (pm2, systemd, un contenedor con
+     restart policy, etc. -ngrok NO se usa en producción-).
+  2. Poner un dominio real (ej. alexa.leanstart.com) con certificado TLS
+     válido (Let's Encrypt / ACM si hay un load balancer de AWS
+     delante), NO el certificado de ngrok.
+  3. En el Developer Console, Build > Endpoint > HTTPS, con la URL real
+     y el tipo de certificado "My development endpoint has a certificate
+     from a trusted certificate authority" (según cómo esté emitido).
+  4. Dejar ALEXA_VERIFY_REQUESTS en true (default) para que sí se valide
+     la firma de cada request de Alexa.
+
+---------------------------------------------------------------------------
+5. MODELO DE INTERACCIÓN EN PRODUCCIÓN
+---------------------------------------------------------------------------
+
+  Los archivos Alexa/models/es-MX.json y Alexa/models/en-US.json siguen
+  siendo la fuente de verdad. En producción conviene dejar de pegarlos a
+  mano en el JSON Editor y automatizar el deploy con ask-cli:
+
+    npm install -g ask-cli
+    ask configure                 # una sola vez, liga tu cuenta de Amazon
+    ask deploy                    # requiere un skill.json + carpeta
+                                   # skill-package/ (no existe todavía en
+                                   # este repo; hay que crearla apuntando
+                                   # a Alexa/models/ como
+                                   # skill-package/interactionModels/custom/)
+
+  Si se sigue haciendo manual: recordar subir AMBOS locales (es-MX y
+  en-US) y correr "Build Model" en cada uno antes de certificar/publicar.
+
+---------------------------------------------------------------------------
+6. SEGURIDAD Y BUENAS PRÁCTICAS PARA PRODUCCIÓN
+---------------------------------------------------------------------------
+
+  - ALEXA_VERIFY_REQUESTS siempre en true en el endpoint público real
+    (verifica firma + timestamp de cada request, evita que cualquiera
+    mande peticiones falsas al endpoint haciéndose pasar por Alexa).
+  - El backend real NO debe dejar CORS en "*" como seed-service; debe
+    restringirlo a los orígenes reales de la app web (Alexa no depende
+    de CORS para hablar con el backend porque la llamada la hace el
+    propio servidor de la skill, no un navegador -pero el resto de la
+    API sí importa-).
+  - No dejar datos en memoria como hace seed-service/store.js; el
+    backend real ya usa PostgreSQL (persistencia real, sobrevive
+    reinicios).
+  - Nunca commitear URLs de producción con credenciales embebidas ni
+    secretos; usar variables de entorno / AWS Secrets Manager / SSM
+    Parameter Store.
+  - Revisar que las respuestas de error (Alexa/index.js -> ErrorHandler,
+    diccionario resources.ERRORS) no filtren detalles internos del
+    backend real (stack traces, URLs internas, etc.) hacia lo que Alexa
+    dice en voz alta; hoy ya están genéricas por diseño, mantenerlo así.
+
+---------------------------------------------------------------------------
+7. PUBLICAR LA SKILL (si va a ser pública, no solo para tu cuenta de dev)
+---------------------------------------------------------------------------
+
+  Si el objetivo es que cualquier usuario la use desde su cuenta de
+  Alexa (no solo la cuenta de desarrollador con la que se prueba), hace
+  falta pasar por certificación de Amazon:
+
+  1. Build > Distribution: completar nombre público, descripción,
+     frases de ejemplo, ícono (grande y pequeño), categoría.
+  2. Privacy & Compliance: declarar si se recopilan datos personales
+     (aquí sí: nombre de usuario), enlazar política de privacidad y
+     términos de uso reales del proyecto LeanStart.
+  3. Testing instructions: instrucciones para el revisor de Amazon,
+     incluyendo cómo generar una semilla de prueba válida (o dejar un
+     usuario/semilla de prueba fijo mientras dura la revisión).
+  4. Enviar a certificación ("Submit for review") y atender el feedback
+     si lo rechazan.
+
+  Si solo es para uso interno/pruebas con tu cuenta de desarrollador,
+  este paso completo se puede omitir: la skill funciona igual en modo
+  "Development" mientras esté habilitada para pruebas en tu cuenta.
+
+---------------------------------------------------------------------------
+8. CHECKLIST FINAL ANTES DE CONECTAR A PRODUCCIÓN
+---------------------------------------------------------------------------
+
+  [ ] La rama feature/alexa-seed-login (SemillaAlexa + endpoints de
+      seeds en auth-service y api-gateway) está mergeada a la rama de
+      backend que se despliega (Back / la que reemplace a main).
+  [ ] Se corrió la migración de Prisma en la base real:
+      cd apps/backend/services/auth-service && npx prisma migrate deploy
+      (la migración ya está escrita a mano en
+      prisma/migrations/20260809190000_add_semillas_alexa; no se generó
+      contra una base real porque no había Postgres disponible al
+      escribirla — vale la pena correr `prisma migrate dev` una vez
+      contra un Postgres de verdad para confirmar que aplica limpio antes
+      de usar `migrate deploy` en producción).
+  [ ] Variables de entorno nuevas del api-gateway están seteadas:
+      SEED_RATE_LIMIT_MAX, SEED_RATE_LIMIT_WINDOW_SECONDS (ver
+      api-gateway/.env.example; tienen default razonable si se omiten).
+  [ ] SEED_API_URL (en la skill) apunta a la URL HTTPS pública del
+      api-gateway real.
+  [ ] ALEXA_VERIFY_REQUESTS no está en "false" en el entorno de
+      producción.
+  [ ] La skill corre en Lambda o en un servidor propio con TLS válido
+      (no ngrok).
+  [ ] El endpoint configurado en el Developer Console (ARN de Lambda o
+      URL HTTPS) es el de producción, no el de ngrok/dev.
+  [ ] Alexa/models/es-MX.json y Alexa/models/en-US.json están
+      desplegados y "Build Model" corrió sin errores en ambos locales.
+  [ ] CORS del backend real restringido a orígenes conocidos.
+  [ ] Persistencia real (PostgreSQL), no el store en memoria de
+      seed-service.
+  [ ] (Si va a ser pública) distribución, privacidad y certificación
+      completadas en el Developer Console.
+  [ ] PENDIENTE (no incluido en feature/alexa-seed-login): la app web
+      todavía no tiene el botón "Generar nueva semilla" — hoy el endpoint
+      POST /auth/seeds/generate solo se puede probar por API (Scalar docs
+      del gateway, o curl con un Bearer token de un login normal). Sin ese
+      botón, un usuario real no tiene forma de conseguir una semilla desde
+      la web todavía.
+===========================================================================

@@ -1,5 +1,5 @@
 {
-  "name": "leanstart-seed-service",
+  "name": "@leanstart/seed-service",
   "private": true,
   "version": "0.1.0",
   "description": "Servicio backend temporal para probar el login por semilla de un solo uso de la skill de Alexa, antes de integrarlo al backend NestJS real.",

@@ -9,12 +9,16 @@
     "apps/frontend/notificaciones-front",
     "apps/frontend/administrador-front",
     "apps/frontend/mentor-front",
-    "apps/frontend/evaluador-front"
+    "apps/frontend/evaluador-front",
+    "Alexa",
+    "seed-service"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@leanstart/web-shell",
     "build": "npm run build --workspace=@leanstart/web-shell",
-    "lint": "npm run lint --workspace=@leanstart/web-shell"
+    "lint": "npm run lint --workspace=@leanstart/web-shell",
+    "alexa:dev": "npm run start --workspace=@leanstart/alexa-skill",
+    "seed:dev": "npm run start --workspace=@leanstart/seed-service"
   },
   "devDependencies": {
     "playwright": "^1.61.1",

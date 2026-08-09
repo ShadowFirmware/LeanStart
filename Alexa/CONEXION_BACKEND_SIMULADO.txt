@@ -1,0 +1,191 @@
+===========================================================================
+ CONEXIÓN DE LA SKILL DE ALEXA CON EL BACKEND (MODO SIMULADO / DESARROLLO)
+===========================================================================
+
+Este documento explica cómo dejar la skill de Alexa (Alexa/index.js)
+funcionando en tu máquina, hablando con el backend "de prueba"
+(seed-service), usando ngrok como puente hacia el Alexa Developer Console.
+NO es el flujo de producción (para eso ver
+CONEXION_BACKEND_PRODUCCION.txt).
+
+---------------------------------------------------------------------------
+1. QUÉ PIEZAS INTERVIENEN
+---------------------------------------------------------------------------
+
+  Alexa Developer Console (nube de Amazon)
+        │  HTTPS (firmado por Amazon)
+        ▼
+  ngrok (túnel público -> tu máquina)
+        │
+        ▼
+  Alexa/server.js  (Express + ask-sdk-express-adapter, puerto 5000)
+        │  usa Alexa/index.js (skillBuilder con todos los handlers)
+        │  hace llamadas HTTP a...
+        ▼
+  seed-service/server.js (Express, puerto 3001)
+        - POST /auth/seeds/generate                -> genera semilla de un
+                                                       solo uso
+        - POST /auth/seeds/validate                -> usada por LoginIntent;
+                                                       si es válida regresa
+                                                       un access token
+                                                       "falso" (auth.accessToken)
+        - GET  /auth/seeds/:nombre                 -> solo para depurar
+        - GET  /empresas                           -> usada por
+          (requiere Authorization: Bearer)             GetProjectStatusIntent
+        - GET  /empresas/:empresaId/observaciones  -> usada por
+          (requiere Authorization: Bearer)             GetMentorCommentsIntent
+        (datos en memoria, ver seed-service/store.js y projects.js;
+        se reinician cada vez que reinicias el servicio)
+
+  NOTA: seed-service es un doble local del api-gateway real (mismos paths y
+  shapes de respuesta que apps/backend/api-gateway en la rama con el
+  backend), pero su "accessToken" es un string de juguete (ver
+  store.js#issueFakeToken), no un JWT real — solo sirve para hablar con
+  este mismo seed-service. Para el contrato exacto y cómo se generó, ver
+  CONEXION_BACKEND_PRODUCCION.txt.
+
+---------------------------------------------------------------------------
+2. INSTALAR DEPENDENCIAS
+---------------------------------------------------------------------------
+
+  Alexa/ y seed-service/ son workspaces de npm dentro del monorepo raíz
+  (junto con apps/frontend/*, ver package.json de la raíz). Un solo
+  install en la raíz basta para los tres — ya NO se instala por separado
+  dentro de cada carpeta (eso dejaba 3 node_modules y 3 lockfiles sueltos):
+
+  npm install          # desde la raíz del repo (LeanStart/)
+
+---------------------------------------------------------------------------
+3. LEVANTAR EL BACKEND SIMULADO (seed-service)
+---------------------------------------------------------------------------
+
+  Desde la raíz:
+    npm run seed:dev
+  (equivale a "npm run start --workspace=@leanstart/seed-service"; también
+  puedes hacer "cd seed-service && npm start", sigue funcionando igual)
+  # -> "Seed auth service escuchando en http://localhost:3001"
+
+  Déjalo corriendo en su propia terminal. Si el login o las consultas de
+  proyecto fallan, lo primero es revisar que esta terminal siga viva.
+
+---------------------------------------------------------------------------
+4. CONFIGURAR VARIABLES DE ENTORNO DE LA SKILL
+---------------------------------------------------------------------------
+
+  Alexa/index.js lee estas variables de entorno (con valores por defecto
+  pensados para desarrollo local, así que en este modo casi nunca hace
+  falta tocarlas):
+
+  SEED_API_URL
+    URL base del backend (seed-service). Por defecto:
+      http://localhost:3001
+    Solo cámbiala si corres seed-service en otro puerto o otra máquina.
+
+  ALEXA_PORT
+    Puerto donde escucha Alexa/server.js. Por defecto: 5000
+
+  ALEXA_VERIFY_REQUESTS
+    Si es "false", desactiva la verificación de firma/timestamp de Alexa
+    (para poder probar con curl directo, sin pasar por el Developer
+    Console). NUNCA lo pongas en false en el endpoint real que uses desde
+    el Developer Console; solo para pruebas locales con curl.
+
+  Ejemplo (PowerShell), solo si necesitas sobreescribir algo:
+    $env:SEED_API_URL = "http://localhost:3001"
+    $env:ALEXA_PORT = "5000"
+
+---------------------------------------------------------------------------
+5. LEVANTAR LA SKILL (endpoint HTTPS propio con ngrok)
+---------------------------------------------------------------------------
+
+  a) En una terminal, desde la raíz del repo:
+       npm run alexa:dev
+     (o "cd Alexa && npm start", sigue funcionando igual)
+     Esto corre server.js (Express + ExpressAdapter), escuchando en
+     http://localhost:5000 y respondiendo POST en "/".
+
+  b) En otra terminal, expón ese puerto con ngrok:
+       ngrok http 5000
+     ngrok te da una URL pública tipo:
+       https://abc123.ngrok-free.app
+
+  c) Copia esa URL HTTPS completa (con el "/" final si ngrok no lo agrega
+     solo, revisa que el endpoint quede como
+     https://abc123.ngrok-free.app/ apuntando al POST "/" de server.js).
+
+  NOTA: cada vez que reinicies ngrok (plan gratuito), la URL cambia. Hay
+  que repetir el paso 6 cada vez.
+
+---------------------------------------------------------------------------
+6. CONFIGURAR EL ENDPOINT EN EL ALEXA DEVELOPER CONSOLE
+---------------------------------------------------------------------------
+
+  1. Entra a https://developer.amazon.com/alexa/console/ask
+  2. Abre tu skill (o créala si no existe: "Create Skill" -> Custom ->
+     "Start from scratch").
+  3. Ve a Build > Endpoint.
+  4. Selecciona "HTTPS".
+  5. En "Default Region" pega la URL de ngrok del paso 5.
+  6. En el tipo de certificado elige:
+     "My development endpoint is a sub-domain of a domain that has a
+      wildcard certificate from a certificate authority"
+     (ngrok ya trae un certificado válido, esta opción es la correcta).
+  7. Guarda ("Save Endpoints").
+
+---------------------------------------------------------------------------
+7. SUBIR EL MODELO DE INTERACCIÓN (uno por idioma)
+---------------------------------------------------------------------------
+
+  La skill ahora es multi-idioma: los modelos viven en Alexa/models/.
+
+  1. Build > JSON Editor (o Interaction Model > JSON Editor).
+  2. Si el locale activo es Español (MX): pega el contenido de
+     Alexa/models/es-MX.json y dale "Save Model" y "Build Model".
+  3. Para agregar inglés: en la parte superior del console, agrega el
+     locale "English (US)" a la skill (menú de locales, arriba a la
+     derecha). Cambia al locale English (US), pega el contenido de
+     Alexa/models/en-US.json, "Save Model" y "Build Model".
+  4. Repite el build cada vez que cambies algo en esos JSON.
+
+---------------------------------------------------------------------------
+8. PROBAR EL FLUJO COMPLETO
+---------------------------------------------------------------------------
+
+  a) Genera una semilla de prueba para un usuario (esto es lo que hará
+     después el botón "Generar nueva semilla" de la app web):
+
+       curl -X POST http://localhost:3001/auth/seeds/generate \
+         -H "Content-Type: application/json" \
+         -d "{\"nombre\":\"Daniel\"}"
+       # -> {"seed":"4829","expiraEn":"2026-08-09T20:00:00.000Z"}
+
+  b) En el Developer Console, pestaña "Test", habilita las pruebas
+     ("Skill testing is enabled in: Development") y escribe (o habla si
+     tienes micrófono):
+       abre guía de emprendedores
+       inicia sesión
+       (Alexa te pedirá nombre y semilla; dale los del paso a)
+       ayuda con un proyecto
+
+  c) También puedes probar sin pasar por Alexa, mandando el JSON de una
+     IntentRequest directo con curl a http://localhost:5000/ (necesitas
+     ALEXA_VERIFY_REQUESTS=false para esto, ver sección 4).
+
+---------------------------------------------------------------------------
+9. PROBLEMAS COMUNES
+---------------------------------------------------------------------------
+
+  - "Tuve un problema para verificar tus datos" al iniciar sesión:
+    seed-service no está corriendo, o SEED_API_URL apunta mal.
+
+  - El Developer Console marca error de certificado / SSL:
+    revisa que copiaste la URL con https:// (no http://) y que ngrok
+    sigue corriendo (una URL de ngrok vieja ya no sirve).
+
+  - Cambios en Alexa/index.js no se reflejan:
+    reinicia "npm start" en Alexa/ (no hay hot-reload).
+
+  - Cambios en los .json de Alexa/models no se reflejan:
+    hace falta volver a pegar el JSON en el console y correr "Build
+    Model" de nuevo; guardar el archivo local no actualiza la skill.
+===========================================================================

@@ -1,35 +1,39 @@
 /**
- * Datos de ejemplo (mock) de proyectos por usuario, para que la skill de
- * Alexa pueda responder "estado de mi proyecto" y "comentarios de mi mentor"
- * sin depender todavía del backend real (NestJS). No están conectados a los
- * datos reales de la app web (esos viven en localStorage del navegador).
+ * Datos de ejemplo (mock) de empresas/observaciones por usuario, para que la
+ * skill de Alexa pueda responder "estado de mi proyecto" y "comentarios de
+ * mi mentor" sin depender todavía del backend real (NestJS). Mismo shape
+ * que expone el api-gateway real: GET /empresas y
+ * GET /empresas/:empresaId/observaciones (ver apps/backend/api-gateway en
+ * la rama con el backend) — comentarios vive en el campo "comentario"
+ * (no "texto"), separado de la empresa, no anidado.
  */
 'use strict';
 
-const PROJECTS_BY_USER = {
+const EMPRESAS_BY_USER = {
   daniel: [
-    {
-      nombre: 'SnackEco',
-      estado: 'en_mentoria',
-      comentarios: [
-        { autor: 'Mentor', texto: 'Buen avance en el problema, pero profundiza más en el segmento de clientes.' },
-        { autor: 'Mentor', texto: 'Agrega métricas más específicas para medir el éxito del negocio.' },
-      ],
-    },
-    {
-      nombre: 'TutorIA',
-      estado: 'borrador',
-      comentarios: [],
-    },
+    { id: 'emp-snackeco', nombre: 'SnackEco', estado: 'en_mentoria' },
+    { id: 'emp-tutoria', nombre: 'TutorIA', estado: 'borrador' },
   ],
 };
 
-function normalizeUsername(username) {
-  return String(username || '').trim().toLowerCase();
+const OBSERVACIONES_BY_EMPRESA = {
+  'emp-snackeco': [
+    { id: 'obs-1', autorNombre: 'Mentor', comentario: 'Buen avance en el problema, pero profundiza más en el segmento de clientes.' },
+    { id: 'obs-2', autorNombre: 'Mentor', comentario: 'Agrega métricas más específicas para medir el éxito del negocio.' },
+  ],
+  'emp-tutoria': [],
+};
+
+function normalizeName(nombre) {
+  return String(nombre || '').trim().toLowerCase();
 }
 
-function getProjectsForUser(username) {
-  return PROJECTS_BY_USER[normalizeUsername(username)] || [];
+function getEmpresasForUser(nombre) {
+  return EMPRESAS_BY_USER[normalizeName(nombre)] || [];
 }
 
-module.exports = { getProjectsForUser };
+function getObservacionesForEmpresa(empresaId) {
+  return OBSERVACIONES_BY_EMPRESA[empresaId] || [];
+}
+
+module.exports = { getEmpresasForUser, getObservacionesForEmpresa };
