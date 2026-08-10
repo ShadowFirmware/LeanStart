@@ -27,21 +27,23 @@ export class AuthService {
     private readonly privilegios: PrivilegiosService
   ) {}
 
-  private async buildAuthResponse(user: {
-    id: string;
-    nombre: string;
-    correo: string;
-    rol: string;
-  }): Promise<AuthResponse> {
+  /** Público: también lo usa SeedsAlexaService para emitir el token tras validar una semilla. */
+  async buildAuthResponse(
+    user: { id: string; nombre: string; correo: string; rol: string },
+    options?: { expiresIn?: string }
+  ): Promise<AuthResponse> {
     const privilegios = await this.privilegios.getPrivilegiosDeRol(user.rol);
-    const accessToken = await this.jwt.signAsync({
-      sub: user.id,
-      rol: user.rol,
-      privilegios,
-      // Identificador único del token: permite revocarlo puntualmente en logout
-      // sin necesitar una tabla de sesiones (ver TokenRevocationService en el gateway).
-      jti: crypto.randomUUID(),
-    });
+    const accessToken = await this.jwt.signAsync(
+      {
+        sub: user.id,
+        rol: user.rol,
+        privilegios,
+        // Identificador único del token: permite revocarlo puntualmente en logout
+        // sin necesitar una tabla de sesiones (ver TokenRevocationService en el gateway).
+        jti: crypto.randomUUID(),
+      },
+      options?.expiresIn ? { expiresIn: options.expiresIn as never } : undefined
+    );
     return {
       accessToken,
       user: {

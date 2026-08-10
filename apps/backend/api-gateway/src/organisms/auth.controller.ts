@@ -6,8 +6,9 @@ import type { Request } from "express";
 import { CurrentUser, Public, type AuthUser } from "@leanstart/backend-commons";
 import { ProxyService } from "../molecules/proxy.service";
 import { LoginRateLimitGuard } from "../molecules/login-rate-limit.guard";
+import { SeedRateLimitGuard } from "../molecules/seed-rate-limit.guard";
 import { TokenRevocationService } from "../molecules/token-revocation.service";
-import { LoginDto, RecuperarDto, RegisterDto } from "../atoms/auth.dto";
+import { GenerarSemillaDto, LoginDto, RecuperarDto, RegisterDto, ValidarSemillaDto } from "../atoms/auth.dto";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -72,5 +73,19 @@ export class AuthController {
       await this.revocation.revocar(payload.jti, ttlSegundos);
     }
     return { ok: true };
+  }
+
+  @Post("seeds/generate")
+  @ApiOperation({ summary: "Generar semilla de un solo uso para el login por voz (skill de Alexa)" })
+  generarSemilla(@CurrentUser() user: AuthUser, @Body() dto: GenerarSemillaDto) {
+    return this.proxy.post(this.baseUrl, "/auth/seeds/generate", dto, user);
+  }
+
+  @Public()
+  @UseGuards(SeedRateLimitGuard)
+  @Post("seeds/validate")
+  @ApiOperation({ summary: "Validar semilla y obtener un access token — lo llama la skill de Alexa, sin sesión web" })
+  validarSemilla(@Body() dto: ValidarSemillaDto) {
+    return this.proxy.post(this.baseUrl, "/auth/seeds/validate", dto);
   }
 }

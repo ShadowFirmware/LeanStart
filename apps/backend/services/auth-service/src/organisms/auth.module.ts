@@ -8,6 +8,7 @@ import { HealthController } from "./health.controller";
 import { AuthService } from "../molecules/auth.service";
 import { UsuariosService } from "../molecules/usuarios.service";
 import { PrivilegiosService } from "../molecules/privilegios.service";
+import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { PrivilegiosService } from "../molecules/privilegios.service";
     }),
   ],
   controllers: [AuthController, UsuariosController, PrivilegiosController, HealthController],
-  providers: [AuthService, UsuariosService, PrivilegiosService],
+  providers: [AuthService, UsuariosService, PrivilegiosService, SeedsAlexaService],
 })
 export class AuthModule {}

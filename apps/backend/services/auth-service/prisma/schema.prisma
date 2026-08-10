@@ -18,7 +18,28 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  semillasAlexa SemillaAlexa[]
+
   @@map("users")
+}
+
+/// Login por voz de la skill de Alexa: el emprendedor genera una semilla de 4
+/// dígitos desde la web (ya autenticado) y se la dicta a Alexa junto con el
+/// nombre que eligió; la skill la cambia por un access token real vía
+/// POST /auth/seeds/validate. Un solo uso (usadaAt) y expira a los 15 min.
+model SemillaAlexa {
+  id          String    @id @default(uuid())
+  userId      String
+  nombre      String
+  seed        String
+  generatedAt DateTime  @default(now())
+  expiraAt    DateTime
+  usadaAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([nombre, seed])
+  @@map("semillas_alexa")
 }
 
 /// Matriz módulo+acción por rol. rolId = nombre literal del rol para los 4 roles
