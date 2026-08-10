@@ -50,7 +50,7 @@ export { cn } from "./lib/utils";
 export { fileToDataUrl } from "./lib/file-to-data-url";
 export { compressImageToDataUrl } from "./lib/compress-image";
 export type { CompressImageOptions } from "./lib/compress-image";
-export { createSafeLocalStorage } from "./lib/safe-storage";
+export { createIndexedDbStorage } from "./lib/indexed-db-storage";
 export { apiFetch, modoDemo, cerrarSesionBackend, cerrarSesionUnaVez } from "./lib/api-client";
 export { debounce } from "./lib/debounce";
 export { GIRO_LABELS, ESTADO_EMPRESA_CONFIG } from "./lib/etiquetas";

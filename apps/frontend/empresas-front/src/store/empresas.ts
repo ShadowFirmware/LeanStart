@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import { apiFetch, createSafeLocalStorage, modoDemo } from "@leanstart/commons";
+import { apiFetch, createIndexedDbStorage, modoDemo } from "@leanstart/commons";
 import type {
   EstadoEmpresa, GiroEmpresa, EstadoHipotesis, TipoProducto, TipoExperimento,
   ModalidadPrecioServicio, UnidadTiempoServicio,
@@ -693,8 +693,9 @@ export const useEmpresasStore = create<EmpresasStore>()(
     }),
     // skipHydration: la rehidratación inicial la dispara <LiveSync/> tras montar,
     // para que servidor y primer render de cliente coincidan (sin mismatch).
-    // storage segura: si se llena la cuota de localStorage no se tumba la app,
-    // solo se avisa (las imágenes ya van comprimidas, así que es un último seguro).
+    // storage en IndexedDB (no localStorage): las evidencias/imágenes van embebidas
+    // en base64 y superan fácil el tope de ~5-10MB de localStorage. Sigue sin tumbar
+    // la app si por lo que sea se llega a topar una cuota — solo se avisa.
     {
       name: "leanstart-empresas",
       skipHydration: true,
@@ -721,9 +722,9 @@ export const useEmpresasStore = create<EmpresasStore>()(
         return state;
       },
       storage: createJSONStorage(() =>
-        createSafeLocalStorage(() =>
+        createIndexedDbStorage(() =>
           toast.error(
-            "Se alcanzó el límite de almacenamiento local. Elimina algún producto, imagen o empresa para poder guardar más."
+            "Se alcanzó el límite de almacenamiento del navegador. Elimina algún producto, imagen o empresa para poder guardar más."
           )
         )
       ),

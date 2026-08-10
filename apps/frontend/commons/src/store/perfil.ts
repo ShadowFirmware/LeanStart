@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { createSafeLocalStorage } from "../lib/safe-storage";
+import { createIndexedDbStorage } from "../lib/indexed-db-storage";
 import { apiFetch, modoDemo } from "../lib/api-client";
 
 /**
@@ -69,7 +69,7 @@ export const usePerfilStore = create<PerfilStore>()(
     {
       name: "leanstart-perfil",
       skipHydration: true,
-      storage: createJSONStorage(() => createSafeLocalStorage()),
+      storage: createJSONStorage(() => createIndexedDbStorage()),
     }
   )
 );
