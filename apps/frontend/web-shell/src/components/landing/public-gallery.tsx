@@ -413,14 +413,15 @@ export function PublicGallery() {
                             src={empresa.logoUrl}
                             className="pointer-events-none absolute select-none object-cover"
                             style={{
-                              width: 460,
-                              height: 460,
-                              bottom: "-22%",
-                              left: "-14%",
-                              borderRadius: "50%",
-                              filter: "blur(46px) saturate(1.4)",
-                              opacity: isActive ? 0.22 : 0,
+                              width: 380,
+                              height: 380,
+                              bottom: "-16%",
+                              left: "-10%",
+                              filter: "blur(9px) saturate(1.35)",
+                              opacity: isActive ? 0.24 : 0,
                               transition: "opacity 700ms",
+                              maskImage: "radial-gradient(circle, black 35%, transparent 72%)",
+                              WebkitMaskImage: "radial-gradient(circle, black 35%, transparent 72%)",
                             }}
                           />
                         ) : (
