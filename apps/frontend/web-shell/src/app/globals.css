@@ -394,6 +394,54 @@ nextjs-portal {
   }
 }
 
+/* ─── Vitrina pública (landing): fondo, borde animado y entrada de tarjetas ─── */
+@property --lp-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes lp-border-spin {
+  to {
+    --lp-angle: 360deg;
+  }
+}
+@keyframes lp-orb-drift-1 {
+  0%, 100% { transform: translate(-6%, -4%) scale(1); }
+  50% { transform: translate(8%, 6%) scale(1.15); }
+}
+@keyframes lp-orb-drift-2 {
+  0%, 100% { transform: translate(10%, 4%) scale(1); }
+  50% { transform: translate(-8%, -8%) scale(1.1); }
+}
+@keyframes lp-orb-drift-3 {
+  0%, 100% { transform: translate(-4%, 8%) scale(0.95); }
+  50% { transform: translate(6%, -6%) scale(1.2); }
+}
+@keyframes lp-particle-float {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-140px) translateX(var(--lp-drift, 20px)); opacity: 0; }
+}
+@keyframes lp-shimmer-sweep {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+@keyframes lp-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes lp-badge-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(154, 98, 250, 0.35); }
+  50% { box-shadow: 0 0 22px 3px rgba(154, 98, 250, 0.35); }
+}
+
 /* ─── Preloader / Loader de marca ───
    Animaciones sutiles para <LoadingScreen>: el anillo cónico gira, el glow
    respira y los puntos del texto laten en secuencia. */
