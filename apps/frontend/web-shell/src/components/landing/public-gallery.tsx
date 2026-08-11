@@ -401,22 +401,46 @@ export function PublicGallery() {
                           />
                         )}
 
-                        {/* Inicial gigante de fondo, como marca de agua decorativa */}
-                        <span
-                          aria-hidden
-                          className="pointer-events-none absolute font-black select-none"
-                          style={{
-                            fontSize: 240,
-                            lineHeight: 1,
-                            bottom: "-0.28em",
-                            left: "-0.06em",
-                            color: "var(--brand)",
-                            opacity: isActive ? 0.06 : 0,
-                            transition: "opacity 700ms",
-                          }}
-                        >
-                          {empresa.nombre.charAt(0).toUpperCase()}
-                        </span>
+                        {/* Marca de agua de fondo: el logo real, gigante y desenfocado (no una
+                            letra genérica) — así cada tarjeta se siente hecha a medida de esa
+                            empresa. Sin logoUrl no hay imagen que desenfocar, se conserva la
+                            inicial como respaldo. */}
+                        {empresa.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            aria-hidden
+                            alt=""
+                            src={empresa.logoUrl}
+                            className="pointer-events-none absolute select-none object-cover"
+                            style={{
+                              width: 460,
+                              height: 460,
+                              bottom: "-22%",
+                              left: "-14%",
+                              borderRadius: "50%",
+                              filter: "blur(46px) saturate(1.4)",
+                              opacity: isActive ? 0.22 : 0,
+                              transition: "opacity 700ms",
+                            }}
+                          />
+                        ) : (
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute font-black select-none"
+                            style={{
+                              fontSize: 240,
+                              lineHeight: 1,
+                              bottom: "-0.28em",
+                              left: "-0.06em",
+                              color: "var(--brand)",
+                              filter: "blur(2px)",
+                              opacity: isActive ? 0.06 : 0,
+                              transition: "opacity 700ms",
+                            }}
+                          >
+                            {empresa.nombre.charAt(0).toUpperCase()}
+                          </span>
+                        )}
 
                         {/* Línea de acento superior, solo en la tarjeta activa */}
                         <div
@@ -438,12 +462,29 @@ export function PublicGallery() {
                           style={{ animation: isActive ? "lp-content-in 500ms cubic-bezier(0.22,1,0.36,1) both" : undefined }}
                         >
                           {isActive && (
-                            <span
-                              className="absolute inset-0 rounded-2xl animate-ping"
-                              style={{ backgroundColor: "var(--brand)", opacity: 0.18, animationDuration: "2.2s" }}
-                            />
+                            <>
+                              {/* Aura: el mismo logo, agrandado y desenfocado detrás del ícono nítido
+                                  — un halo con los colores reales de la marca en vez de un glow morado
+                                  genérico. Con inicial de respaldo, el halo sale del propio tile. */}
+                              <div
+                                aria-hidden
+                                className="absolute pointer-events-none"
+                                style={{
+                                  inset: -22,
+                                  filter: "blur(22px) saturate(1.3)",
+                                  opacity: 0.75,
+                                  transform: "scale(1.15)",
+                                }}
+                              >
+                                <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={88} radio="2xl" borde="ninguno" />
+                              </div>
+                              <span
+                                className="absolute inset-0 rounded-2xl animate-ping"
+                                style={{ backgroundColor: "var(--brand)", opacity: 0.18, animationDuration: "2.2s" }}
+                              />
+                            </>
                           )}
-                          <div style={{ boxShadow: isActive ? "0 8px 32px rgba(154,98,250,0.4)" : "none", borderRadius: 16 }}>
+                          <div className="relative" style={{ boxShadow: isActive ? "0 8px 32px rgba(154,98,250,0.4)" : "none", borderRadius: 16 }}>
                             <EmpresaLogo nombre={empresa.nombre} logoUrl={empresa.logoUrl} size={88} radio="2xl" borde="marca" />
                           </div>
                         </div>
