@@ -13,7 +13,6 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input,
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   usePagination, PaginationBar, useHasHydrated, useAccion, ViewSkeleton,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
@@ -46,9 +45,7 @@ const MAX_NOMBRE = 80;
 const schema = z.object({
   nombre: z.string().min(2, "Mínimo 2 caracteres").max(MAX_NOMBRE, `Máximo ${MAX_NOMBRE} caracteres`),
   correo: z.email("Correo inválido"),
-  rol: z.enum(["administrador", "emprendedor", "mentor", "evaluador"], {
-    error: "Selecciona un rol",
-  }),
+  roles: z.array(z.enum(["administrador", "emprendedor", "mentor", "evaluador"])).min(1, "Selecciona al menos un rol"),
   // Obligatoria al crear, opcional al editar (vacía = no cambiarla) — la validación
   // de "obligatoria al crear" se hace a mano en onSubmit porque depende del modo.
   password: z.union([z.string().min(8, "Mínimo 8 caracteres"), z.literal("")]),
@@ -80,7 +77,7 @@ export function UsuariosView() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nombre: "", correo: "", rol: "" as Role, password: "" },
+    defaultValues: { nombre: "", correo: "", roles: [], password: "" },
   });
 
   const usuariosFiltrados = useMemo(() => {
@@ -88,7 +85,7 @@ export function UsuariosView() {
       const q = busqueda.trim().toLowerCase();
       const coincideBusqueda =
         !q || u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
-      const coincideRol = filtroRol === TODOS_LOS_ROLES || u.rol === filtroRol;
+      const coincideRol = filtroRol === TODOS_LOS_ROLES || u.roles.includes(filtroRol as Role);
       return coincideBusqueda && coincideRol;
     });
   }, [usuarios, busqueda, filtroRol]);
@@ -99,14 +96,14 @@ export function UsuariosView() {
 
   function abrirCrear() {
     setEditTarget(null);
-    form.reset({ nombre: "", correo: "", rol: "" as Role, password: "" });
+    form.reset({ nombre: "", correo: "", roles: [], password: "" });
     setShowPassword(false);
     setDialogOpen(true);
   }
 
   function abrirEditar(usuario: Usuario) {
     setEditTarget(usuario);
-    form.reset({ nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol, password: "" });
+    form.reset({ nombre: usuario.nombre, correo: usuario.correo, roles: usuario.roles, password: "" });
     setShowPassword(false);
     setDialogOpen(true);
   }
@@ -229,6 +226,7 @@ export function UsuariosView() {
           {usuariosPagina.map((u) => {
             const rolConfig = ROL_CONFIG[u.rol];
             const estadoConfig = ESTADO_CONFIG[u.estado];
+            const roles = u.roles?.length ? u.roles : [u.rol];
             return (
               <div
                 key={u.id}
@@ -262,13 +260,18 @@ export function UsuariosView() {
                   </div>
                 </div>
 
-                {/* Rol */}
-                <span
-                  className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
-                  style={{ color: rolConfig.color, backgroundColor: `${rolConfig.color}1F` }}
-                >
-                  {rolConfig.label}
-                </span>
+                {/* Roles */}
+                <div className="flex flex-wrap gap-1.5 shrink-0">
+                  {roles.map((rol) => (
+                    <span
+                      key={rol}
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      style={{ color: ROL_CONFIG[rol].color, backgroundColor: `${ROL_CONFIG[rol].color}1F` }}
+                    >
+                      {ROL_CONFIG[rol].label}
+                    </span>
+                  ))}
+                </div>
 
                 {/* Estado */}
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium shrink-0 w-20" style={{ color: estadoConfig.color }}>
@@ -396,29 +399,46 @@ export function UsuariosView() {
               />
 
               <FormItem>
-                <FormLabel>Rol</FormLabel>
+                <FormLabel>Roles</FormLabel>
+                <p className="text-xs -mt-1 mb-1" style={{ color: "var(--text-dim)" }}>
+                  Puede tener más de uno — con varios, ve las secciones de cada uno a la vez en su dashboard.
+                </p>
                 <Controller
                   control={form.control}
-                  name="rol"
+                  name="roles"
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      items={Object.entries(ROL_CONFIG).map(([value, { label }]) => ({ value, label }))}
-                    >
-                      <SelectTrigger className="w-full" style={inputStyle}>
-                        <SelectValue placeholder="Selecciona un rol" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ROL_CONFIG).map(([value, { label }]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-wrap gap-2">
+                      {(Object.entries(ROL_CONFIG) as [Role, { label: string; color: string }][]).map(
+                        ([value, { label, color }]) => {
+                          const activo = field.value?.includes(value);
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() =>
+                                field.onChange(
+                                  activo
+                                    ? field.value.filter((r) => r !== value)
+                                    : [...(field.value ?? []), value]
+                                )
+                              }
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border"
+                              style={{
+                                color: activo ? color : "var(--text-dim)",
+                                backgroundColor: activo ? `${color}1F` : "var(--hover-surface)",
+                                borderColor: activo ? `${color}55` : "var(--border-hair)",
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
                   )}
                 />
-                {form.formState.errors.rol && (
-                  <p className="text-xs text-destructive">{form.formState.errors.rol.message}</p>
+                {form.formState.errors.roles && (
+                  <p className="text-xs text-destructive">{form.formState.errors.roles.message}</p>
                 )}
               </FormItem>
 

@@ -1,5 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { INTERNAL_KEY_HEADER, USER_ID_HEADER, USER_PRIVILEGIOS_HEADER, USER_ROL_HEADER } from "../atoms/auth-user";
+import {
+  INTERNAL_KEY_HEADER,
+  USER_ID_HEADER,
+  USER_PRIVILEGIOS_HEADER,
+  USER_ROL_HEADER,
+  USER_ROLES_HEADER,
+} from "../atoms/auth-user";
 import type { AuthUser } from "../atoms/auth-user";
 
 /**
@@ -22,6 +28,7 @@ export class InternalHttpClient {
     if (actingAs) {
       headers[USER_ID_HEADER] = actingAs.id;
       headers[USER_ROL_HEADER] = actingAs.rol;
+      headers[USER_ROLES_HEADER] = JSON.stringify(actingAs.roles ?? [actingAs.rol]);
       headers[USER_PRIVILEGIOS_HEADER] = JSON.stringify(actingAs.privilegios ?? []);
     }
     return headers;

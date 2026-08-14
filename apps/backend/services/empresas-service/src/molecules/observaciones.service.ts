@@ -44,8 +44,12 @@ export class ObservacionesService {
    * comentarios sueltos (en distintos bloques/productos) y mandarlos juntos.
    */
   async crear(user: AuthUser, empresaId: string, autorNombre: string, dto: CreateObservacionDto) {
-    await this.empresas.obtener(user, empresaId);
-    const esBorrador = user.rol === "mentor";
+    // Se ancla a la relación con ESTA empresa puntual, no al rol global del usuario:
+    // con roles múltiples, alguien podría ser mentor de una empresa y dueño de otra
+    // a la vez, y lo que decide si el comentario nace como borrador es cuál de las
+    // dos relaciones aplica aquí, no qué roles tiene en general.
+    const empresa = await this.empresas.obtener(user, empresaId);
+    const esBorrador = empresa.mentorId === user.id;
 
     return this.prisma.observacion.create({
       data: { ...dto, empresaId, autorId: user.id, autorNombre, estado: esBorrador ? "borrador" : "pendiente" },

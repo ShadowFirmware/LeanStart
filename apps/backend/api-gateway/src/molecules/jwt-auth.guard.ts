@@ -33,7 +33,13 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("Falta el token de acceso.");
     }
 
-    let payload: { sub: string; rol: AuthUser["rol"]; privilegios: AuthUser["privilegios"]; jti?: string };
+    let payload: {
+      sub: string;
+      rol: AuthUser["rol"];
+      roles?: AuthUser["roles"];
+      privilegios: AuthUser["privilegios"];
+      jti?: string;
+    };
     try {
       payload = await this.jwt.verifyAsync(token);
     } catch {
@@ -44,7 +50,12 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("La sesión fue cerrada. Inicia sesión de nuevo.");
     }
 
-    request.authUser = { id: payload.sub, rol: payload.rol, privilegios: payload.privilegios ?? [] };
+    request.authUser = {
+      id: payload.sub,
+      rol: payload.rol,
+      roles: payload.roles ?? [payload.rol],
+      privilegios: payload.privilegios ?? [],
+    };
     return true;
   }
 }

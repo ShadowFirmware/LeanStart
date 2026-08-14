@@ -28,8 +28,9 @@ export default auth((req) => {
   // de "sácalo de /login hacia su rol" — si no, tras loguearse con éxito no pasa
   // nada visible, porque este bypass nunca redirige.
   if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    if (pathname === "/login" && session?.user?.rol) {
-      return NextResponse.redirect(new URL(ROLE_HOME[session.user.rol], req.url));
+    const rolesDemo = session?.user?.roles?.length ? session.user.roles : session?.user?.rol ? [session.user.rol] : undefined;
+    if (pathname === "/login" && rolesDemo?.length) {
+      return NextResponse.redirect(new URL(ROLE_HOME[rolesDemo[0]], req.url));
     }
     return NextResponse.next();
   }
@@ -42,9 +43,9 @@ export default auth((req) => {
     pathname === "/recuperar" ||
     pathname === "/restablecer"
   ) {
-    if (session?.user?.rol) {
+    if (session?.user?.roles?.length) {
       return NextResponse.redirect(
-        new URL(ROLE_HOME[session.user.rol], req.url)
+        new URL(ROLE_HOME[session.user.roles[0]], req.url)
       );
     }
     return NextResponse.next();
@@ -55,12 +56,14 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const rol = session.user.rol;
+  const roles = session.user.roles?.length ? session.user.roles : [session.user.rol];
 
-  // Verificar que el usuario acceda solo a las rutas de su rol
+  // Un usuario puede tener varios roles a la vez: acceder a un prefijo alcanza con
+  // que UNO de sus roles lo cubra. Si el pathname no coincide con ningún prefijo
+  // conocido, se deja pasar (rutas compartidas fuera de los 4 grupos por rol).
   for (const [role, prefix] of Object.entries(ROLE_PREFIXES) as [Role, string][]) {
-    if (pathname.startsWith(prefix) && rol !== role) {
-      return NextResponse.redirect(new URL(ROLE_HOME[rol], req.url));
+    if (pathname.startsWith(prefix) && !roles.includes(role)) {
+      return NextResponse.redirect(new URL(ROLE_HOME[roles[0]], req.url));
     }
   }
 

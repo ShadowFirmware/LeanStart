@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { AdministradorSidebar } from "@/components/administrador/sidebar";
+import { CombinedSidebar } from "@/components/shared/combined-sidebar";
 
 const DEV_USER = { name: "Admin Demo", email: "admin@leanstart.dev" };
 
@@ -12,17 +12,18 @@ export default async function AdministradorLayout({
   const session = await auth();
 
   if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
-    if (!session?.user || session.user.rol !== "administrador") {
+    if (!session?.user || !session.user.roles?.includes("administrador")) {
       redirect("/login");
     }
   }
 
   const userName = session?.user?.name ?? DEV_USER.name;
   const userEmail = session?.user?.email ?? DEV_USER.email;
+  const roles = session?.user?.roles?.length ? session.user.roles : ["administrador" as const];
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "var(--shell)" }}>
-      <AdministradorSidebar userName={userName} userEmail={userEmail} />
+      <CombinedSidebar roles={roles} userName={userName} userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}
       </main>

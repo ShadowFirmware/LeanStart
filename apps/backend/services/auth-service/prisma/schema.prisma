@@ -12,7 +12,12 @@ model User {
   nombre       String
   correo       String   @unique
   passwordHash String
+  /// Rol principal = roles[0]; se mantiene sincronizado para que cualquier
+  /// código que todavía lea `rol` (en vez de `roles`) siga funcionando.
   rol          String
+  /// Fuente de verdad para autorización: un usuario puede tener varios roles
+  /// a la vez (ej. emprendedor + mentor). Nunca vacío.
+  roles        String[]
   estado       String   @default("activo")
   avatarUrl    String?
   createdAt    DateTime @default(now())

@@ -7,6 +7,7 @@ import {
   USER_ID_HEADER,
   USER_PRIVILEGIOS_HEADER,
   USER_ROL_HEADER,
+  USER_ROLES_HEADER,
 } from "../atoms/auth-user";
 import type { AuthUser } from "../atoms/auth-user";
 
@@ -45,10 +46,12 @@ export class GatewayKeyGuard implements CanActivate {
     const userId = request.header(USER_ID_HEADER);
     if (userId) {
       const rol = request.header(USER_ROL_HEADER) as AuthUser["rol"];
+      const rolesRaw = request.header(USER_ROLES_HEADER);
       const privilegiosRaw = request.header(USER_PRIVILEGIOS_HEADER);
       request.authUser = {
         id: userId,
         rol,
+        roles: rolesRaw ? JSON.parse(rolesRaw) : [rol],
         privilegios: privilegiosRaw ? JSON.parse(privilegiosRaw) : [],
       };
     }

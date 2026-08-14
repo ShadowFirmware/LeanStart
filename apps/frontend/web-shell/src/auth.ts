@@ -41,11 +41,13 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
               account.email === credentials.email && account.password === credentials.password
           );
           if (demoAccount) {
+            const roles = demoAccount.roles ?? [demoAccount.rol];
             return {
               id: demoAccount.id,
               name: demoAccount.name,
               email: demoAccount.email,
-              rol: demoAccount.rol,
+              rol: roles[0],
+              roles,
               privilegios: [],
             };
           }
@@ -67,12 +69,14 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           if (!res.ok) return null;
 
           const data = await res.json();
+          const roles = (data.user.roles as Role[] | undefined) ?? [data.user.rol as Role];
 
           return {
             id: String(data.user.id),
             name: String(data.user.nombre),
             email: String(data.user.email),
-            rol: data.user.rol as Role,
+            rol: roles[0],
+            roles,
             privilegios: data.user.privilegios ?? [],
             accessToken: String(data.accessToken),
           };
@@ -87,6 +91,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
+        token.roles = user.roles;
         token.privilegios = user.privilegios;
         token.accessToken = user.accessToken;
       }
@@ -95,6 +100,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.rol = token.rol as Role;
+      session.user.roles = token.roles as Role[];
       session.user.privilegios = token.privilegios as Privilegio[];
       session.accessToken = token.accessToken as string;
       return session;

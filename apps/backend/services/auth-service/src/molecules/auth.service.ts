@@ -18,7 +18,9 @@ export interface AuthResponse {
     id: string;
     nombre: string;
     email: string;
+    /** Rol principal = roles[0]. Se mantiene por compatibilidad. */
     rol: string;
+    roles: string[];
     privilegios: Privilegio[];
   };
 }
@@ -35,14 +37,16 @@ export class AuthService {
 
   /** Público: también lo usa SeedsAlexaService para emitir el token tras validar una semilla. */
   async buildAuthResponse(
-    user: { id: string; nombre: string; correo: string; rol: string },
+    user: { id: string; nombre: string; correo: string; rol: string; roles: string[] },
     options?: { expiresIn?: string }
   ): Promise<AuthResponse> {
-    const privilegios = await this.privilegios.getPrivilegiosDeRol(user.rol);
+    const roles = user.roles?.length ? user.roles : [user.rol];
+    const privilegios = await this.privilegios.getPrivilegiosDeRoles(roles);
     const accessToken = await this.jwt.signAsync(
       {
         sub: user.id,
-        rol: user.rol,
+        rol: roles[0],
+        roles,
         privilegios,
         // Identificador único del token: permite revocarlo puntualmente en logout
         // sin necesitar una tabla de sesiones (ver TokenRevocationService en el gateway).
@@ -56,7 +60,8 @@ export class AuthService {
         id: user.id,
         nombre: user.nombre,
         email: user.correo,
-        rol: user.rol,
+        rol: roles[0],
+        roles,
         privilegios,
       },
     };
@@ -75,6 +80,7 @@ export class AuthService {
         correo: dto.correo,
         passwordHash,
         rol: "emprendedor",
+        roles: ["emprendedor"],
       },
     });
 
@@ -97,12 +103,14 @@ export class AuthService {
 
   async me(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    const privilegios = await this.privilegios.getPrivilegiosDeRol(user.rol);
+    const roles = user.roles.length ? user.roles : [user.rol];
+    const privilegios = await this.privilegios.getPrivilegiosDeRoles(roles);
     return {
       id: user.id,
       nombre: user.nombre,
       email: user.correo,
-      rol: user.rol,
+      rol: roles[0],
+      roles,
       avatarUrl: user.avatarUrl,
       privilegios,
     };

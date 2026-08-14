@@ -24,7 +24,7 @@ export class UsuariosService {
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
-      data: { nombre: dto.nombre, correo: dto.correo, rol: dto.rol, passwordHash },
+      data: { nombre: dto.nombre, correo: dto.correo, rol: dto.roles[0], roles: dto.roles, passwordHash },
     });
     return this.sinPassword(user);
   }
@@ -33,7 +33,13 @@ export class UsuariosService {
     const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : undefined;
     const user = await this.prisma.user.update({
       where: { id },
-      data: { nombre: dto.nombre, correo: dto.correo, rol: dto.rol, ...(passwordHash ? { passwordHash } : {}) },
+      data: {
+        nombre: dto.nombre,
+        correo: dto.correo,
+        rol: dto.roles[0],
+        roles: dto.roles,
+        ...(passwordHash ? { passwordHash } : {}),
+      },
     });
     return this.sinPassword(user);
   }

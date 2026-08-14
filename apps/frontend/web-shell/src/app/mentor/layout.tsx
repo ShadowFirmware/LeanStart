@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { MentorSidebar } from "@/components/mentor/sidebar";
+import { CombinedSidebar } from "@/components/shared/combined-sidebar";
 
 const DEV_USER = { name: "Mentor Demo", email: "mentor@leanstart.dev" };
 
@@ -12,17 +12,18 @@ export default async function MentorLayout({
   const session = await auth();
 
   if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
-    if (!session?.user || session.user.rol !== "mentor") {
+    if (!session?.user || !session.user.roles?.includes("mentor")) {
       redirect("/login");
     }
   }
 
   const userName = session?.user?.name ?? DEV_USER.name;
   const userEmail = session?.user?.email ?? DEV_USER.email;
+  const roles = session?.user?.roles?.length ? session.user.roles : ["mentor" as const];
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "var(--shell)" }}>
-      <MentorSidebar userName={userName} userEmail={userEmail} />
+      <CombinedSidebar roles={roles} userName={userName} userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}
       </main>

@@ -47,7 +47,10 @@ export interface DemoAccount {
   name: string;
   email: string;
   password: string;
+  /** Rol principal = roles[0]. Se mantiene por compatibilidad. */
   rol: Role;
+  /** Todos los roles de la cuenta — si tiene varios, ve las secciones de cada uno a la vez. */
+  roles?: Role[];
 }
 
 /**
@@ -62,5 +65,8 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     email: "daniel@example.com",
     password: "12345678",
     rol: "emprendedor",
+    // Multi-rol de prueba: con esto se puede verificar el sidebar combinado
+    // (secciones de emprendedor y mentor a la vez) sin necesitar el backend real.
+    roles: ["emprendedor", "mentor"],
   },
 ];

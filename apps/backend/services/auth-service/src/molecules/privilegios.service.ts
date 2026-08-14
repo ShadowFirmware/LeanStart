@@ -15,6 +15,19 @@ export class PrivilegiosService {
     }));
   }
 
+  /** Un usuario con varios roles tiene la UNIÓN de lo que cada uno le permite, módulo por módulo. */
+  async getPrivilegiosDeRoles(rolIds: string[]): Promise<Privilegio[]> {
+    const porRol = await Promise.all(rolIds.map((r) => this.getPrivilegiosDeRol(r)));
+    return MODULOS.map((modulo) => {
+      const acciones = new Set<Accion>();
+      for (const privilegios of porRol) {
+        const entrada = privilegios.find((p) => p.modulo === modulo);
+        entrada?.acciones.forEach((a) => acciones.add(a));
+      }
+      return { modulo, acciones: [...acciones] };
+    });
+  }
+
   async toggleAccion(rolId: string, modulo: Modulo, accion: Accion) {
     const existente = await this.prisma.privilegio.findUnique({
       where: { rolId_modulo_accion: { rolId, modulo, accion } },

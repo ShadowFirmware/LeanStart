@@ -29,7 +29,7 @@ export class ReportesEmpresaService {
 
   /** Todos los reportes pendientes de todas las empresas (uso exclusivo del administrador). */
   async listarTodos(user: AuthUser) {
-    if (user.rol !== "administrador") {
+    if (!user.roles.includes("administrador")) {
       throw new ForbiddenException("Solo el administrador puede ver todos los reportes.");
     }
     return this.prisma.reporteEmpresa.findMany({

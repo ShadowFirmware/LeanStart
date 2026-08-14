@@ -48,7 +48,7 @@ const useEfectoDePintado = typeof window === "undefined" ? useEffect : useLayout
 
 export function LiveSync() {
   const { data: session, status } = useSession();
-  const rol = session?.user?.rol;
+  const roles = session?.user?.roles;
   const userId = session?.user?.id;
 
   // Rehidratación inicial (una vez, tras montar en el cliente).
@@ -65,17 +65,17 @@ export function LiveSync() {
     useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
     if (userId) usePerfilStore.getState().cargarPerfil(userId).catch(() => {});
 
-    if (rol === "administrador") {
+    if (roles?.includes("administrador")) {
       useUsuariosStore.getState().cargarUsuarios().catch(() => {});
     }
-    if (rol === "administrador" || rol === "evaluador") {
+    if (roles?.includes("administrador") || roles?.includes("evaluador")) {
       useCriteriosStore.getState().cargarCriterios().catch(() => {});
       useReportesGeneradosStore.getState().cargarReportesGenerados().catch(() => {});
     }
     // Todos los roles pueden leer la config de viabilidad (para mostrar el nivel
     // obtenido en las cards de empresas); solo el administrador puede modificarla.
     useViabilidadStore.getState().cargarViabilidad().catch(() => {});
-  }, [status, rol, userId]);
+  }, [status, roles, userId]);
 
   // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
   // persona genera una notificación, o el usuario edita su perfil desde otro

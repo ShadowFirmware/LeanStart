@@ -68,7 +68,10 @@ export class EvaluacionesService {
    */
   async obtener(actingAs: AuthUser, empresaId: string) {
     const data = await this.getRaw(empresaId);
-    if (actingAs.rol === "emprendedor") {
+    // El bloque restrictivo aplica cuando NO tiene ningún rol elevado — así un usuario
+    // con roles ["emprendedor","evaluador"] sí ve todo, sin importar que también sea emprendedor.
+    const esSoloEmprendedor = !actingAs.roles.includes("evaluador") && !actingAs.roles.includes("administrador");
+    if (esSoloEmprendedor) {
       const empresasUrl = this.config.getOrThrow<string>("EMPRESAS_SERVICE_URL");
       const empresa = await this.http.get<{ ownerId: string }>(`${empresasUrl}/empresas/${empresaId}/interno`);
       if (empresa.ownerId !== actingAs.id) {
