@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck, Rocket, GraduationCap, ClipboardCheck, Pencil, Check, Plus, Trash2, UserCog,
-  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3,
+  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3, Search, UserRound,
 } from "lucide-react";
 import {
   Button,
@@ -13,7 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Input, Textarea, useHasHydrated, ViewSkeleton, LoadingOverlay, Spinner, useAccion,
 } from "@leanstart/commons";
-import type { Role, Modulo, Accion } from "@leanstart/commons";
+import type { Role, Modulo, Accion, Usuario } from "@leanstart/commons";
 import { modoDemo, useUsuariosStore } from "@leanstart/commons";
 import { useRolesStore, type RolPersonalizado } from "../store/roles";
 import { usePrivilegiosStore, MODULOS, ACCIONES } from "../store/privilegios";
@@ -50,11 +50,12 @@ const ACCION_LABELS: Record<Accion, string> = {
 const MAX_DESCRIPCION = 240;
 const MAX_NOMBRE = 40;
 
-type Seccion = "roles" | "privilegios";
+type Seccion = "roles" | "privilegios" | "usuarios";
 
 const SECCIONES: { value: Seccion; label: string }[] = [
   { value: "roles", label: "Roles" },
   { value: "privilegios", label: "Privilegios" },
+  { value: "usuarios", label: "Por usuario" },
 ];
 
 /** Columnas de la matriz de privilegios: módulo (fijo) + una por acción. */
@@ -70,6 +71,7 @@ export function RolesPrivilegiosView() {
   const editarRolPersonalizado = useRolesStore((s) => s.editarRolPersonalizado);
   const eliminarRolPersonalizado = useRolesStore((s) => s.eliminarRolPersonalizado);
   const usuarios = useUsuariosStore((s) => s.usuarios);
+  const editarUsuario = useUsuariosStore((s) => s.editarUsuario);
 
   const inicializarRolPrivilegios = usePrivilegiosStore((s) => s.inicializarRol);
   const eliminarRolPrivilegios = usePrivilegiosStore((s) => s.eliminarRol);
@@ -106,6 +108,43 @@ export function RolesPrivilegiosView() {
   const cambioPrivilegio = useAccion();
   const [privilegioEnCurso, setPrivilegioEnCurso] = useState<string | null>(null);
   const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios;
+
+  // Pestaña "Por usuario": buscar a alguien puntual y darle/quitarle roles solo a
+  // él/ella, sin tocar a nadie más de su rol (a diferencia de la matriz de arriba,
+  // que aplica al rol completo).
+  const [busquedaUsuario, setBusquedaUsuario] = useState("");
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+  const cambioRolUsuario = useAccion();
+  const [rolEnCurso, setRolEnCurso] = useState<Role | null>(null);
+
+  const usuariosFiltrados = usuarios.filter((u) => {
+    const q = busquedaUsuario.trim().toLowerCase();
+    return !q || u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
+  });
+
+  async function toggleRolUsuario(usuario: Usuario, rol: Role) {
+    const tiene = usuario.roles.includes(rol);
+    if (tiene && usuario.roles.length === 1) {
+      toast.error("Un usuario necesita al menos un rol.");
+      return;
+    }
+    const nuevosRoles = tiene ? usuario.roles.filter((r) => r !== rol) : [...usuario.roles, rol];
+    await cambioRolUsuario.ejecutar(
+      async () => {
+        setRolEnCurso(rol);
+        try {
+          await editarUsuario(usuario.id, { nombre: usuario.nombre, correo: usuario.correo, roles: nuevosRoles });
+          setUsuarioSeleccionado({ ...usuario, roles: nuevosRoles, rol: nuevosRoles[0] });
+        } finally {
+          setRolEnCurso(null);
+        }
+      },
+      {
+        etiqueta: "Actualizando roles",
+        onError: () => toast.error("No se pudo actualizar los roles del usuario."),
+      }
+    );
+  }
 
   async function aplicarPrivilegio(clave: string, operacion: () => Promise<void>) {
     await cambioPrivilegio.ejecutar(
@@ -238,12 +277,12 @@ export function RolesPrivilegiosView() {
         })}
       </div>
 
-      {seccion === "roles" ? (
+      {seccion === "roles" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ROLES_ORDEN.map((rol) => {
             const cfg = ROLES_CONFIG[rol];
             const Icon = cfg.icon;
-            const count = usuarios.filter((u) => u.rol === rol).length;
+            const count = usuarios.filter((u) => u.roles.includes(rol)).length;
             return (
               <div
                 key={rol}
@@ -329,7 +368,9 @@ export function RolesPrivilegiosView() {
             </div>
           ))}
         </div>
-      ) : (
+      )}
+
+      {seccion === "privilegios" && (
         <div className="flex flex-col gap-4">
           {/* Selector de rol con ícono + conteo de usuarios */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -337,7 +378,7 @@ export function RolesPrivilegiosView() {
               const cfg = ROLES_CONFIG[rol];
               const RolIcon = cfg.icon;
               const isActive = rolPrivilegios === rol;
-              const count = usuarios.filter((u) => u.rol === rol).length;
+              const count = usuarios.filter((u) => u.roles.includes(rol)).length;
               return (
                 <button
                   key={rol}
@@ -572,6 +613,133 @@ export function RolesPrivilegiosView() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {seccion === "usuarios" && (
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
+            <input
+              type="text"
+              placeholder="Buscar usuario por nombre o correo..."
+              value={busquedaUsuario}
+              onChange={(e) => setBusquedaUsuario(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Resultados de la búsqueda */}
+            <div
+              className="rounded-xl overflow-hidden flex flex-col max-h-[420px] overflow-y-auto"
+              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+            >
+              {usuariosFiltrados.length === 0 ? (
+                <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>
+                  Sin resultados.
+                </p>
+              ) : (
+                usuariosFiltrados.map((u) => {
+                  const isActive = usuarioSeleccionado?.id === u.id;
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setUsuarioSeleccionado(u)}
+                      className="flex items-center gap-3 px-4 py-3 text-left transition-colors"
+                      style={{
+                        backgroundColor: isActive ? "rgba(154,98,250,0.12)" : "transparent",
+                        borderBottom: "1px solid var(--hover-surface)",
+                      }}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                        style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
+                      >
+                        {u.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{u.nombre}</p>
+                        <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{u.correo}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                        {u.roles.map((rol) => (
+                          <span
+                            key={rol}
+                            className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                            style={{ color: ROLES_CONFIG[rol].color, backgroundColor: `${ROLES_CONFIG[rol].color}1F` }}
+                          >
+                            {ROLES_CONFIG[rol].label}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Roles del usuario seleccionado */}
+            <div
+              className="rounded-xl p-5 flex flex-col gap-4"
+              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+            >
+              {!usuarioSeleccionado ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                  <UserRound className="w-8 h-8" style={{ color: "var(--text-faint)" }} />
+                  <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+                    Busca y selecciona un usuario para darle o quitarle roles solo a él.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                      style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
+                    >
+                      {usuarioSeleccionado.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{usuarioSeleccionado.nombre}</p>
+                      <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{usuarioSeleccionado.correo}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs" style={{ color: "var(--text-dim)" }}>
+                    Puede tener más de un rol a la vez — con varios, ve las secciones de cada uno en su dashboard.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ROLES_ORDEN.map((rol) => {
+                      const cfg = ROLES_CONFIG[rol];
+                      const activo = usuarioSeleccionado.roles.includes(rol);
+                      const enCurso = cambioRolUsuario.cargando && rolEnCurso === rol;
+                      return (
+                        <button
+                          key={rol}
+                          type="button"
+                          disabled={cambioRolUsuario.cargando}
+                          onClick={() => toggleRolUsuario(usuarioSeleccionado, rol)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
+                          style={{
+                            color: activo ? cfg.color : "var(--text-dim)",
+                            backgroundColor: activo ? `${cfg.color}1F` : "var(--hover-surface)",
+                            borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
+                          }}
+                        >
+                          {enCurso ? <Spinner size={14} /> : activo ? <Check className="w-3.5 h-3.5" /> : null}
+                          {cfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
