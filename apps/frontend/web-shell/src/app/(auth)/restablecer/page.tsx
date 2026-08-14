@@ -18,7 +18,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 
@@ -92,6 +92,7 @@ function RestablecerForm() {
   const [loading, setLoading] = useState(false);
   const [listo, setListo] = useState(false);
   const [invalido, setInvalido] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<RestablecerFormValues>({
     resolver: zodResolver(restablecerSchema),
@@ -208,7 +209,25 @@ function RestablecerForm() {
                   Nueva contraseña
                 </FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" className="input-auth focus-visible:ring-0" {...field} />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="input-auth focus-visible:ring-0 pr-11"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{ color: "var(--text-dim)" }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage className="text-xs" />
               </FormItem>
@@ -226,7 +245,25 @@ function RestablecerForm() {
                   Confirmar contraseña
                 </FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" className="input-auth focus-visible:ring-0" {...field} />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="input-auth focus-visible:ring-0 pr-11"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{ color: "var(--text-dim)" }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage className="text-xs" />
               </FormItem>
