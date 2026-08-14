@@ -60,6 +60,8 @@ const SECCIONES: { value: Seccion; label: string }[] = [
 /** Columnas de la matriz de privilegios: módulo (fijo) + una por acción. */
 const GRID_COLS = "minmax(150px, 1.6fr) repeat(6, minmax(64px, 1fr))";
 
+type MatrizRolLocal = Record<Modulo, Accion[]>;
+
 export function RolesPrivilegiosView() {
   const hydrated = useHasHydrated();
   const [seccion, setSeccion] = useState<Seccion>("roles");
@@ -108,41 +110,74 @@ export function RolesPrivilegiosView() {
   const [privilegioEnCurso, setPrivilegioEnCurso] = useState<string | null>(null);
   const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios;
 
-  // Pestaña "Por usuario": buscar a alguien puntual y darle/quitarle roles solo a
-  // él/ella, sin tocar a nadie más de su rol (a diferencia de la matriz de arriba,
-  // que aplica al rol completo).
+  // Pestaña "Privilegios" → buscar a alguien puntual: los roles que se le marquen
+  // quedan en un borrador local (no se aplican al toque) hasta "Guardar cambios",
+  // y mientras tanto se ve en vivo la unión de privilegios que ese borrador implica.
   const [busquedaUsuario, setBusquedaUsuario] = useState("");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
-  const cambioRolUsuario = useAccion();
-  const [rolEnCurso, setRolEnCurso] = useState<Role | null>(null);
+  const [rolesDraft, setRolesDraft] = useState<Role[]>([]);
+  const guardadoUsuario = useAccion();
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const q = busquedaUsuario.trim().toLowerCase();
     return !q || u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
   });
 
-  async function toggleRolUsuario(usuario: Usuario, rol: Role) {
-    const tiene = usuario.roles.includes(rol);
-    if (tiene && usuario.roles.length === 1) {
-      toast.error("Un usuario necesita al menos un rol.");
-      return;
-    }
-    const nuevosRoles = tiene ? usuario.roles.filter((r) => r !== rol) : [...usuario.roles, rol];
-    await cambioRolUsuario.ejecutar(
-      async () => {
-        setRolEnCurso(rol);
-        try {
-          await editarUsuario(usuario.id, { nombre: usuario.nombre, correo: usuario.correo, roles: nuevosRoles });
-          setUsuarioSeleccionado({ ...usuario, roles: nuevosRoles, rol: nuevosRoles[0] });
-        } finally {
-          setRolEnCurso(null);
+  function seleccionarUsuario(usuario: Usuario | null) {
+    setUsuarioSeleccionado(usuario);
+    setRolesDraft(usuario?.roles ?? []);
+    // Para que la vista previa de privilegios sea exacta sin importar qué rol se
+    // le agregue en el borrador, se traen los 4 de una vez (no-op en modo demo).
+    if (usuario) ROLES_ORDEN.forEach((rol) => cargarPrivilegios(rol).catch(() => {}));
+  }
+
+  function toggleRolDraft(rol: Role) {
+    setRolesDraft((actual) => {
+      if (actual.includes(rol)) {
+        if (actual.length === 1) {
+          toast.error("Un usuario necesita al menos un rol.");
+          return actual;
         }
+        return actual.filter((r) => r !== rol);
+      }
+      return [...actual, rol];
+    });
+  }
+
+  const hayCambiosUsuario =
+    usuarioSeleccionado !== null &&
+    (rolesDraft.length !== usuarioSeleccionado.roles.length ||
+      rolesDraft.some((r) => !usuarioSeleccionado.roles.includes(r)));
+
+  /** Unión de privilegios de todos los roles del borrador — lo que ese usuario
+   *  tendría si se guarda tal cual está marcado ahora mismo. */
+  const privilegiosEfectivosDraft: MatrizRolLocal = MODULOS.reduce((acc, modulo) => {
+    const acciones = new Set<Accion>();
+    rolesDraft.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => acciones.add(a)));
+    return { ...acc, [modulo]: [...acciones] };
+  }, {} as MatrizRolLocal);
+
+  async function guardarCambiosUsuario() {
+    if (!usuarioSeleccionado) return;
+    await guardadoUsuario.ejecutar(
+      async () => {
+        await editarUsuario(usuarioSeleccionado.id, {
+          nombre: usuarioSeleccionado.nombre,
+          correo: usuarioSeleccionado.correo,
+          roles: rolesDraft,
+        });
+        setUsuarioSeleccionado({ ...usuarioSeleccionado, roles: rolesDraft, rol: rolesDraft[0] });
+        toast.success(`Roles y privilegios de "${usuarioSeleccionado.nombre}" actualizados.`);
       },
       {
-        etiqueta: "Actualizando roles",
-        onError: () => toast.error("No se pudo actualizar los roles del usuario."),
+        etiqueta: "Guardando roles",
+        onError: () => toast.error("No se pudo guardar. Intenta de nuevo."),
       }
     );
+  }
+
+  function cancelarCambiosUsuario() {
+    if (usuarioSeleccionado) setRolesDraft(usuarioSeleccionado.roles);
   }
 
   async function aplicarPrivilegio(clave: string, operacion: () => Promise<void>) {
@@ -277,7 +312,6 @@ export function RolesPrivilegiosView() {
       </div>
 
       {seccion === "roles" && (
-        <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ROLES_ORDEN.map((rol) => {
             const cfg = ROLES_CONFIG[rol];
@@ -368,52 +402,55 @@ export function RolesPrivilegiosView() {
             </div>
           ))}
         </div>
+      )}
 
-        {/* Buscar un usuario puntual y darle/quitarle roles solo a él, sin afectar
-            a los demás de su rol (a diferencia de la matriz de la pestaña Privilegios,
-            que aplica al rol completo). */}
-        <div
-          className="rounded-xl p-5 flex flex-col gap-4"
-          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-        >
-          <div>
-            <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Roles de un usuario específico</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-              Busca a alguien y cambia solo sus roles, sin tocar a nadie más.
-            </p>
-          </div>
+      {seccion === "privilegios" && (
+        <div className="flex flex-col gap-4">
+          {/* Buscar un usuario puntual y darle/quitarle roles solo a él (afecta sus
+              privilegios efectivos, unión de todos sus roles), sin tocar a nadie más
+              — a diferencia de la matriz de abajo, que aplica al rol completo. */}
+          <div
+            className="rounded-xl p-5 flex flex-col gap-4"
+            style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+          >
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Privilegios de un usuario específico</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+                Busca a alguien para ver a quién le estás dando o quitando privilegios, y cámbiale solo sus roles a él.
+              </p>
+            </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o correo..."
-              value={busquedaUsuario}
-              onChange={(e) => setBusquedaUsuario(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-              style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
-            />
-          </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o correo..."
+                value={busquedaUsuario}
+                onChange={(e) => setBusquedaUsuario(e.target.value)}
+                className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+                style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
+              />
+            </div>
 
-          {busquedaUsuario.trim() && (
-            <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto">
-              {usuariosFiltrados.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: "var(--text-dim)" }}>Sin resultados.</p>
-              ) : (
-                usuariosFiltrados.map((u) => {
-                  const isActive = usuarioSeleccionado?.id === u.id;
-                  return (
-                    <div
-                      key={u.id}
-                      className="rounded-lg p-3 flex flex-col gap-2"
-                      style={{ border: `1px solid ${isActive ? "rgba(154,98,250,0.35)" : "var(--border-hair)"}` }}
-                    >
+            {busquedaUsuario.trim() && (
+              <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto">
+                {usuariosFiltrados.length === 0 ? (
+                  <p className="text-sm text-center py-4" style={{ color: "var(--text-dim)" }}>Sin resultados.</p>
+                ) : (
+                  usuariosFiltrados.map((u) => {
+                    const isActive = usuarioSeleccionado?.id === u.id;
+                    return (
                       <button
+                        key={u.id}
                         type="button"
-                        onClick={() => setUsuarioSeleccionado(isActive ? null : u)}
-                        className="flex items-center gap-3 text-left"
+                        onClick={() => seleccionarUsuario(isActive ? null : u)}
+                        className="rounded-lg p-3 flex items-center gap-3 text-left transition-colors"
+                        style={{
+                          border: `1px solid ${isActive ? "rgba(154,98,250,0.4)" : "var(--border-hair)"}`,
+                          backgroundColor: isActive ? "rgba(154,98,250,0.08)" : "transparent",
+                        }}
                       >
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
@@ -437,45 +474,101 @@ export function RolesPrivilegiosView() {
                           ))}
                         </div>
                       </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
 
-                      {isActive && (
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {ROLES_ORDEN.map((rol) => {
-                            const cfg = ROLES_CONFIG[rol];
-                            const activo = u.roles.includes(rol);
-                            const enCurso = cambioRolUsuario.cargando && rolEnCurso === rol;
-                            return (
-                              <button
-                                key={rol}
-                                type="button"
-                                disabled={cambioRolUsuario.cargando}
-                                onClick={() => toggleRolUsuario(u, rol)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
-                                style={{
-                                  color: activo ? cfg.color : "var(--text-dim)",
-                                  backgroundColor: activo ? `${cfg.color}1F` : "var(--hover-surface)",
-                                  borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
-                                }}
-                              >
-                                {enCurso ? <Spinner size={12} /> : activo ? <Check className="w-3 h-3" /> : null}
-                                {cfg.label}
-                              </button>
-                            );
-                          })}
+            {usuarioSeleccionado && (
+              <div className="rounded-lg p-4 flex flex-col gap-4" style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                    style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
+                  >
+                    {usuarioSeleccionado.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{usuarioSeleccionado.nombre}</p>
+                    <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{usuarioSeleccionado.correo}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-dim)" }}>Roles</p>
+                  <div className="flex flex-wrap gap-2">
+                    {ROLES_ORDEN.map((rol) => {
+                      const cfg = ROLES_CONFIG[rol];
+                      const activo = rolesDraft.includes(rol);
+                      return (
+                        <button
+                          key={rol}
+                          type="button"
+                          disabled={guardadoUsuario.cargando}
+                          onClick={() => toggleRolDraft(rol)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
+                          style={{
+                            color: activo ? cfg.color : "var(--text-dim)",
+                            backgroundColor: activo ? `${cfg.color}1F` : "var(--surface-profile)",
+                            borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
+                          }}
+                        >
+                          {activo ? <Check className="w-3 h-3" /> : null}
+                          {cfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-dim)" }}>
+                    Privilegios que tendría {hayCambiosUsuario && <span style={{ color: "var(--brand)" }}>(sin guardar)</span>}
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {MODULOS.map((modulo) => {
+                      const acciones = privilegiosEfectivosDraft[modulo] ?? [];
+                      const ModIcon = MODULO_CONFIG[modulo].icon;
+                      return (
+                        <div key={modulo} className="flex items-start gap-2 text-xs">
+                          <ModIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--text-dim)" }} />
+                          <span className="shrink-0 w-24" style={{ color: "var(--text-dim)" }}>{MODULO_CONFIG[modulo].label}</span>
+                          <span style={{ color: acciones.length ? "var(--text-strong)" : "var(--text-faint)" }}>
+                            {acciones.length ? acciones.map((a) => ACCION_LABELS[a]).join(", ") : "Sin acceso"}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-        </div>
-      )}
+                      );
+                    })}
+                  </div>
+                </div>
 
-      {seccion === "privilegios" && (
-        <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!hayCambiosUsuario || guardadoUsuario.cargando}
+                    onClick={cancelarCambiosUsuario}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={!hayCambiosUsuario}
+                    loading={guardadoUsuario.cargando}
+                    loadingText="Guardando…"
+                    onClick={guardarCambiosUsuario}
+                    className="h-8 px-3 text-xs border-0"
+                    style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
+                  >
+                    Guardar cambios
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Selector de rol con ícono + conteo de usuarios */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {ROLES_ORDEN.map((rol) => {
