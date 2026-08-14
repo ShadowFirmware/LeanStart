@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck, Rocket, GraduationCap, ClipboardCheck, Pencil, Check, Plus, Trash2, UserCog,
-  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3, Search, UserRound,
+  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3, Search,
 } from "lucide-react";
 import {
   Button,
@@ -50,12 +50,11 @@ const ACCION_LABELS: Record<Accion, string> = {
 const MAX_DESCRIPCION = 240;
 const MAX_NOMBRE = 40;
 
-type Seccion = "roles" | "privilegios" | "usuarios";
+type Seccion = "roles" | "privilegios";
 
 const SECCIONES: { value: Seccion; label: string }[] = [
   { value: "roles", label: "Roles" },
   { value: "privilegios", label: "Privilegios" },
-  { value: "usuarios", label: "Por usuario" },
 ];
 
 /** Columnas de la matriz de privilegios: módulo (fijo) + una por acción. */
@@ -278,6 +277,7 @@ export function RolesPrivilegiosView() {
       </div>
 
       {seccion === "roles" && (
+        <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ROLES_ORDEN.map((rol) => {
             const cfg = ROLES_CONFIG[rol];
@@ -367,6 +367,110 @@ export function RolesPrivilegiosView() {
               </p>
             </div>
           ))}
+        </div>
+
+        {/* Buscar un usuario puntual y darle/quitarle roles solo a él, sin afectar
+            a los demás de su rol (a diferencia de la matriz de la pestaña Privilegios,
+            que aplica al rol completo). */}
+        <div
+          className="rounded-xl p-5 flex flex-col gap-4"
+          style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
+        >
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--text-strong)" }}>Roles de un usuario específico</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+              Busca a alguien y cambia solo sus roles, sin tocar a nadie más.
+            </p>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o correo..."
+              value={busquedaUsuario}
+              onChange={(e) => setBusquedaUsuario(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
+              style={{ backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
+            />
+          </div>
+
+          {busquedaUsuario.trim() && (
+            <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto">
+              {usuariosFiltrados.length === 0 ? (
+                <p className="text-sm text-center py-4" style={{ color: "var(--text-dim)" }}>Sin resultados.</p>
+              ) : (
+                usuariosFiltrados.map((u) => {
+                  const isActive = usuarioSeleccionado?.id === u.id;
+                  return (
+                    <div
+                      key={u.id}
+                      className="rounded-lg p-3 flex flex-col gap-2"
+                      style={{ border: `1px solid ${isActive ? "rgba(154,98,250,0.35)" : "var(--border-hair)"}` }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setUsuarioSeleccionado(isActive ? null : u)}
+                        className="flex items-center gap-3 text-left"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                          style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
+                        >
+                          {u.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{u.nombre}</p>
+                          <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{u.correo}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                          {u.roles.map((rol) => (
+                            <span
+                              key={rol}
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                              style={{ color: ROLES_CONFIG[rol].color, backgroundColor: `${ROLES_CONFIG[rol].color}1F` }}
+                            >
+                              {ROLES_CONFIG[rol].label}
+                            </span>
+                          ))}
+                        </div>
+                      </button>
+
+                      {isActive && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {ROLES_ORDEN.map((rol) => {
+                            const cfg = ROLES_CONFIG[rol];
+                            const activo = u.roles.includes(rol);
+                            const enCurso = cambioRolUsuario.cargando && rolEnCurso === rol;
+                            return (
+                              <button
+                                key={rol}
+                                type="button"
+                                disabled={cambioRolUsuario.cargando}
+                                onClick={() => toggleRolUsuario(u, rol)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
+                                style={{
+                                  color: activo ? cfg.color : "var(--text-dim)",
+                                  backgroundColor: activo ? `${cfg.color}1F` : "var(--hover-surface)",
+                                  borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
+                                }}
+                              >
+                                {enCurso ? <Spinner size={12} /> : activo ? <Check className="w-3 h-3" /> : null}
+                                {cfg.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
         </div>
       )}
 
@@ -613,133 +717,6 @@ export function RolesPrivilegiosView() {
                   );
                 })}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {seccion === "usuarios" && (
-        <div className="flex flex-col gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--text-faint)" }} />
-            <input
-              type="text"
-              placeholder="Buscar usuario por nombre o correo..."
-              value={busquedaUsuario}
-              onChange={(e) => setBusquedaUsuario(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 rounded-lg text-sm outline-none transition-colors"
-              style={{ backgroundColor: "var(--surface-profile)", border: "1px solid var(--border-hair)", color: "var(--text-strong)" }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(154,98,250,0.4)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-hair)")}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Resultados de la búsqueda */}
-            <div
-              className="rounded-xl overflow-hidden flex flex-col max-h-[420px] overflow-y-auto"
-              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-            >
-              {usuariosFiltrados.length === 0 ? (
-                <p className="text-sm text-center py-10" style={{ color: "var(--text-dim)" }}>
-                  Sin resultados.
-                </p>
-              ) : (
-                usuariosFiltrados.map((u) => {
-                  const isActive = usuarioSeleccionado?.id === u.id;
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => setUsuarioSeleccionado(u)}
-                      className="flex items-center gap-3 px-4 py-3 text-left transition-colors"
-                      style={{
-                        backgroundColor: isActive ? "rgba(154,98,250,0.12)" : "transparent",
-                        borderBottom: "1px solid var(--hover-surface)",
-                      }}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-                        style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
-                      >
-                        {u.nombre.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate" style={{ color: "var(--text-strong)" }}>{u.nombre}</p>
-                        <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{u.correo}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1 justify-end shrink-0">
-                        {u.roles.map((rol) => (
-                          <span
-                            key={rol}
-                            className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                            style={{ color: ROLES_CONFIG[rol].color, backgroundColor: `${ROLES_CONFIG[rol].color}1F` }}
-                          >
-                            {ROLES_CONFIG[rol].label}
-                          </span>
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Roles del usuario seleccionado */}
-            <div
-              className="rounded-xl p-5 flex flex-col gap-4"
-              style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}
-            >
-              {!usuarioSeleccionado ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-                  <UserRound className="w-8 h-8" style={{ color: "var(--text-faint)" }} />
-                  <p className="text-sm" style={{ color: "var(--text-dim)" }}>
-                    Busca y selecciona un usuario para darle o quitarle roles solo a él.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
-                      style={{ backgroundColor: "var(--brand-tint)", color: "var(--brand)" }}
-                    >
-                      {usuarioSeleccionado.nombre.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{usuarioSeleccionado.nombre}</p>
-                      <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{usuarioSeleccionado.correo}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs" style={{ color: "var(--text-dim)" }}>
-                    Puede tener más de un rol a la vez — con varios, ve las secciones de cada uno en su dashboard.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {ROLES_ORDEN.map((rol) => {
-                      const cfg = ROLES_CONFIG[rol];
-                      const activo = usuarioSeleccionado.roles.includes(rol);
-                      const enCurso = cambioRolUsuario.cargando && rolEnCurso === rol;
-                      return (
-                        <button
-                          key={rol}
-                          type="button"
-                          disabled={cambioRolUsuario.cargando}
-                          onClick={() => toggleRolUsuario(usuarioSeleccionado, rol)}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
-                          style={{
-                            color: activo ? cfg.color : "var(--text-dim)",
-                            backgroundColor: activo ? `${cfg.color}1F` : "var(--hover-surface)",
-                            borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
-                          }}
-                        >
-                          {enCurso ? <Spinner size={14} /> : activo ? <Check className="w-3.5 h-3.5" /> : null}
-                          {cfg.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

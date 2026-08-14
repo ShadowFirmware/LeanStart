@@ -49,6 +49,11 @@ const useEfectoDePintado = typeof window === "undefined" ? useEffect : useLayout
 export function LiveSync() {
   const { data: session, status } = useSession();
   const roles = session?.user?.roles;
+  // `roles` es un array — next-auth puede devolver una referencia NUEVA en cada
+  // poll de sesión aunque el contenido no cambie, y usarlo tal cual como dependencia
+  // de un effect lo dispara en cada poll (bucle de peticiones). Se deriva un string
+  // estable en su lugar, que solo cambia cuando los roles realmente cambian.
+  const rolesKey = roles?.join(",") ?? "";
   const userId = session?.user?.id;
 
   // Rehidratación inicial (una vez, tras montar en el cliente).
@@ -75,7 +80,8 @@ export function LiveSync() {
     // Todos los roles pueden leer la config de viabilidad (para mostrar el nivel
     // obtenido en las cards de empresas); solo el administrador puede modificarla.
     useViabilidadStore.getState().cargarViabilidad().catch(() => {});
-  }, [status, roles, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, rolesKey, userId]);
 
   // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
   // persona genera una notificación, o el usuario edita su perfil desde otro
