@@ -19,8 +19,25 @@ model User {
   updatedAt    DateTime @updatedAt
 
   semillasAlexa SemillaAlexa[]
+  resetTokens   PasswordResetToken[]
 
   @@map("users")
+}
+
+/// Recuperación de contraseña: token de un solo uso enviado por correo (ver
+/// EmailService), expira a la hora. AuthService.restablecer lo consume para
+/// fijar un passwordHash nuevo sin necesitar la contraseña anterior.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiraAt  DateTime
+  usadoAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_tokens")
 }
 
 /// Login por voz de la skill de Alexa: el emprendedor genera una semilla de 4

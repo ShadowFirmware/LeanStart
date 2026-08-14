@@ -35,7 +35,13 @@ export default auth((req) => {
   }
 
   // Rutas públicas
-  if (pathname === "/login" || pathname === "/" || pathname === "/registro") {
+  if (
+    pathname === "/login" ||
+    pathname === "/" ||
+    pathname === "/registro" ||
+    pathname === "/recuperar" ||
+    pathname === "/restablecer"
+  ) {
     if (session?.user?.rol) {
       return NextResponse.redirect(
         new URL(ROLE_HOME[session.user.rol], req.url)

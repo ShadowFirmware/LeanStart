@@ -34,6 +34,17 @@ export class RecuperarDto {
   correo!: string;
 }
 
+export class RestablecerDto {
+  @ApiProperty({ description: "Token recibido por correo" })
+  @IsString()
+  token!: string;
+
+  @ApiProperty({ example: "Sup3rSegura!", minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
 export class GenerarSemillaDto {
   @ApiProperty({ example: "Daniel", description: "Nombre que el emprendedor le dirá a Alexa para identificarse" })
   @IsString()

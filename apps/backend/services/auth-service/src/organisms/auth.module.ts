@@ -9,6 +9,7 @@ import { AuthService } from "../molecules/auth.service";
 import { UsuariosService } from "../molecules/usuarios.service";
 import { PrivilegiosService } from "../molecules/privilegios.service";
 import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
+import { EmailService } from "../molecules/email.service";
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
     }),
   ],
   controllers: [AuthController, UsuariosController, PrivilegiosController, HealthController],
-  providers: [AuthService, UsuariosService, PrivilegiosService, SeedsAlexaService],
+  providers: [AuthService, UsuariosService, PrivilegiosService, SeedsAlexaService, EmailService],
 })
 export class AuthModule {}

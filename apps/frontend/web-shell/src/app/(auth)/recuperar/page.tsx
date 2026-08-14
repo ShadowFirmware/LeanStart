@@ -13,10 +13,13 @@ import {
   FormMessage,
   Input,
   Button,
+  apiFetch,
+  modoDemo,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import Link from "next/link";
 import { ArrowLeft, MailCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 
 const recuperarSchema = z.object({
@@ -36,12 +39,26 @@ export default function RecuperarPage() {
 
   async function onSubmit(values: RecuperarFormValues) {
     setLoading(true);
-    // Solo-front (sin backend): simulamos el envío. Al conectar backend, aquí va
-    // el POST /auth/recuperar. Mostramos un mensaje genérico para no revelar si
-    // el correo existe (buena práctica de seguridad).
-    await new Promise((r) => setTimeout(r, 700));
-    setLoading(false);
-    setEnviadoA(values.email);
+    try {
+      if (modoDemo()) {
+        // Sin backend real en modo demo: no hay a quién mandarle el correo.
+        // La respuesta es genérica de cualquier forma (nunca revela si el
+        // correo existe), así que simular el mismo resultado es honesto.
+        await new Promise((r) => setTimeout(r, 700));
+      } else {
+        await apiFetch("/auth/recuperar", {
+          method: "POST",
+          body: JSON.stringify({ correo: values.email }),
+          skipAuth: true,
+          etiquetaCarga: null,
+        });
+      }
+      setEnviadoA(values.email);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo enviar el correo. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

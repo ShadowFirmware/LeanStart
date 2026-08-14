@@ -6,6 +6,7 @@ import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
 import { LoginDto } from "../atoms/login.dto";
 import { RegisterDto } from "../atoms/register.dto";
 import { RecuperarDto } from "../atoms/recuperar.dto";
+import { RestablecerDto } from "../atoms/restablecer.dto";
 import { UpdateMeDto } from "../atoms/update-me.dto";
 import { GenerarSemillaDto, ValidarSemillaDto } from "../atoms/semilla.dto";
 
@@ -30,9 +31,15 @@ export class AuthController {
   }
 
   @Post("recuperar")
-  @ApiOperation({ summary: "Solicitar recuperación de contraseña (stub, sin envío real de correo)" })
+  @ApiOperation({ summary: "Solicitar recuperación de contraseña (envía un correo con el enlace vía Resend)" })
   recuperar(@Body() dto: RecuperarDto) {
     return this.auth.recuperar(dto.correo);
+  }
+
+  @Post("restablecer")
+  @ApiOperation({ summary: "Fijar una contraseña nueva a partir del token del correo de recuperación" })
+  restablecer(@Body() dto: RestablecerDto) {
+    return this.auth.restablecer(dto.token, dto.password);
   }
 
   @Get("me")

@@ -7,8 +7,16 @@ import { CurrentUser, Public, type AuthUser } from "@leanstart/backend-commons";
 import { ProxyService } from "../molecules/proxy.service";
 import { LoginRateLimitGuard } from "../molecules/login-rate-limit.guard";
 import { SeedRateLimitGuard } from "../molecules/seed-rate-limit.guard";
+import { RecuperarRateLimitGuard } from "../molecules/recuperar-rate-limit.guard";
 import { TokenRevocationService } from "../molecules/token-revocation.service";
-import { GenerarSemillaDto, LoginDto, RecuperarDto, RegisterDto, ValidarSemillaDto } from "../atoms/auth.dto";
+import {
+  GenerarSemillaDto,
+  LoginDto,
+  RecuperarDto,
+  RegisterDto,
+  RestablecerDto,
+  ValidarSemillaDto,
+} from "../atoms/auth.dto";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -40,10 +48,18 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(RecuperarRateLimitGuard)
   @Post("recuperar")
-  @ApiOperation({ summary: "Solicitar recuperación de contraseña" })
+  @ApiOperation({ summary: "Solicitar recuperación de contraseña (envía un correo con el enlace)" })
   recuperar(@Body() dto: RecuperarDto) {
     return this.proxy.post(this.baseUrl, "/auth/recuperar", dto);
+  }
+
+  @Public()
+  @Post("restablecer")
+  @ApiOperation({ summary: "Fijar una contraseña nueva a partir del token del correo de recuperación" })
+  restablecer(@Body() dto: RestablecerDto) {
+    return this.proxy.post(this.baseUrl, "/auth/restablecer", dto);
   }
 
   @Get("me")

@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcryptjs";
 import type { Privilegio } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
@@ -7,6 +8,9 @@ import type { LoginDto } from "../atoms/login.dto";
 import type { RegisterDto } from "../atoms/register.dto";
 import type { UpdateMeDto } from "../atoms/update-me.dto";
 import { PrivilegiosService } from "./privilegios.service";
+import { EmailService } from "./email.service";
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export interface AuthResponse {
   accessToken: string;
@@ -24,7 +28,9 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-    private readonly privilegios: PrivilegiosService
+    private readonly privilegios: PrivilegiosService,
+    private readonly email: EmailService,
+    private readonly config: ConfigService
   ) {}
 
   /** Público: también lo usa SeedsAlexaService para emitir el token tras validar una semilla. */
@@ -115,16 +121,35 @@ export class AuthService {
   }
 
   /**
-   * Sin proveedor de email todavía: genera un token de recuperación y lo loguea.
-   * Responde siempre igual exista o no la cuenta, para no filtrar qué correos están registrados.
+   * Responde siempre igual exista o no la cuenta, para no filtrar qué correos
+   * están registrados (por eso el envío va fire-and-forget: nunca hace más
+   * lenta la respuesta ni la condiciona a que el correo salga bien).
    */
   async recuperar(correo: string): Promise<{ mensaje: string }> {
     const user = await this.prisma.user.findUnique({ where: { correo } });
     if (user) {
       const token = crypto.randomUUID();
-      // eslint-disable-next-line no-console
-      console.warn(`[auth-service] Token de recuperación para ${correo}: ${token}`);
+      const expiraAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await this.prisma.passwordResetToken.create({ data: { userId: user.id, token, expiraAt } });
+
+      const enlace = `${this.config.getOrThrow<string>("FRONTEND_URL")}/restablecer?token=${token}`;
+      void this.email.enviarRecuperacion(correo, enlace).catch(() => undefined);
     }
     return { mensaje: "Si el correo existe, se enviaron instrucciones de recuperación." };
+  }
+
+  /** Consume el token del correo de recuperación y fija una contraseña nueva. */
+  async restablecer(token: string, password: string): Promise<{ ok: true }> {
+    const registro = await this.prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!registro || registro.usadoAt || registro.expiraAt.getTime() < Date.now()) {
+      throw new UnauthorizedException("El enlace de recuperación no es válido o ya expiró.");
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: registro.userId }, data: { passwordHash } }),
+      this.prisma.passwordResetToken.update({ where: { id: registro.id }, data: { usadoAt: new Date() } }),
+    ]);
+    return { ok: true };
   }
 }
