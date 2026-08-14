@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ShieldCheck, Rocket, GraduationCap, ClipboardCheck, Pencil, Check, Plus, Trash2, UserCog,
-  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3, Search,
+  Users, Building2, Package, LayoutTemplate, Lightbulb, BarChart3, Search, X,
 } from "lucide-react";
 import {
   Button,
@@ -156,6 +156,11 @@ export function RolesPrivilegiosView() {
     rolesDraft.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => acciones.add(a)));
     return { ...acc, [modulo]: [...acciones] };
   }, {} as MatrizRolLocal);
+
+  // Con un usuario seleccionado, la matriz grande muestra SUS privilegios efectivos
+  // (en solo lectura); sin selección, funciona como siempre: editable por rol.
+  const matrizMostrada: MatrizRolLocal = usuarioSeleccionado ? privilegiosEfectivosDraft : ((privilegios[rolPrivilegios] ?? {}) as MatrizRolLocal);
+  const soloLecturaMatriz = usuarioSeleccionado !== null;
 
   async function guardarCambiosUsuario() {
     if (!usuarioSeleccionado) return;
@@ -489,10 +494,21 @@ export function RolesPrivilegiosView() {
                   >
                     {usuarioSeleccionado.nombre.charAt(0).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate" style={{ color: "var(--text-strong)" }}>{usuarioSeleccionado.nombre}</p>
                     <p className="text-xs truncate" style={{ color: "var(--text-dim)" }}>{usuarioSeleccionado.correo}</p>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => seleccionarUsuario(null)}
+                    style={{ color: "var(--text-dim)" }}
+                    aria-label="Dejar de mostrar este usuario en la matriz"
+                    title="Volver a la matriz por rol"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
 
                 <div>
@@ -522,26 +538,11 @@ export function RolesPrivilegiosView() {
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-dim)" }}>
-                    Privilegios que tendría {hayCambiosUsuario && <span style={{ color: "var(--brand)" }}>(sin guardar)</span>}
+                {hayCambiosUsuario && (
+                  <p className="text-xs" style={{ color: "var(--brand)" }}>
+                    Cambios sin guardar — la matriz de abajo ya muestra la vista previa.
                   </p>
-                  <div className="flex flex-col gap-1.5">
-                    {MODULOS.map((modulo) => {
-                      const acciones = privilegiosEfectivosDraft[modulo] ?? [];
-                      const ModIcon = MODULO_CONFIG[modulo].icon;
-                      return (
-                        <div key={modulo} className="flex items-start gap-2 text-xs">
-                          <ModIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--text-dim)" }} />
-                          <span className="shrink-0 w-24" style={{ color: "var(--text-dim)" }}>{MODULO_CONFIG[modulo].label}</span>
-                          <span style={{ color: acciones.length ? "var(--text-strong)" : "var(--text-faint)" }}>
-                            {acciones.length ? acciones.map((a) => ACCION_LABELS[a]).join(", ") : "Sin acceso"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <Button
@@ -569,73 +570,84 @@ export function RolesPrivilegiosView() {
             )}
           </div>
 
-          {/* Selector de rol con ícono + conteo de usuarios */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {ROLES_ORDEN.map((rol) => {
-              const cfg = ROLES_CONFIG[rol];
-              const RolIcon = cfg.icon;
-              const isActive = rolPrivilegios === rol;
-              const count = usuarios.filter((u) => u.roles.includes(rol)).length;
-              return (
-                <button
-                  key={rol}
-                  type="button"
-                  onClick={() => setRolPrivilegios(rol)}
-                  // Cambiar de rol a mitad de una escritura movería el spinner a la
-                  // celda equivalente del rol nuevo, que no es la que se está guardando.
-                  disabled={cambioPrivilegio.cargando}
-                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{
-                    backgroundColor: isActive ? `${cfg.color}1F` : "var(--hover-surface-2)",
-                    color: isActive ? "var(--text-strong)" : "var(--text-dim)",
-                    border: `1px solid ${isActive ? `${cfg.color}66` : "var(--border-subtle)"}`,
-                  }}
-                >
-                  <span
-                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${cfg.color}22` }}
+          {/* Selector de rol con ícono + conteo de usuarios — reemplazado por un aviso
+              mientras se está mostrando (en solo lectura) la matriz de un usuario. */}
+          {usuarioSeleccionado ? (
+            <div
+              className="flex items-center gap-2 rounded-xl px-4 h-10 text-sm w-fit"
+              style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.25)", color: "var(--brand-accent)" }}
+            >
+              <Users className="w-4 h-4" />
+              Mostrando los privilegios efectivos de <strong>{usuarioSeleccionado.nombre}</strong> (solo lectura)
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              {ROLES_ORDEN.map((rol) => {
+                const cfg = ROLES_CONFIG[rol];
+                const RolIcon = cfg.icon;
+                const isActive = rolPrivilegios === rol;
+                const count = usuarios.filter((u) => u.roles.includes(rol)).length;
+                return (
+                  <button
+                    key={rol}
+                    type="button"
+                    onClick={() => setRolPrivilegios(rol)}
+                    // Cambiar de rol a mitad de una escritura movería el spinner a la
+                    // celda equivalente del rol nuevo, que no es la que se está guardando.
+                    disabled={cambioPrivilegio.cargando}
+                    className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{
+                      backgroundColor: isActive ? `${cfg.color}1F` : "var(--hover-surface-2)",
+                      color: isActive ? "var(--text-strong)" : "var(--text-dim)",
+                      border: `1px solid ${isActive ? `${cfg.color}66` : "var(--border-subtle)"}`,
+                    }}
                   >
-                    <RolIcon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
-                  </span>
-                  {cfg.label}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--muted-foreground)" }}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-            {personalizados.map((rol) => {
-              const isActive = rolPrivilegios === rol.id;
-              return (
-                <button
-                  key={rol.id}
-                  type="button"
-                  onClick={() => setRolPrivilegios(rol.id)}
-                  disabled={cambioPrivilegio.cargando}
-                  className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{
-                    backgroundColor: isActive ? `${rol.color}1F` : "var(--hover-surface-2)",
-                    color: isActive ? "var(--text-strong)" : "var(--text-dim)",
-                    border: `1px solid ${isActive ? `${rol.color}66` : "var(--border-subtle)"}`,
-                  }}
-                >
-                  <span
-                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${rol.color}22` }}
+                    <span
+                      className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${cfg.color}22` }}
+                    >
+                      <RolIcon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+                    </span>
+                    {cfg.label}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--border-subtle)", color: "var(--muted-foreground)" }}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+              {personalizados.map((rol) => {
+                const isActive = rolPrivilegios === rol.id;
+                return (
+                  <button
+                    key={rol.id}
+                    type="button"
+                    onClick={() => setRolPrivilegios(rol.id)}
+                    disabled={cambioPrivilegio.cargando}
+                    className="inline-flex items-center gap-2 pl-2 pr-3 h-10 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{
+                      backgroundColor: isActive ? `${rol.color}1F` : "var(--hover-surface-2)",
+                      color: isActive ? "var(--text-strong)" : "var(--text-dim)",
+                      border: `1px solid ${isActive ? `${rol.color}66` : "var(--border-subtle)"}`,
+                    }}
                   >
-                    <UserCog className="w-3.5 h-3.5" style={{ color: rol.color }} />
-                  </span>
-                  {rol.nombre}
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${rol.color}22` }}
+                    >
+                      <UserCog className="w-3.5 h-3.5" style={{ color: rol.color }} />
+                    </span>
+                    {rol.nombre}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Resumen de permisos + acciones rápidas */}
+          {/* Resumen de permisos + acciones rápidas (los botones de otorgar/quitar
+              todo no aplican mientras se muestra un usuario en solo lectura). */}
           {(() => {
-            const rolMatriz = privilegios[rolPrivilegios] ?? {};
             const total = MODULOS.length * ACCIONES.length;
-            const otorgados = MODULOS.reduce((acc, m) => acc + (rolMatriz[m as Modulo]?.length ?? 0), 0);
+            const otorgados = MODULOS.reduce((acc, m) => acc + (matrizMostrada[m as Modulo]?.length ?? 0), 0);
             const pct = Math.round((otorgados / total) * 100);
             return (
               <div
@@ -657,32 +669,34 @@ export function RolesPrivilegiosView() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => aplicarPrivilegio("todos:otorgar", () => setTodos(rolPrivilegios, true))}
-                    loading={privilegioEnCurso === "todos:otorgar"}
-                    loadingText="Otorgando…"
-                    disabled={matrizBloqueada}
-                    className="text-xs font-medium px-3 h-8 rounded-lg"
-                    style={{ color: "var(--brand-accent)", backgroundColor: "var(--brand-tint)", border: "1px solid rgba(154,98,250,0.25)" }}
-                  >
-                    Otorgar todo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => aplicarPrivilegio("todos:quitar", () => setTodos(rolPrivilegios, false))}
-                    loading={privilegioEnCurso === "todos:quitar"}
-                    loadingText="Quitando…"
-                    disabled={matrizBloqueada}
-                    className="text-xs font-medium px-3 h-8 rounded-lg"
-                    style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                  >
-                    Quitar todo
-                  </Button>
-                </div>
+                {!usuarioSeleccionado && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => aplicarPrivilegio("todos:otorgar", () => setTodos(rolPrivilegios, true))}
+                      loading={privilegioEnCurso === "todos:otorgar"}
+                      loadingText="Otorgando…"
+                      disabled={matrizBloqueada}
+                      className="text-xs font-medium px-3 h-8 rounded-lg"
+                      style={{ color: "var(--brand-accent)", backgroundColor: "var(--brand-tint)", border: "1px solid rgba(154,98,250,0.25)" }}
+                    >
+                      Otorgar todo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => aplicarPrivilegio("todos:quitar", () => setTodos(rolPrivilegios, false))}
+                      loading={privilegioEnCurso === "todos:quitar"}
+                      loadingText="Quitando…"
+                      disabled={matrizBloqueada}
+                      className="text-xs font-medium px-3 h-8 rounded-lg"
+                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+                    >
+                      Quitar todo
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -704,17 +718,17 @@ export function RolesPrivilegiosView() {
                     Módulo
                   </div>
                   {ACCIONES.map((accion) => {
-                    const enTodos = MODULOS.every((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion));
-                    const enAlgunos = MODULOS.some((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion));
+                    const enTodos = MODULOS.every((m) => (matrizMostrada[m] ?? []).includes(accion));
+                    const enAlgunos = MODULOS.some((m) => (matrizMostrada[m] ?? []).includes(accion));
                     return (
                       <button
                         key={accion}
                         type="button"
                         onClick={() => aplicarPrivilegio(`col:${accion}`, () => toggleAccionColumna(rolPrivilegios, accion))}
-                        disabled={matrizBloqueada}
+                        disabled={matrizBloqueada || soloLecturaMatriz}
                         aria-busy={privilegioEnCurso === `col:${accion}` || undefined}
                         className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                        title={enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
+                        title={soloLecturaMatriz ? undefined : enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
                         style={{ color: enAlgunos ? "var(--brand-accent)" : "var(--text-dim)", backgroundColor: enTodos ? "rgba(154,98,250,0.08)" : "transparent" }}
                       >
                         <span className="text-[11px] font-semibold">{ACCION_LABELS[accion]}</span>
@@ -725,7 +739,7 @@ export function RolesPrivilegiosView() {
                             className="text-[9px] px-1 rounded-full"
                             style={{ color: "var(--text-dim)", backgroundColor: "var(--border-subtle)" }}
                           >
-                            {MODULOS.filter((m) => (privilegios[rolPrivilegios]?.[m] ?? []).includes(accion)).length}/{MODULOS.length}
+                            {MODULOS.filter((m) => (matrizMostrada[m] ?? []).includes(accion)).length}/{MODULOS.length}
                           </span>
                         )}
                       </button>
@@ -737,7 +751,7 @@ export function RolesPrivilegiosView() {
                 {MODULOS.map((modulo, i) => {
                   const modCfg = MODULO_CONFIG[modulo];
                   const ModIcon = modCfg.icon;
-                  const activas = privilegios[rolPrivilegios]?.[modulo] ?? [];
+                  const activas = matrizMostrada[modulo] ?? [];
                   const todoActivo = activas.length === ACCIONES.length;
                   return (
                     <div
@@ -748,11 +762,11 @@ export function RolesPrivilegiosView() {
                       <button
                         type="button"
                         onClick={() => aplicarPrivilegio(`mod:${modulo}`, () => toggleModuloCompleto(rolPrivilegios, modulo))}
-                        disabled={matrizBloqueada}
+                        disabled={matrizBloqueada || soloLecturaMatriz}
                         aria-busy={privilegioEnCurso === `mod:${modulo}` || undefined}
                         className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         style={{ backgroundColor: "var(--surface-profile)" }}
-                        title={todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
+                        title={soloLecturaMatriz ? undefined : todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -781,7 +795,7 @@ export function RolesPrivilegiosView() {
                             key={accion}
                             type="button"
                             onClick={() => aplicarPrivilegio(clave, () => toggleAccion(rolPrivilegios, modulo, accion))}
-                            disabled={matrizBloqueada}
+                            disabled={matrizBloqueada || soloLecturaMatriz}
                             aria-busy={enCurso || undefined}
                             className="flex items-center justify-center py-3 group disabled:cursor-not-allowed disabled:opacity-60"
                             aria-pressed={activa}
