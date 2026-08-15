@@ -7,3 +7,5 @@ allowBuilds:
   '@scarf/scarf': false
   '@prisma/engines': true
   'prisma': true
+  '@google/genai': false
+  protobufjs: false

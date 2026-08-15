@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, type Content, type FunctionDeclaration } from "@google/genai";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { GIRO_LABELS, type AuthUser } from "@leanstart/backend-commons";
@@ -47,20 +47,20 @@ export interface AsistenteRespuesta {
   camposActualizados: string[];
 }
 
-/** Resultado de aplicar un tool_use: `empresa` solo viene poblado cuando la
- *  escritura tocó el perfil (crear/actualizar empresa) — las de canvas no lo
- *  traen, porque `CanvasService.actualizar` devuelve solo el canvas. */
+/** Resultado de aplicar una función invocada por el modelo: `empresa` solo
+ *  viene poblado cuando la escritura tocó el perfil (crear/actualizar
+ *  empresa) — las de canvas no lo traen, porque `CanvasService.actualizar`
+ *  devuelve solo el canvas. */
 type ResultadoEscritura =
   | { ok: true; etiqueta: string; empresa?: EmpresaConDetalle }
   | { ok: false; motivo: string };
 
-function toolCrearEmpresa(): Anthropic.Tool {
+function declaracionCrearEmpresa(): FunctionDeclaration {
   return {
     name: "crear_empresa",
     description:
       "Crea la empresa del emprendedor con su perfil inicial. Solo llamar cuando ya tengas los 4 campos completos y válidos: nombre (2-100 caracteres), giro, descripción (mínimo 20 caracteres) y mercado objetivo (mínimo 20 caracteres). Se puede llamar una sola vez.",
-    strict: true,
-    input_schema: {
+    parametersJsonSchema: {
       type: "object",
       properties: {
         nombre: { type: "string", minLength: 2, maxLength: 100, description: "Nombre de la empresa." },
@@ -69,16 +69,15 @@ function toolCrearEmpresa(): Anthropic.Tool {
         mercadoObjetivo: { type: "string", minLength: 20, maxLength: 500, description: "A quién le vende, mínimo 20 caracteres." },
       },
       required: ["nombre", "giro", "descripcion", "mercadoObjetivo"],
-      additionalProperties: false,
     },
   };
 }
 
-function toolActualizarEmpresa(): Anthropic.Tool {
+function declaracionActualizarEmpresa(): FunctionDeclaration {
   return {
     name: "actualizar_empresa",
     description: "Actualiza uno o más campos del perfil de la empresa ya creada. Manda solo los campos que cambian.",
-    input_schema: {
+    parametersJsonSchema: {
       type: "object",
       properties: {
         nombre: { type: "string", minLength: 2, maxLength: 100 },
@@ -86,36 +85,32 @@ function toolActualizarEmpresa(): Anthropic.Tool {
         descripcion: { type: "string", minLength: 20, maxLength: 500 },
         mercadoObjetivo: { type: "string", minLength: 20, maxLength: 500 },
       },
-      additionalProperties: false,
     },
   };
 }
 
-function toolActualizarBloqueTexto(): Anthropic.Tool {
+function declaracionActualizarBloqueTexto(): FunctionDeclaration {
   return {
     name: "actualizar_bloque_texto",
     description:
       "Reemplaza el contenido de uno de los 3 bloques de texto libre del Lean Canvas (Solución, Propuesta de valor única, Ventaja injusta). Máximo 400 caracteres.",
-    strict: true,
-    input_schema: {
+    parametersJsonSchema: {
       type: "object",
       properties: {
         bloque: { type: "string", enum: [...BLOQUES_TEXTO], description: "Qué bloque se actualiza." },
         texto: { type: "string", maxLength: 400, description: "Contenido nuevo del bloque." },
       },
       required: ["bloque", "texto"],
-      additionalProperties: false,
     },
   };
 }
 
-function toolActualizarBloqueLista(): Anthropic.Tool {
+function declaracionActualizarBloqueLista(): FunctionDeclaration {
   return {
     name: "actualizar_bloque_lista",
     description:
       "Reemplaza la lista COMPLETA de uno de los 6 bloques tipo lista del Lean Canvas (Problema, Segmentos de clientes, Métricas clave, Canales, Estructura de costos, Fuentes de ingresos). Esto reemplaza todo el bloque — si ya tenía elementos y quieres conservarlos, inclúyelos de nuevo junto con los nuevos.",
-    strict: true,
-    input_schema: {
+    parametersJsonSchema: {
       type: "object",
       properties: {
         bloque: { type: "string", enum: [...BLOQUES_LISTA], description: "Qué bloque se actualiza." },
@@ -126,35 +121,34 @@ function toolActualizarBloqueLista(): Anthropic.Tool {
         },
       },
       required: ["bloque", "items"],
-      additionalProperties: false,
     },
   };
 }
 
 /**
- * Asistente conversacional (Claude API) para el panel de Alexa: ayuda al
+ * Asistente conversacional (Google Gemini) para el panel de Alexa: ayuda al
  * emprendedor a llenar el perfil de su empresa y el Lean Canvas charlando en
  * vez de por formulario. Reutiliza EmpresasService/CanvasService — mismo
  * proceso, no HTTP — así que ni la validación ni el scoping por usuario se
- * duplican aquí.
+ * duplican aquí. Se eligió Gemini (en vez de Claude) por su tier gratuito.
  */
 @Injectable()
 export class AsistenteService {
   private readonly logger = new Logger(AsistenteService.name);
-  private readonly anthropic: Anthropic | null;
+  private readonly gemini: GoogleGenAI | null;
 
   constructor(
     config: ConfigService,
     private readonly empresas: EmpresasService,
     private readonly canvas: CanvasService
   ) {
-    const apiKey = config.get<string>("ANTHROPIC_API_KEY");
-    this.anthropic = apiKey ? new Anthropic({ apiKey }) : null;
+    const apiKey = config.get<string>("GEMINI_API_KEY");
+    this.gemini = apiKey ? new GoogleGenAI({ apiKey }) : null;
   }
 
   async enviarMensaje(user: AuthUser, dto: MensajeChatDto): Promise<AsistenteRespuesta> {
-    if (!this.anthropic) {
-      this.logger.warn("ANTHROPIC_API_KEY no configurada — el asistente no puede responder.");
+    if (!this.gemini) {
+      this.logger.warn("GEMINI_API_KEY no configurada — el asistente no puede responder.");
       return {
         respuesta: "El asistente no está configurado todavía — contacta al administrador.",
         empresaId: dto.empresaId ?? null,
@@ -165,17 +159,33 @@ export class AsistenteService {
 
     const empresaActual = dto.empresaId ? await this.empresas.obtener(user, dto.empresaId) : null;
 
-    let respuestaClaude: Anthropic.Message;
+    const contenidos: Content[] = dto.historial.map((m) => ({
+      role: m.rol === "assistant" ? "model" : "user",
+      parts: [{ text: m.contenido }],
+    }));
+
+    let textoModelo = "";
+    let llamadas: { name?: string; args?: Record<string, unknown> }[] = [];
     try {
-      respuestaClaude = await this.anthropic.messages.create({
-        model: "claude-opus-5",
-        max_tokens: 1024,
-        system: this.construirSystemPrompt(empresaActual),
-        messages: dto.historial.map((m) => ({ role: m.rol, content: m.contenido })),
-        tools: empresaActual ? [toolActualizarEmpresa(), toolActualizarBloqueTexto(), toolActualizarBloqueLista()] : [toolCrearEmpresa()],
+      const respuesta = await this.gemini.models.generateContent({
+        model: "gemini-flash-latest",
+        contents: contenidos,
+        config: {
+          systemInstruction: this.construirSystemPrompt(empresaActual),
+          maxOutputTokens: 1024,
+          tools: [
+            {
+              functionDeclarations: empresaActual
+                ? [declaracionActualizarEmpresa(), declaracionActualizarBloqueTexto(), declaracionActualizarBloqueLista()]
+                : [declaracionCrearEmpresa()],
+            },
+          ],
+        },
       });
+      textoModelo = (respuesta.text ?? "").trim();
+      llamadas = respuesta.functionCalls ?? [];
     } catch (err) {
-      this.logger.warn(`Anthropic falló: ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(`Gemini falló: ${err instanceof Error ? err.message : err}`);
       return {
         respuesta: "El asistente está ocupado en este momento — intenta de nuevo en unos segundos.",
         empresaId: dto.empresaId ?? null,
@@ -184,30 +194,23 @@ export class AsistenteService {
       };
     }
 
-    const textoClaude = respuestaClaude.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
-    const usosDeHerramienta = respuestaClaude.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
-
     let empresaId = dto.empresaId ?? null;
     let empresaFinal = empresaActual;
     const camposActualizados: string[] = [];
     const errores: string[] = [];
     let canvasTocado = false;
 
-    for (const uso of usosDeHerramienta) {
+    for (const llamada of llamadas) {
       let resultado: ResultadoEscritura;
-      if (uso.name === "crear_empresa" && !empresaId) {
-        resultado = await this.crearEmpresa(user, uso.input);
-      } else if (uso.name === "actualizar_empresa" && empresaId) {
-        resultado = await this.actualizarEmpresa(user, empresaId, uso.input);
-      } else if (uso.name === "actualizar_bloque_texto" && empresaId) {
-        resultado = await this.actualizarBloqueTexto(user, empresaId, uso.input);
+      if (llamada.name === "crear_empresa" && !empresaId) {
+        resultado = await this.crearEmpresa(user, llamada.args);
+      } else if (llamada.name === "actualizar_empresa" && empresaId) {
+        resultado = await this.actualizarEmpresa(user, empresaId, llamada.args);
+      } else if (llamada.name === "actualizar_bloque_texto" && empresaId) {
+        resultado = await this.actualizarBloqueTexto(user, empresaId, llamada.args);
         if (resultado.ok) canvasTocado = true;
-      } else if (uso.name === "actualizar_bloque_lista" && empresaId) {
-        resultado = await this.actualizarBloqueLista(user, empresaId, uso.input);
+      } else if (llamada.name === "actualizar_bloque_lista" && empresaId) {
+        resultado = await this.actualizarBloqueLista(user, empresaId, llamada.args);
         if (resultado.ok) canvasTocado = true;
       } else {
         continue;
@@ -231,7 +234,7 @@ export class AsistenteService {
     }
 
     const respuesta =
-      errores.length > 0 ? `${textoClaude || "Casi lo tengo, pero hubo un problema:"} ${errores.join(" ")}`.trim() : textoClaude || "Listo.";
+      errores.length > 0 ? `${textoModelo || "Casi lo tengo, pero hubo un problema:"} ${errores.join(" ")}`.trim() : textoModelo || "Listo.";
 
     return { respuesta, empresaId, empresa: empresaFinal, camposActualizados };
   }
@@ -323,12 +326,12 @@ ${estadoCanvas}
 Giros válidos: ${girosDisponibles}
 
 Reglas importantes:
-- SIEMPRE incluye una respuesta de texto breve junto a cualquier herramienta que uses, confirmando qué guardaste o preguntando lo siguiente que falta.
+- SIEMPRE incluye una respuesta de texto breve junto a cualquier función que uses, confirmando qué guardaste o preguntando lo siguiente que falta.
 - "crear_empresa" solo se puede llamar una vez que tengas los 4 campos (nombre, giro, descripción de al menos 20 caracteres, mercado objetivo de al menos 20 caracteres) — si te falta alguno, sigue preguntando en vez de inventar contenido.
 - "actualizar_bloque_lista" REEMPLAZA la lista completa del bloque. Si el usuario quiere agregar un elemento a una lista que ya tiene contenido (ver "Estado actual del Lean Canvas" arriba), manda también los elementos que ya había, no solo el nuevo.
 - Respeta los límites: bloques de texto libre (Solución, Propuesta de valor, Ventaja injusta) hasta 400 caracteres; listas hasta 5 elementos, salvo Estructura de costos que admite hasta 8; cada elemento de lista hasta 100 caracteres.
 - No inventes datos que el usuario no te dio — pregunta antes de llenar un campo con una suposición.
-- No hay una herramienta para el código de vinculación con Alexa — eso lo maneja otra parte de la pantalla; si te preguntan por eso, dile al usuario que use el botón "Generar código" que está en esta misma página.
+- No hay una función para el código de vinculación con Alexa — eso lo maneja otra parte de la pantalla; si te preguntan por eso, dile al usuario que use el botón "Vincular con Alexa" que está en el mismo panel del asistente.
 `.trim();
   }
 }
