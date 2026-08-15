@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { CombinedSidebar } from "@/components/shared/combined-sidebar";
+import { AlexaWidget } from "@/components/emprendedor/alexa-widget";
 
 const DEV_USER = { name: "Emprendedor Demo", email: "demo@leanstart.dev" };
 
@@ -27,6 +28,7 @@ export default async function EmprendedorLayout({
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}
       </main>
+      <AlexaWidget />
     </div>
   );
 }

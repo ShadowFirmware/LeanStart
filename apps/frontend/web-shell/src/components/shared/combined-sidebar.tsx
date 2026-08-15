@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  LayoutDashboard, Building2, Bell, Mic, History, Users, ShieldCheck,
+  LayoutDashboard, Building2, Bell, History, Users, ShieldCheck,
   ClipboardList, TrendingUp, BarChart3, LogOut, Menu, X,
 } from "lucide-react";
 import type { Role } from "@leanstart/commons";
@@ -79,7 +79,6 @@ export function CombinedSidebar({ roles, userName, userEmail }: CombinedSidebarP
           { href: "/emprendedor/dashboard", label: "Dashboard", icon: LayoutDashboard },
           { href: "/emprendedor/empresas", label: "Mis Empresas", icon: Building2 },
           { href: "/emprendedor/notificaciones", label: "Notificaciones", icon: Bell, badge: hydrated ? noLeidasEmprendedor : 0 },
-          { href: "/emprendedor/alexa", label: "Alexa", icon: Mic },
         ];
       case "mentor":
         return [
