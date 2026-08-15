@@ -48,4 +48,55 @@ export class PrivilegiosController {
   setTodos(@CurrentUser() user: AuthUser, @Param("rolId") rolId: string, @Body() body: Record<string, unknown>) {
     return this.proxy.patch(this.baseUrl, `/privilegios/${rolId}/set-todos`, body, user);
   }
+
+  @Get("usuario/:userId")
+  @ApiOperation({ summary: "Privilegios efectivos de un usuario (roles + excepciones puntuales)" })
+  @ApiParam({ name: "userId" })
+  obtenerUsuario(@CurrentUser() user: AuthUser, @Param("userId") userId: string) {
+    return this.proxy.get(this.baseUrl, `/privilegios/usuario/${userId}`, user);
+  }
+
+  @Patch("usuario/:userId/toggle-accion")
+  @ApiOperation({ summary: "Otorgar/quitar una acción puntual a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleAccionUsuario(
+    @CurrentUser() user: AuthUser,
+    @Param("userId") userId: string,
+    @Body() body: Record<string, unknown>
+  ) {
+    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-accion`, body, user);
+  }
+
+  @Patch("usuario/:userId/toggle-modulo")
+  @ApiOperation({ summary: "Otorgar/quitar todas las acciones de un módulo a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleModuloUsuario(
+    @CurrentUser() user: AuthUser,
+    @Param("userId") userId: string,
+    @Body() body: Record<string, unknown>
+  ) {
+    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-modulo`, body, user);
+  }
+
+  @Patch("usuario/:userId/toggle-columna")
+  @ApiOperation({ summary: "Otorgar/quitar una acción en todos los módulos a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleColumnaUsuario(
+    @CurrentUser() user: AuthUser,
+    @Param("userId") userId: string,
+    @Body() body: Record<string, unknown>
+  ) {
+    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-columna`, body, user);
+  }
+
+  @Patch("usuario/:userId/set-todos")
+  @ApiOperation({ summary: "Otorgar o revocar todos los privilegios a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  setTodosUsuario(
+    @CurrentUser() user: AuthUser,
+    @Param("userId") userId: string,
+    @Body() body: Record<string, unknown>
+  ) {
+    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/set-todos`, body, user);
+  }
 }

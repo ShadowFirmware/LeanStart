@@ -25,6 +25,7 @@ model User {
 
   semillasAlexa SemillaAlexa[]
   resetTokens   PasswordResetToken[]
+  privilegiosOverride UsuarioPrivilegio[]
 
   @@map("users")
 }
@@ -75,4 +76,23 @@ model Privilegio {
 
   @@unique([rolId, modulo, accion])
   @@map("privilegios")
+}
+
+/// Excepción puntual a los privilegios que un usuario recibiría solo por sus
+/// roles: `otorgado=true` le da una acción que su(s) rol(es) no incluyen,
+/// `otorgado=false` le quita una que sí incluyen. Sin fila = usa el default
+/// del rol. Solo se guardan las diferencias, así que cambiar los roles de un
+/// usuario no descarta sus excepciones (pueden dejar de aplicar si el módulo
+/// ya no es relevante, pero no se pierden).
+model UsuarioPrivilegio {
+  id       String  @id @default(uuid())
+  userId   String
+  modulo   String
+  accion   String
+  otorgado Boolean
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, modulo, accion])
+  @@map("usuario_privilegios")
 }

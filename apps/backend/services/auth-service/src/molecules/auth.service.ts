@@ -41,7 +41,7 @@ export class AuthService {
     options?: { expiresIn?: string }
   ): Promise<AuthResponse> {
     const roles = user.roles?.length ? user.roles : [user.rol];
-    const privilegios = await this.privilegios.getPrivilegiosDeRoles(roles);
+    const privilegios = await this.privilegios.getPrivilegiosEfectivos(user.id, roles);
     const accessToken = await this.jwt.signAsync(
       {
         sub: user.id,
@@ -104,7 +104,7 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const roles = user.roles.length ? user.roles : [user.rol];
-    const privilegios = await this.privilegios.getPrivilegiosDeRoles(roles);
+    const privilegios = await this.privilegios.getPrivilegiosEfectivos(user.id, roles);
     return {
       id: user.id,
       nombre: user.nombre,

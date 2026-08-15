@@ -44,4 +44,39 @@ export class PrivilegiosController {
   setTodos(@Param("rolId") rolId: string, @Body() dto: SetTodosDto) {
     return this.privilegios.setTodos(rolId, dto.activar);
   }
+
+  @Get("usuario/:userId")
+  @ApiOperation({ summary: "Privilegios efectivos de un usuario (roles + excepciones puntuales)" })
+  @ApiParam({ name: "userId" })
+  obtenerUsuario(@Param("userId") userId: string) {
+    return this.privilegios.getPrivilegiosEfectivosDeUsuario(userId);
+  }
+
+  @Patch("usuario/:userId/toggle-accion")
+  @ApiOperation({ summary: "Otorgar/quitar una acción puntual a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleAccionUsuario(@Param("userId") userId: string, @Body() dto: ToggleAccionDto) {
+    return this.privilegios.toggleAccionUsuario(userId, dto.modulo, dto.accion);
+  }
+
+  @Patch("usuario/:userId/toggle-modulo")
+  @ApiOperation({ summary: "Otorgar/quitar todas las acciones de un módulo a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleModuloUsuario(@Param("userId") userId: string, @Body() dto: ToggleModuloDto) {
+    return this.privilegios.toggleModuloUsuario(userId, dto.modulo);
+  }
+
+  @Patch("usuario/:userId/toggle-columna")
+  @ApiOperation({ summary: "Otorgar/quitar una acción en todos los módulos a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  toggleColumnaUsuario(@Param("userId") userId: string, @Body() dto: ToggleColumnaDto) {
+    return this.privilegios.toggleColumnaUsuario(userId, dto.accion);
+  }
+
+  @Patch("usuario/:userId/set-todos")
+  @ApiOperation({ summary: "Otorgar o revocar todos los privilegios a un usuario específico" })
+  @ApiParam({ name: "userId" })
+  setTodosUsuario(@Param("userId") userId: string, @Body() dto: SetTodosDto) {
+    return this.privilegios.setTodosUsuario(userId, dto.activar);
+  }
 }

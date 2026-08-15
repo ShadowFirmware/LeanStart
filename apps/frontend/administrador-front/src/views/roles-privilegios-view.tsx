@@ -95,10 +95,19 @@ export function RolesPrivilegiosView() {
   const toggleAccionColumna = usePrivilegiosStore((s) => s.toggleAccionColumna);
   const setTodos = usePrivilegiosStore((s) => s.setTodos);
 
-  // Cargar los privilegios del rol seleccionado es una ida y vuelta al backend:
-  // mientras tanto la matriz muestra su propio velo de carga en lugar de una
-  // cuadrícula vacía que parece "sin permisos".
+  const privilegiosUsuario = usePrivilegiosStore((s) => s.privilegiosUsuario);
+  const cargarPrivilegiosUsuario = usePrivilegiosStore((s) => s.cargarPrivilegiosUsuario);
+  const inicializarPrivilegiosUsuario = usePrivilegiosStore((s) => s.inicializarPrivilegiosUsuario);
+  const toggleAccionUsuario = usePrivilegiosStore((s) => s.toggleAccionUsuario);
+  const toggleModuloUsuarioCompleto = usePrivilegiosStore((s) => s.toggleModuloUsuarioCompleto);
+  const toggleAccionColumnaUsuario = usePrivilegiosStore((s) => s.toggleAccionColumnaUsuario);
+  const setTodosUsuario = usePrivilegiosStore((s) => s.setTodosUsuario);
+
+  // Cargar los privilegios del rol (o del usuario) seleccionado es una ida y
+  // vuelta al backend: mientras tanto la matriz muestra su propio velo de
+  // carga en lugar de una cuadrícula vacía que parece "sin permisos".
   const [cargandoPrivilegios, setCargandoPrivilegios] = useState(false);
+  const [cargandoPrivilegiosUsuario, setCargandoPrivilegiosUsuario] = useState(false);
 
   /* ─── Escrituras sobre la matriz ───
      Cada endpoint de privilegios responde con la matriz COMPLETA del rol, así
@@ -108,11 +117,13 @@ export function RolesPrivilegiosView() {
      guarda la clave de ese control ("cel:usuarios:ver", "mod:empresas"…). */
   const cambioPrivilegio = useAccion();
   const [privilegioEnCurso, setPrivilegioEnCurso] = useState<string | null>(null);
-  const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios;
+  const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios || cargandoPrivilegiosUsuario;
 
   // Pestaña "Privilegios" → buscar a alguien puntual: los roles que se le marquen
-  // quedan en un borrador local (no se aplican al toque) hasta "Guardar cambios",
-  // y mientras tanto se ve en vivo la unión de privilegios que ese borrador implica.
+  // quedan en un borrador local (no se aplican al toque) hasta "Guardar cambios".
+  // La matriz de abajo, en cambio, edita sus privilegios EFECTIVOS al instante
+  // (igual que la matriz por rol): cada clic ahí guarda una excepción puntual
+  // para ese usuario, sin esperar a "Guardar cambios".
   const [busquedaUsuario, setBusquedaUsuario] = useState("");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [rolesDraft, setRolesDraft] = useState<Role[]>([]);
@@ -126,9 +137,25 @@ export function RolesPrivilegiosView() {
   function seleccionarUsuario(usuario: Usuario | null) {
     setUsuarioSeleccionado(usuario);
     setRolesDraft(usuario?.roles ?? []);
-    // Para que la vista previa de privilegios sea exacta sin importar qué rol se
-    // le agregue en el borrador, se traen los 4 de una vez (no-op en modo demo).
-    if (usuario) ROLES_ORDEN.forEach((rol) => cargarPrivilegios(rol).catch(() => {}));
+    if (!usuario) return;
+
+    if (modoDemo()) {
+      // Sin backend: se siembra la matriz del usuario con la unión de sus
+      // roles actuales (solo si todavía no tiene una en esta sesión, para no
+      // pisar ediciones ya hechas).
+      const base = MODULOS.reduce((acc, modulo) => {
+        const acciones = new Set<Accion>();
+        usuario.roles.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => acciones.add(a)));
+        return { ...acc, [modulo]: [...acciones] };
+      }, {} as MatrizRolLocal);
+      inicializarPrivilegiosUsuario(usuario.id, base);
+      return;
+    }
+
+    setCargandoPrivilegiosUsuario(true);
+    cargarPrivilegiosUsuario(usuario.id)
+      .catch(() => toast.error("No se pudieron cargar los privilegios de este usuario."))
+      .finally(() => setCargandoPrivilegiosUsuario(false));
   }
 
   function toggleRolDraft(rol: Role) {
@@ -149,18 +176,12 @@ export function RolesPrivilegiosView() {
     (rolesDraft.length !== usuarioSeleccionado.roles.length ||
       rolesDraft.some((r) => !usuarioSeleccionado.roles.includes(r)));
 
-  /** Unión de privilegios de todos los roles del borrador — lo que ese usuario
-   *  tendría si se guarda tal cual está marcado ahora mismo. */
-  const privilegiosEfectivosDraft: MatrizRolLocal = MODULOS.reduce((acc, modulo) => {
-    const acciones = new Set<Accion>();
-    rolesDraft.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => acciones.add(a)));
-    return { ...acc, [modulo]: [...acciones] };
-  }, {} as MatrizRolLocal);
-
-  // Con un usuario seleccionado, la matriz grande muestra SUS privilegios efectivos
-  // (en solo lectura); sin selección, funciona como siempre: editable por rol.
-  const matrizMostrada: MatrizRolLocal = usuarioSeleccionado ? privilegiosEfectivosDraft : ((privilegios[rolPrivilegios] ?? {}) as MatrizRolLocal);
-  const soloLecturaMatriz = usuarioSeleccionado !== null;
+  // Con un usuario seleccionado, la matriz grande edita SUS privilegios
+  // efectivos (roles + excepciones puntuales); sin selección, funciona como
+  // siempre: editable por rol (afecta a todos los usuarios de ese rol).
+  const matrizMostrada: MatrizRolLocal = usuarioSeleccionado
+    ? ((privilegiosUsuario[usuarioSeleccionado.id] ?? {}) as MatrizRolLocal)
+    : ((privilegios[rolPrivilegios] ?? {}) as MatrizRolLocal);
 
   async function guardarCambiosUsuario() {
     if (!usuarioSeleccionado) return;
@@ -172,6 +193,8 @@ export function RolesPrivilegiosView() {
           roles: rolesDraft,
         });
         setUsuarioSeleccionado({ ...usuarioSeleccionado, roles: rolesDraft, rol: rolesDraft[0] });
+        // El conjunto base (roles) cambió: refrescar sus privilegios efectivos.
+        void cargarPrivilegiosUsuario(usuarioSeleccionado.id).catch(() => {});
         toast.success(`Roles y privilegios de "${usuarioSeleccionado.nombre}" actualizados.`);
       },
       {
@@ -203,6 +226,28 @@ export function RolesPrivilegiosView() {
         onError: () => toast.error("No se pudo actualizar los privilegios."),
       }
     );
+  }
+
+  // La matriz llama a estas en vez de a `toggleAccion`/etc. directamente: si
+  // hay un usuario seleccionado, el clic guarda una excepción puntual para él;
+  // si no, sigue afectando al rol completo como siempre.
+  function alternarAccion(modulo: Modulo, accion: Accion) {
+    return usuarioSeleccionado
+      ? toggleAccionUsuario(usuarioSeleccionado.id, modulo, accion)
+      : toggleAccion(rolPrivilegios, modulo, accion);
+  }
+  function alternarModulo(modulo: Modulo) {
+    return usuarioSeleccionado
+      ? toggleModuloUsuarioCompleto(usuarioSeleccionado.id, modulo)
+      : toggleModuloCompleto(rolPrivilegios, modulo);
+  }
+  function alternarColumna(accion: Accion) {
+    return usuarioSeleccionado
+      ? toggleAccionColumnaUsuario(usuarioSeleccionado.id, accion)
+      : toggleAccionColumna(rolPrivilegios, accion);
+  }
+  function alternarTodos(activar: boolean) {
+    return usuarioSeleccionado ? setTodosUsuario(usuarioSeleccionado.id, activar) : setTodos(rolPrivilegios, activar);
   }
 
   useEffect(() => {
@@ -540,7 +585,7 @@ export function RolesPrivilegiosView() {
 
                 {hayCambiosUsuario && (
                   <p className="text-xs" style={{ color: "var(--brand)" }}>
-                    Cambios sin guardar — la matriz de abajo ya muestra la vista previa.
+                    Cambios de roles sin guardar.
                   </p>
                 )}
 
@@ -578,7 +623,7 @@ export function RolesPrivilegiosView() {
               style={{ backgroundColor: "rgba(154,98,250,0.08)", border: "1px solid rgba(154,98,250,0.25)", color: "var(--brand-accent)" }}
             >
               <Users className="w-4 h-4" />
-              Mostrando los privilegios efectivos de <strong>{usuarioSeleccionado.nombre}</strong> (solo lectura)
+              Editando los privilegios de <strong>{usuarioSeleccionado.nombre}</strong> — se aplican solo a él
             </div>
           ) : (
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -669,41 +714,39 @@ export function RolesPrivilegiosView() {
                     </div>
                   </div>
                 </div>
-                {!usuarioSeleccionado && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => aplicarPrivilegio("todos:otorgar", () => setTodos(rolPrivilegios, true))}
-                      loading={privilegioEnCurso === "todos:otorgar"}
-                      loadingText="Otorgando…"
-                      disabled={matrizBloqueada}
-                      className="text-xs font-medium px-3 h-8 rounded-lg"
-                      style={{ color: "var(--brand-accent)", backgroundColor: "var(--brand-tint)", border: "1px solid rgba(154,98,250,0.25)" }}
-                    >
-                      Otorgar todo
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => aplicarPrivilegio("todos:quitar", () => setTodos(rolPrivilegios, false))}
-                      loading={privilegioEnCurso === "todos:quitar"}
-                      loadingText="Quitando…"
-                      disabled={matrizBloqueada}
-                      className="text-xs font-medium px-3 h-8 rounded-lg"
-                      style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
-                    >
-                      Quitar todo
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => aplicarPrivilegio("todos:otorgar", () => alternarTodos(true))}
+                    loading={privilegioEnCurso === "todos:otorgar"}
+                    loadingText="Otorgando…"
+                    disabled={matrizBloqueada}
+                    className="text-xs font-medium px-3 h-8 rounded-lg"
+                    style={{ color: "var(--brand-accent)", backgroundColor: "var(--brand-tint)", border: "1px solid rgba(154,98,250,0.25)" }}
+                  >
+                    Otorgar todo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => aplicarPrivilegio("todos:quitar", () => alternarTodos(false))}
+                    loading={privilegioEnCurso === "todos:quitar"}
+                    loadingText="Quitando…"
+                    disabled={matrizBloqueada}
+                    className="text-xs font-medium px-3 h-8 rounded-lg"
+                    style={{ color: "var(--text-dim)", backgroundColor: "var(--hover-surface)", border: "1px solid var(--border-hair)" }}
+                  >
+                    Quitar todo
+                  </Button>
+                </div>
               </div>
             );
           })()}
 
           {/* Matriz interactiva módulo × acción */}
           <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: "var(--surface-profile)", boxShadow: "var(--shadow-card)", border: "1px solid var(--border-subtle)" }}>
-            <LoadingOverlay show={cargandoPrivilegios} message="Cargando privilegios" />
+            <LoadingOverlay show={usuarioSeleccionado ? cargandoPrivilegiosUsuario : cargandoPrivilegios} message="Cargando privilegios" />
             <div className="overflow-x-auto">
               <div className="min-w-[660px]">
                 {/* Encabezado: acciones (clic = alternar columna completa) */}
@@ -724,11 +767,11 @@ export function RolesPrivilegiosView() {
                       <button
                         key={accion}
                         type="button"
-                        onClick={() => aplicarPrivilegio(`col:${accion}`, () => toggleAccionColumna(rolPrivilegios, accion))}
-                        disabled={matrizBloqueada || soloLecturaMatriz}
+                        onClick={() => aplicarPrivilegio(`col:${accion}`, () => alternarColumna(accion))}
+                        disabled={matrizBloqueada}
                         aria-busy={privilegioEnCurso === `col:${accion}` || undefined}
                         className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                        title={soloLecturaMatriz ? undefined : enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
+                        title={enTodos ? `Quitar "${ACCION_LABELS[accion]}" de todos los módulos` : `Dar "${ACCION_LABELS[accion]}" a todos los módulos`}
                         style={{ color: enAlgunos ? "var(--brand-accent)" : "var(--text-dim)", backgroundColor: enTodos ? "rgba(154,98,250,0.08)" : "transparent" }}
                       >
                         <span className="text-[11px] font-semibold">{ACCION_LABELS[accion]}</span>
@@ -761,12 +804,12 @@ export function RolesPrivilegiosView() {
                     >
                       <button
                         type="button"
-                        onClick={() => aplicarPrivilegio(`mod:${modulo}`, () => toggleModuloCompleto(rolPrivilegios, modulo))}
-                        disabled={matrizBloqueada || soloLecturaMatriz}
+                        onClick={() => aplicarPrivilegio(`mod:${modulo}`, () => alternarModulo(modulo))}
+                        disabled={matrizBloqueada}
                         aria-busy={privilegioEnCurso === `mod:${modulo}` || undefined}
                         className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         style={{ backgroundColor: "var(--surface-profile)" }}
-                        title={soloLecturaMatriz ? undefined : todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
+                        title={todoActivo ? "Quitar todos los permisos del módulo" : "Otorgar todos los permisos del módulo"}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -794,8 +837,8 @@ export function RolesPrivilegiosView() {
                           <button
                             key={accion}
                             type="button"
-                            onClick={() => aplicarPrivilegio(clave, () => toggleAccion(rolPrivilegios, modulo, accion))}
-                            disabled={matrizBloqueada || soloLecturaMatriz}
+                            onClick={() => aplicarPrivilegio(clave, () => alternarAccion(modulo, accion))}
+                            disabled={matrizBloqueada}
                             aria-busy={enCurso || undefined}
                             className="flex items-center justify-center py-3 group disabled:cursor-not-allowed disabled:opacity-60"
                             aria-pressed={activa}
