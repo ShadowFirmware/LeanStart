@@ -296,6 +296,14 @@ interface EmpresasStore {
    * marcar observaciones atendidas, al finalizar una evaluación).
    */
   sincronizarLocal: (empresaId: string, data: Partial<Empresa>) => void;
+  /**
+   * Igual que `sincronizarLocal`, pero recibe la forma CRUDA que devuelve el
+   * backend (con canvas/productos/hipotesis anidados, tal como la manda p. ej.
+   * el asistente conversacional tras crear o editar una empresa) y la mapea
+   * antes de guardarla. Si la empresa todavía no estaba en la lista (se acaba
+   * de crear), la agrega en vez de intentar un merge que no encontraría nada.
+   */
+  sincronizarDesdeApi: (empresaCruda: Record<string, unknown>) => void;
 }
 
 export const useEmpresasStore = create<EmpresasStore>()(
@@ -688,6 +696,18 @@ export const useEmpresasStore = create<EmpresasStore>()(
       sincronizarLocal(empresaId, data) {
         set({
           empresas: get().empresas.map((e) => (e.id === empresaId ? { ...e, ...data } : e)),
+        });
+      },
+
+      sincronizarDesdeApi(empresaCruda) {
+        const mapeada = mapEmpresaCompleta(empresaCruda);
+        set((state) => {
+          const yaExiste = state.empresas.some((e) => e.id === mapeada.id);
+          return {
+            empresas: yaExiste
+              ? state.empresas.map((e) => (e.id === mapeada.id ? mapeada : e))
+              : [mapeada, ...state.empresas],
+          };
         });
       },
     }),

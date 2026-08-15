@@ -18,6 +18,7 @@ import { ReportesGeneradosController } from "./reportes-generados.controller";
 import { ReportesEmpresaController } from "./reportes-empresa.controller";
 import { NotificacionesController } from "./notificaciones.controller";
 import { HealthController } from "./health.controller";
+import { AsistenteController } from "./asistente.controller";
 import { ProxyService } from "../molecules/proxy.service";
 import { LoginRateLimitGuard } from "../molecules/login-rate-limit.guard";
 import { TokenRevocationService } from "../molecules/token-revocation.service";
@@ -52,6 +53,7 @@ const jwtModule = JwtModule.registerAsync({
     ReportesEmpresaController,
     NotificacionesController,
     HealthController,
+    AsistenteController,
   ],
   providers: [ProxyService, InternalHttpClient, LoginRateLimitGuard, TokenRevocationService],
 })
