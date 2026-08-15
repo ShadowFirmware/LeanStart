@@ -62,6 +62,22 @@ const GRID_COLS = "minmax(150px, 1.6fr) repeat(6, minmax(64px, 1fr))";
 
 type MatrizRolLocal = Record<Modulo, Accion[]>;
 
+/** El rol "dueño" de cada módulo: el que por defecto tiene más acciones ahí
+ *  (ver PRIVILEGIOS_DEFAULT en el store). Si a un usuario se le otorgan en la
+ *  matriz privilegios de un módulo que superan lo que sus roles actuales ya le
+ *  dan ahí, se le añade automáticamente el rol dueño — su dashboard se combina
+ *  solo, con el mecanismo de multi-rol que ya existe. */
+const MODULO_ROL_DUENO: Record<Modulo, Role> = {
+  usuarios: "administrador",
+  empresas: "emprendedor",
+  productos: "emprendedor",
+  lean_canvas: "emprendedor",
+  hipotesis: "emprendedor",
+  mentorias: "mentor",
+  evaluaciones: "evaluador",
+  reportes: "administrador",
+};
+
 export function RolesPrivilegiosView() {
   const hydrated = useHasHydrated();
   const [seccion, setSeccion] = useState<Seccion>("roles");
@@ -207,11 +223,6 @@ export function RolesPrivilegiosView() {
     });
   }
 
-  const hayCambiosRoles =
-    usuarioSeleccionado !== null &&
-    (rolesDraft.length !== usuarioSeleccionado.roles.length ||
-      rolesDraft.some((r) => !usuarioSeleccionado.roles.includes(r)));
-
   /** Celdas donde el borrador difiere de lo último cargado del backend — lo
    *  que realmente hay que guardar si se presiona "Guardar cambios". */
   const privilegiosOriginales = usuarioSeleccionado ? (privilegiosUsuario[usuarioSeleccionado.id] as MatrizRolLocal | undefined) : undefined;
@@ -227,6 +238,30 @@ export function RolesPrivilegiosView() {
           }));
         })
       : [];
+
+  /** Roles que el borrador de privilegios IMPLICA aunque no se hayan marcado
+   *  a mano: si para un módulo el borrador da más de lo que los roles ya
+   *  marcados (`rolesDraft`) darían por defecto, se entiende que el usuario
+   *  necesita el rol dueño de ese módulo — y con eso su dashboard se combina
+   *  solo (mismo mecanismo que dar el rol desde los chips de arriba). */
+  const rolesAutoImplicados: Role[] = privilegiosDraft
+    ? [
+        ...new Set(
+          MODULOS.filter((modulo) => {
+            const base = new Set<Accion>();
+            rolesDraft.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => base.add(a)));
+            return (privilegiosDraft[modulo] ?? []).some((a) => !base.has(a));
+          }).map((modulo) => MODULO_ROL_DUENO[modulo])
+        ),
+      ].filter((rol) => !rolesDraft.includes(rol))
+    : [];
+
+  const rolesEfectivosDraft: Role[] = [...new Set([...rolesDraft, ...rolesAutoImplicados])];
+
+  const hayCambiosRoles =
+    usuarioSeleccionado !== null &&
+    (rolesEfectivosDraft.length !== usuarioSeleccionado.roles.length ||
+      rolesEfectivosDraft.some((r) => !usuarioSeleccionado.roles.includes(r)));
 
   const hayCambiosUsuario = hayCambiosRoles || cambiosPrivilegiosPendientes.length > 0;
 
@@ -245,14 +280,21 @@ export function RolesPrivilegiosView() {
           await editarUsuario(usuarioSeleccionado.id, {
             nombre: usuarioSeleccionado.nombre,
             correo: usuarioSeleccionado.correo,
-            roles: rolesDraft,
+            roles: rolesEfectivosDraft,
           });
-          setUsuarioSeleccionado((actual) => (actual ? { ...actual, roles: rolesDraft, rol: rolesDraft[0] } : actual));
+          setUsuarioSeleccionado((actual) =>
+            actual ? { ...actual, roles: rolesEfectivosDraft, rol: rolesEfectivosDraft[0] } : actual
+          );
+          setRolesDraft(rolesEfectivosDraft);
         }
         if (cambiosPrivilegiosPendientes.length > 0) {
           await setCeldasUsuario(usuarioSeleccionado.id, cambiosPrivilegiosPendientes);
         }
-        toast.success(`Roles y privilegios de "${usuarioSeleccionado.nombre}" actualizados.`);
+        const mensajeRoles =
+          rolesAutoImplicados.length > 0
+            ? ` Se le añadió el rol de ${rolesAutoImplicados.map((r) => ROLES_CONFIG[r].label).join(" y ")} por los privilegios otorgados.`
+            : "";
+        toast.success(`Roles y privilegios de "${usuarioSeleccionado.nombre}" actualizados.${mensajeRoles}`);
       },
       {
         etiqueta: "Guardando roles y privilegios",
@@ -598,22 +640,27 @@ export function RolesPrivilegiosView() {
                   <div className="flex flex-wrap gap-2">
                     {ROLES_ORDEN.map((rol) => {
                       const cfg = ROLES_CONFIG[rol];
-                      const activo = rolesDraft.includes(rol);
+                      const marcado = rolesDraft.includes(rol);
+                      const soloImplicado = !marcado && rolesAutoImplicados.includes(rol);
+                      const activo = marcado || soloImplicado;
                       return (
                         <button
                           key={rol}
                           type="button"
                           disabled={guardadoUsuario.cargando}
                           onClick={() => toggleRolDraft(rol)}
+                          title={soloImplicado ? `Implicado por los privilegios que le diste en ${MODULO_CONFIG[MODULOS.find((m) => MODULO_ROL_DUENO[m] === rol) ?? "usuarios"].label}` : undefined}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-60"
                           style={{
                             color: activo ? cfg.color : "var(--text-dim)",
                             backgroundColor: activo ? `${cfg.color}1F` : "var(--surface-profile)",
                             borderColor: activo ? `${cfg.color}55` : "var(--border-hair)",
+                            borderStyle: soloImplicado ? "dashed" : "solid",
                           }}
                         >
                           {activo ? <Check className="w-3 h-3" /> : null}
                           {cfg.label}
+                          {soloImplicado && <span className="opacity-70">(auto)</span>}
                         </button>
                       );
                     })}
