@@ -113,12 +113,14 @@ export class PrivilegiosService {
   }
 
   /**
-   * Aplica una lista de cambios deseados como excepciones puntuales: si el
-   * estado pedido coincide con lo que el usuario ya tendría solo por sus
-   * roles, borra la excepción (no hace falta guardar nada); si difiere, la
-   * guarda. Así la tabla de excepciones solo crece con diferencias reales.
+   * Guarda de una sola vez el borrador completo que el admin armó en la
+   * matriz para un usuario: cada celda trae su estado FINAL deseado (no un
+   * toggle relativo), así que el resultado es exacto sin importar si de paso
+   * también cambiaron los roles del usuario en el mismo guardado. Solo se
+   * guardan filas de excepción donde el estado deseado difiere de lo que el
+   * usuario ya tendría solo por sus roles — el resto se borra (o ni se toca).
    */
-  private async aplicarCambiosUsuario(
+  async setCeldasUsuario(
     userId: string,
     cambios: Array<{ modulo: Modulo; accion: Accion; activar: boolean }>
   ): Promise<Privilegio[]> {
@@ -143,37 +145,5 @@ export class PrivilegiosService {
       ),
     ]);
     return this.getPrivilegiosEfectivos(userId, roles);
-  }
-
-  async toggleAccionUsuario(userId: string, modulo: Modulo, accion: Accion) {
-    const efectivos = await this.getPrivilegiosEfectivosDeUsuario(userId);
-    const activo = efectivos.find((p) => p.modulo === modulo)?.acciones.includes(accion) ?? false;
-    return this.aplicarCambiosUsuario(userId, [{ modulo, accion, activar: !activo }]);
-  }
-
-  async toggleModuloUsuario(userId: string, modulo: Modulo) {
-    const efectivos = await this.getPrivilegiosEfectivosDeUsuario(userId);
-    const activas = efectivos.find((p) => p.modulo === modulo)?.acciones.length ?? 0;
-    const activar = activas !== ACCIONES.length;
-    return this.aplicarCambiosUsuario(
-      userId,
-      ACCIONES.map((accion) => ({ modulo, accion, activar }))
-    );
-  }
-
-  async toggleColumnaUsuario(userId: string, accion: Accion) {
-    const efectivos = await this.getPrivilegiosEfectivosDeUsuario(userId);
-    const todosLaTienen = MODULOS.every((m) => efectivos.find((p) => p.modulo === m)?.acciones.includes(accion));
-    return this.aplicarCambiosUsuario(
-      userId,
-      MODULOS.map((modulo) => ({ modulo, accion, activar: !todosLaTienen }))
-    );
-  }
-
-  async setTodosUsuario(userId: string, activar: boolean) {
-    return this.aplicarCambiosUsuario(
-      userId,
-      MODULOS.flatMap((modulo) => ACCIONES.map((accion) => ({ modulo, accion, activar })))
-    );
   }
 }

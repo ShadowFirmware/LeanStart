@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { Roles } from "@leanstart/backend-commons";
 import { PrivilegiosService } from "../molecules/privilegios.service";
-import { SetTodosDto, ToggleAccionDto, ToggleColumnaDto, ToggleModuloDto } from "../atoms/privilegio.dto";
+import { SetCeldasDto, SetTodosDto, ToggleAccionDto, ToggleColumnaDto, ToggleModuloDto } from "../atoms/privilegio.dto";
 
 @ApiTags("privilegios")
 @Roles("administrador")
@@ -52,31 +52,10 @@ export class PrivilegiosController {
     return this.privilegios.getPrivilegiosEfectivosDeUsuario(userId);
   }
 
-  @Patch("usuario/:userId/toggle-accion")
-  @ApiOperation({ summary: "Otorgar/quitar una acción puntual a un usuario específico" })
+  @Patch("usuario/:userId/set-celdas")
+  @ApiOperation({ summary: "Guarda en bloque el borrador de privilegios de un usuario específico" })
   @ApiParam({ name: "userId" })
-  toggleAccionUsuario(@Param("userId") userId: string, @Body() dto: ToggleAccionDto) {
-    return this.privilegios.toggleAccionUsuario(userId, dto.modulo, dto.accion);
-  }
-
-  @Patch("usuario/:userId/toggle-modulo")
-  @ApiOperation({ summary: "Otorgar/quitar todas las acciones de un módulo a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  toggleModuloUsuario(@Param("userId") userId: string, @Body() dto: ToggleModuloDto) {
-    return this.privilegios.toggleModuloUsuario(userId, dto.modulo);
-  }
-
-  @Patch("usuario/:userId/toggle-columna")
-  @ApiOperation({ summary: "Otorgar/quitar una acción en todos los módulos a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  toggleColumnaUsuario(@Param("userId") userId: string, @Body() dto: ToggleColumnaDto) {
-    return this.privilegios.toggleColumnaUsuario(userId, dto.accion);
-  }
-
-  @Patch("usuario/:userId/set-todos")
-  @ApiOperation({ summary: "Otorgar o revocar todos los privilegios a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  setTodosUsuario(@Param("userId") userId: string, @Body() dto: SetTodosDto) {
-    return this.privilegios.setTodosUsuario(userId, dto.activar);
+  setCeldasUsuario(@Param("userId") userId: string, @Body() dto: SetCeldasDto) {
+    return this.privilegios.setCeldasUsuario(userId, dto.cambios);
   }
 }

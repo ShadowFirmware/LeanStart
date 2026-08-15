@@ -36,10 +36,8 @@ interface PrivilegiosStore {
   cargarPrivilegiosUsuario: (userId: string) => Promise<void>;
   /** Solo modo demo: siembra la matriz de un usuario si todavía no tiene una, sin pisar ediciones ya hechas en esta sesión. */
   inicializarPrivilegiosUsuario: (userId: string, base: MatrizRol) => void;
-  toggleAccionUsuario: (userId: string, modulo: Modulo, accion: Accion) => Promise<void>;
-  toggleModuloUsuarioCompleto: (userId: string, modulo: Modulo) => Promise<void>;
-  toggleAccionColumnaUsuario: (userId: string, accion: Accion) => Promise<void>;
-  setTodosUsuario: (userId: string, activar: boolean) => Promise<void>;
+  /** Guarda en bloque el borrador armado en la matriz: cada celda trae su estado FINAL deseado. */
+  setCeldasUsuario: (userId: string, cambios: Array<{ modulo: Modulo; accion: Accion; activar: boolean }>) => Promise<void>;
 }
 
 function matriz(base: Partial<Record<Modulo, Accion[]>>): MatrizRol {
@@ -225,96 +223,27 @@ export const usePrivilegiosStore = create<PrivilegiosStore>()(
         set((state) => ({ privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: base } }));
       },
 
-      async toggleAccionUsuario(userId, modulo, accion) {
+      async setCeldasUsuario(userId, cambios) {
         if (!modoDemo()) {
           const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
-            `/privilegios/usuario/${userId}/toggle-accion`,
-            { method: "PATCH", body: JSON.stringify({ modulo, accion }) }
+            `/privilegios/usuario/${userId}/set-celdas`,
+            { method: "PATCH", body: JSON.stringify({ cambios }) }
           );
           set((state) => ({ privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: mapMatriz(respuesta) } }));
           return;
         }
 
         set((state) => {
-          const actual = state.privilegiosUsuario[userId]?.[modulo] ?? [];
-          const actualizado = actual.includes(accion)
-            ? actual.filter((a) => a !== accion)
-            : [...actual, accion];
-          return {
-            privilegiosUsuario: {
-              ...state.privilegiosUsuario,
-              [userId]: { ...(state.privilegiosUsuario[userId] ?? matriz({})), [modulo]: actualizado },
-            },
-          };
-        });
-      },
-
-      async toggleModuloUsuarioCompleto(userId, modulo) {
-        if (!modoDemo()) {
-          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
-            `/privilegios/usuario/${userId}/toggle-modulo`,
-            { method: "PATCH", body: JSON.stringify({ modulo }) }
-          );
-          set((state) => ({ privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: mapMatriz(respuesta) } }));
-          return;
-        }
-
-        set((state) => {
-          const actual = state.privilegiosUsuario[userId]?.[modulo] ?? [];
-          const actualizado = actual.length === ACCIONES.length ? [] : [...ACCIONES];
-          return {
-            privilegiosUsuario: {
-              ...state.privilegiosUsuario,
-              [userId]: { ...(state.privilegiosUsuario[userId] ?? matriz({})), [modulo]: actualizado },
-            },
-          };
-        });
-      },
-
-      async toggleAccionColumnaUsuario(userId, accion) {
-        if (!modoDemo()) {
-          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
-            `/privilegios/usuario/${userId}/toggle-columna`,
-            { method: "PATCH", body: JSON.stringify({ accion }) }
-          );
-          set((state) => ({ privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: mapMatriz(respuesta) } }));
-          return;
-        }
-
-        set((state) => {
-          const usuarioMatriz = state.privilegiosUsuario[userId] ?? matriz({});
-          const todosLaTienen = MODULOS.every((m) => (usuarioMatriz[m] ?? []).includes(accion));
-          const nuevaMatriz = {} as MatrizRol;
-          for (const m of MODULOS) {
-            const actual = usuarioMatriz[m] ?? [];
-            nuevaMatriz[m] = todosLaTienen
-              ? actual.filter((a) => a !== accion)
-              : actual.includes(accion) ? actual : [...actual, accion];
+          const actual = state.privilegiosUsuario[userId] ?? matriz({});
+          const nueva = { ...actual };
+          for (const c of cambios) {
+            const lista = nueva[c.modulo] ?? [];
+            nueva[c.modulo] = c.activar
+              ? lista.includes(c.accion) ? lista : [...lista, c.accion]
+              : lista.filter((a) => a !== c.accion);
           }
-          return { privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: nuevaMatriz } };
+          return { privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: nueva } };
         });
-      },
-
-      async setTodosUsuario(userId, activar) {
-        if (!modoDemo()) {
-          const respuesta = await apiFetch<{ modulo: Modulo; acciones: Accion[] }[]>(
-            `/privilegios/usuario/${userId}/set-todos`,
-            { method: "PATCH", body: JSON.stringify({ activar }) }
-          );
-          set((state) => ({ privilegiosUsuario: { ...state.privilegiosUsuario, [userId]: mapMatriz(respuesta) } }));
-          return;
-        }
-
-        set((state) => ({
-          privilegiosUsuario: {
-            ...state.privilegiosUsuario,
-            [userId]: matriz(
-              activar
-                ? MODULOS.reduce((acc, m) => ({ ...acc, [m]: [...ACCIONES] }), {})
-                : {}
-            ),
-          },
-        }));
       },
     }),
     { name: "leanstart-privilegios", skipHydration: true }

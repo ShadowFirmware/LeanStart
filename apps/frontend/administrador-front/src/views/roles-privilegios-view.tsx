@@ -98,10 +98,7 @@ export function RolesPrivilegiosView() {
   const privilegiosUsuario = usePrivilegiosStore((s) => s.privilegiosUsuario);
   const cargarPrivilegiosUsuario = usePrivilegiosStore((s) => s.cargarPrivilegiosUsuario);
   const inicializarPrivilegiosUsuario = usePrivilegiosStore((s) => s.inicializarPrivilegiosUsuario);
-  const toggleAccionUsuario = usePrivilegiosStore((s) => s.toggleAccionUsuario);
-  const toggleModuloUsuarioCompleto = usePrivilegiosStore((s) => s.toggleModuloUsuarioCompleto);
-  const toggleAccionColumnaUsuario = usePrivilegiosStore((s) => s.toggleAccionColumnaUsuario);
-  const setTodosUsuario = usePrivilegiosStore((s) => s.setTodosUsuario);
+  const setCeldasUsuario = usePrivilegiosStore((s) => s.setCeldasUsuario);
 
   // Cargar los privilegios del rol (o del usuario) seleccionado es una ida y
   // vuelta al backend: mientras tanto la matriz muestra su propio velo de
@@ -117,17 +114,17 @@ export function RolesPrivilegiosView() {
      guarda la clave de ese control ("cel:usuarios:ver", "mod:empresas"…). */
   const cambioPrivilegio = useAccion();
   const [privilegioEnCurso, setPrivilegioEnCurso] = useState<string | null>(null);
-  const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios || cargandoPrivilegiosUsuario;
 
-  // Pestaña "Privilegios" → buscar a alguien puntual: los roles que se le marquen
-  // quedan en un borrador local (no se aplican al toque) hasta "Guardar cambios".
-  // La matriz de abajo, en cambio, edita sus privilegios EFECTIVOS al instante
-  // (igual que la matriz por rol): cada clic ahí guarda una excepción puntual
-  // para ese usuario, sin esperar a "Guardar cambios".
+  // Pestaña "Privilegios" → buscar a alguien puntual: tanto los roles como las
+  // celdas de la matriz que se le marquen quedan en un borrador LOCAL (nada se
+  // aplica al toque) hasta que se presiona "Guardar cambios" — igual que ya
+  // funcionaba para los roles, la matriz ahora se comporta exactamente igual.
   const [busquedaUsuario, setBusquedaUsuario] = useState("");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [rolesDraft, setRolesDraft] = useState<Role[]>([]);
+  const [privilegiosDraft, setPrivilegiosDraft] = useState<MatrizRolLocal | null>(null);
   const guardadoUsuario = useAccion();
+  const matrizBloqueada = cambioPrivilegio.cargando || cargandoPrivilegios || cargandoPrivilegiosUsuario || guardadoUsuario.cargando;
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const q = busquedaUsuario.trim().toLowerCase();
@@ -137,25 +134,64 @@ export function RolesPrivilegiosView() {
   function seleccionarUsuario(usuario: Usuario | null) {
     setUsuarioSeleccionado(usuario);
     setRolesDraft(usuario?.roles ?? []);
+    setPrivilegiosDraft(null);
     if (!usuario) return;
 
     if (modoDemo()) {
       // Sin backend: se siembra la matriz del usuario con la unión de sus
       // roles actuales (solo si todavía no tiene una en esta sesión, para no
-      // pisar ediciones ya hechas).
+      // pisar ediciones ya guardadas antes).
       const base = MODULOS.reduce((acc, modulo) => {
         const acciones = new Set<Accion>();
         usuario.roles.forEach((rol) => (privilegios[rol]?.[modulo] ?? []).forEach((a) => acciones.add(a)));
         return { ...acc, [modulo]: [...acciones] };
       }, {} as MatrizRolLocal);
       inicializarPrivilegiosUsuario(usuario.id, base);
+      setPrivilegiosDraft((usePrivilegiosStore.getState().privilegiosUsuario[usuario.id] as MatrizRolLocal) ?? base);
       return;
     }
 
     setCargandoPrivilegiosUsuario(true);
     cargarPrivilegiosUsuario(usuario.id)
+      .then(() => {
+        const cargados = usePrivilegiosStore.getState().privilegiosUsuario[usuario.id] as MatrizRolLocal | undefined;
+        setPrivilegiosDraft(cargados ?? null);
+      })
       .catch(() => toast.error("No se pudieron cargar los privilegios de este usuario."))
       .finally(() => setCargandoPrivilegiosUsuario(false));
+  }
+
+  // Ediciones LOCALES del borrador de la matriz (sin llamar al backend): las
+  // mismas tres formas de alternar que la matriz por rol ya tenía, pero puras.
+  function alternarAccionDraft(modulo: Modulo, accion: Accion) {
+    setPrivilegiosDraft((actual) => {
+      if (!actual) return actual;
+      const lista = actual[modulo] ?? [];
+      const actualizada = lista.includes(accion) ? lista.filter((a) => a !== accion) : [...lista, accion];
+      return { ...actual, [modulo]: actualizada };
+    });
+  }
+  function alternarModuloDraft(modulo: Modulo) {
+    setPrivilegiosDraft((actual) => {
+      if (!actual) return actual;
+      const lista = actual[modulo] ?? [];
+      return { ...actual, [modulo]: lista.length === ACCIONES.length ? [] : [...ACCIONES] };
+    });
+  }
+  function alternarColumnaDraft(accion: Accion) {
+    setPrivilegiosDraft((actual) => {
+      if (!actual) return actual;
+      const todosLaTienen = MODULOS.every((m) => (actual[m] ?? []).includes(accion));
+      const nueva = {} as MatrizRolLocal;
+      for (const m of MODULOS) {
+        const lista = actual[m] ?? [];
+        nueva[m] = todosLaTienen ? lista.filter((a) => a !== accion) : lista.includes(accion) ? lista : [...lista, accion];
+      }
+      return nueva;
+    });
+  }
+  function alternarTodosDraft(activar: boolean) {
+    setPrivilegiosDraft(() => MODULOS.reduce((acc, m) => ({ ...acc, [m]: activar ? [...ACCIONES] : [] }), {} as MatrizRolLocal));
   }
 
   function toggleRolDraft(rol: Role) {
@@ -171,41 +207,64 @@ export function RolesPrivilegiosView() {
     });
   }
 
-  const hayCambiosUsuario =
+  const hayCambiosRoles =
     usuarioSeleccionado !== null &&
     (rolesDraft.length !== usuarioSeleccionado.roles.length ||
       rolesDraft.some((r) => !usuarioSeleccionado.roles.includes(r)));
 
-  // Con un usuario seleccionado, la matriz grande edita SUS privilegios
-  // efectivos (roles + excepciones puntuales); sin selección, funciona como
-  // siempre: editable por rol (afecta a todos los usuarios de ese rol).
+  /** Celdas donde el borrador difiere de lo último cargado del backend — lo
+   *  que realmente hay que guardar si se presiona "Guardar cambios". */
+  const privilegiosOriginales = usuarioSeleccionado ? (privilegiosUsuario[usuarioSeleccionado.id] as MatrizRolLocal | undefined) : undefined;
+  const cambiosPrivilegiosPendientes: Array<{ modulo: Modulo; accion: Accion; activar: boolean }> =
+    usuarioSeleccionado && privilegiosDraft && privilegiosOriginales
+      ? MODULOS.flatMap((modulo) => {
+          const orig = new Set(privilegiosOriginales[modulo] ?? []);
+          const draft = new Set(privilegiosDraft[modulo] ?? []);
+          return ACCIONES.filter((accion) => orig.has(accion) !== draft.has(accion)).map((accion) => ({
+            modulo,
+            accion,
+            activar: draft.has(accion),
+          }));
+        })
+      : [];
+
+  const hayCambiosUsuario = hayCambiosRoles || cambiosPrivilegiosPendientes.length > 0;
+
+  // Con un usuario seleccionado, la matriz grande edita el BORRADOR de sus
+  // privilegios efectivos (nada se guarda hasta "Guardar cambios"); sin
+  // selección, funciona como siempre: editable por rol al instante.
   const matrizMostrada: MatrizRolLocal = usuarioSeleccionado
-    ? ((privilegiosUsuario[usuarioSeleccionado.id] ?? {}) as MatrizRolLocal)
+    ? (privilegiosDraft ?? ({} as MatrizRolLocal))
     : ((privilegios[rolPrivilegios] ?? {}) as MatrizRolLocal);
 
   async function guardarCambiosUsuario() {
     if (!usuarioSeleccionado) return;
     await guardadoUsuario.ejecutar(
       async () => {
-        await editarUsuario(usuarioSeleccionado.id, {
-          nombre: usuarioSeleccionado.nombre,
-          correo: usuarioSeleccionado.correo,
-          roles: rolesDraft,
-        });
-        setUsuarioSeleccionado({ ...usuarioSeleccionado, roles: rolesDraft, rol: rolesDraft[0] });
-        // El conjunto base (roles) cambió: refrescar sus privilegios efectivos.
-        void cargarPrivilegiosUsuario(usuarioSeleccionado.id).catch(() => {});
+        if (hayCambiosRoles) {
+          await editarUsuario(usuarioSeleccionado.id, {
+            nombre: usuarioSeleccionado.nombre,
+            correo: usuarioSeleccionado.correo,
+            roles: rolesDraft,
+          });
+          setUsuarioSeleccionado((actual) => (actual ? { ...actual, roles: rolesDraft, rol: rolesDraft[0] } : actual));
+        }
+        if (cambiosPrivilegiosPendientes.length > 0) {
+          await setCeldasUsuario(usuarioSeleccionado.id, cambiosPrivilegiosPendientes);
+        }
         toast.success(`Roles y privilegios de "${usuarioSeleccionado.nombre}" actualizados.`);
       },
       {
-        etiqueta: "Guardando roles",
+        etiqueta: "Guardando roles y privilegios",
         onError: () => toast.error("No se pudo guardar. Intenta de nuevo."),
       }
     );
   }
 
   function cancelarCambiosUsuario() {
-    if (usuarioSeleccionado) setRolesDraft(usuarioSeleccionado.roles);
+    if (!usuarioSeleccionado) return;
+    setRolesDraft(usuarioSeleccionado.roles);
+    setPrivilegiosDraft((privilegiosUsuario[usuarioSeleccionado.id] as MatrizRolLocal | undefined) ?? null);
   }
 
   async function aplicarPrivilegio(clave: string, operacion: () => Promise<void>) {
@@ -226,28 +285,6 @@ export function RolesPrivilegiosView() {
         onError: () => toast.error("No se pudo actualizar los privilegios."),
       }
     );
-  }
-
-  // La matriz llama a estas en vez de a `toggleAccion`/etc. directamente: si
-  // hay un usuario seleccionado, el clic guarda una excepción puntual para él;
-  // si no, sigue afectando al rol completo como siempre.
-  function alternarAccion(modulo: Modulo, accion: Accion) {
-    return usuarioSeleccionado
-      ? toggleAccionUsuario(usuarioSeleccionado.id, modulo, accion)
-      : toggleAccion(rolPrivilegios, modulo, accion);
-  }
-  function alternarModulo(modulo: Modulo) {
-    return usuarioSeleccionado
-      ? toggleModuloUsuarioCompleto(usuarioSeleccionado.id, modulo)
-      : toggleModuloCompleto(rolPrivilegios, modulo);
-  }
-  function alternarColumna(accion: Accion) {
-    return usuarioSeleccionado
-      ? toggleAccionColumnaUsuario(usuarioSeleccionado.id, accion)
-      : toggleAccionColumna(rolPrivilegios, accion);
-  }
-  function alternarTodos(activar: boolean) {
-    return usuarioSeleccionado ? setTodosUsuario(usuarioSeleccionado.id, activar) : setTodos(rolPrivilegios, activar);
   }
 
   useEffect(() => {
@@ -585,7 +622,7 @@ export function RolesPrivilegiosView() {
 
                 {hayCambiosUsuario && (
                   <p className="text-xs" style={{ color: "var(--brand)" }}>
-                    Cambios de roles sin guardar.
+                    Cambios sin guardar — la matriz de abajo ya muestra el borrador.
                   </p>
                 )}
 
@@ -718,7 +755,7 @@ export function RolesPrivilegiosView() {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => aplicarPrivilegio("todos:otorgar", () => alternarTodos(true))}
+                    onClick={() => usuarioSeleccionado ? alternarTodosDraft(true) : aplicarPrivilegio("todos:otorgar", () => setTodos(rolPrivilegios, true))}
                     loading={privilegioEnCurso === "todos:otorgar"}
                     loadingText="Otorgando…"
                     disabled={matrizBloqueada}
@@ -730,7 +767,7 @@ export function RolesPrivilegiosView() {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => aplicarPrivilegio("todos:quitar", () => alternarTodos(false))}
+                    onClick={() => usuarioSeleccionado ? alternarTodosDraft(false) : aplicarPrivilegio("todos:quitar", () => setTodos(rolPrivilegios, false))}
                     loading={privilegioEnCurso === "todos:quitar"}
                     loadingText="Quitando…"
                     disabled={matrizBloqueada}
@@ -767,7 +804,7 @@ export function RolesPrivilegiosView() {
                       <button
                         key={accion}
                         type="button"
-                        onClick={() => aplicarPrivilegio(`col:${accion}`, () => alternarColumna(accion))}
+                        onClick={() => usuarioSeleccionado ? alternarColumnaDraft(accion) : aplicarPrivilegio(`col:${accion}`, () => toggleAccionColumna(rolPrivilegios, accion))}
                         disabled={matrizBloqueada}
                         aria-busy={privilegioEnCurso === `col:${accion}` || undefined}
                         className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
@@ -804,7 +841,7 @@ export function RolesPrivilegiosView() {
                     >
                       <button
                         type="button"
-                        onClick={() => aplicarPrivilegio(`mod:${modulo}`, () => alternarModulo(modulo))}
+                        onClick={() => usuarioSeleccionado ? alternarModuloDraft(modulo) : aplicarPrivilegio(`mod:${modulo}`, () => toggleModuloCompleto(rolPrivilegios, modulo))}
                         disabled={matrizBloqueada}
                         aria-busy={privilegioEnCurso === `mod:${modulo}` || undefined}
                         className="sticky left-0 z-10 flex items-center gap-2.5 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
@@ -837,7 +874,7 @@ export function RolesPrivilegiosView() {
                           <button
                             key={accion}
                             type="button"
-                            onClick={() => aplicarPrivilegio(clave, () => alternarAccion(modulo, accion))}
+                            onClick={() => usuarioSeleccionado ? alternarAccionDraft(modulo, accion) : aplicarPrivilegio(clave, () => toggleAccion(rolPrivilegios, modulo, accion))}
                             disabled={matrizBloqueada}
                             aria-busy={enCurso || undefined}
                             className="flex items-center justify-center py-3 group disabled:cursor-not-allowed disabled:opacity-60"

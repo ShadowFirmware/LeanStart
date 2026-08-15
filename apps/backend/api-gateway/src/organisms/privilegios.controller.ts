@@ -56,47 +56,14 @@ export class PrivilegiosController {
     return this.proxy.get(this.baseUrl, `/privilegios/usuario/${userId}`, user);
   }
 
-  @Patch("usuario/:userId/toggle-accion")
-  @ApiOperation({ summary: "Otorgar/quitar una acción puntual a un usuario específico" })
+  @Patch("usuario/:userId/set-celdas")
+  @ApiOperation({ summary: "Guarda en bloque el borrador de privilegios de un usuario específico" })
   @ApiParam({ name: "userId" })
-  toggleAccionUsuario(
+  setCeldasUsuario(
     @CurrentUser() user: AuthUser,
     @Param("userId") userId: string,
     @Body() body: Record<string, unknown>
   ) {
-    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-accion`, body, user);
-  }
-
-  @Patch("usuario/:userId/toggle-modulo")
-  @ApiOperation({ summary: "Otorgar/quitar todas las acciones de un módulo a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  toggleModuloUsuario(
-    @CurrentUser() user: AuthUser,
-    @Param("userId") userId: string,
-    @Body() body: Record<string, unknown>
-  ) {
-    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-modulo`, body, user);
-  }
-
-  @Patch("usuario/:userId/toggle-columna")
-  @ApiOperation({ summary: "Otorgar/quitar una acción en todos los módulos a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  toggleColumnaUsuario(
-    @CurrentUser() user: AuthUser,
-    @Param("userId") userId: string,
-    @Body() body: Record<string, unknown>
-  ) {
-    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/toggle-columna`, body, user);
-  }
-
-  @Patch("usuario/:userId/set-todos")
-  @ApiOperation({ summary: "Otorgar o revocar todos los privilegios a un usuario específico" })
-  @ApiParam({ name: "userId" })
-  setTodosUsuario(
-    @CurrentUser() user: AuthUser,
-    @Param("userId") userId: string,
-    @Body() body: Record<string, unknown>
-  ) {
-    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/set-todos`, body, user);
+    return this.proxy.patch(this.baseUrl, `/privilegios/usuario/${userId}/set-celdas`, body, user);
   }
 }
