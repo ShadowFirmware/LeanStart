@@ -28,6 +28,7 @@ model Empresa {
   updatedAt        DateTime @updatedAt
 
   canvas      Canvas?
+  canvasVersiones CanvasVersion[]
   productos   Producto[]
   hipotesis   Hipotesis[]
   observaciones Observacion[]
@@ -53,6 +54,29 @@ model Canvas {
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@map("canvas")
+}
+
+/// Foto del canvas en cada guardado — historial de solo lectura, no restaurable.
+/// Se crea en la misma transacción que Canvas.upsert (ver CanvasService.actualizar).
+model CanvasVersion {
+  id                 String   @id @default(uuid())
+  empresaId          String
+  problema           String[]
+  solucion           String   @default("")
+  pvp                String   @default("")
+  ventajaInjusta     String   @default("")
+  segmentosClientes  String[]
+  metricasClave      String[]
+  canales            String[]
+  estructuraCostos   String[]
+  fuentesIngresos    String[]
+  canvasBloques      Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([empresaId, createdAt])
+  @@map("canvas_versiones")
 }
 
 model Producto {

@@ -1,10 +1,26 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { InternalHttpClient } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
+import { EmailService } from "./email.service";
 import type { CreateNotificacionDto } from "../atoms/notificacion.dto";
+
+interface UsuarioInterno {
+  id: string;
+  nombre: string;
+  correo: string;
+}
 
 @Injectable()
 export class NotificacionesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificacionesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly http: InternalHttpClient,
+    private readonly email: EmailService
+  ) {}
 
   async listarDeUsuario(userId: string) {
     return this.prisma.notificacion.findMany({
@@ -31,7 +47,25 @@ export class NotificacionesService {
       });
       if (existente) return existente;
     }
-    return this.prisma.notificacion.create({ data: dto });
+    const notificacion = await this.prisma.notificacion.create({ data: dto });
+    void this.enviarCorreo(dto);
+    return notificacion;
+  }
+
+  // Todo el cuerpo va en el try (no solo la llamada HTTP): un error leyendo la config
+  // (p. ej. AUTH_SERVICE_URL sin definir) es síncrono y ocurre ANTES del await, así
+  // que un .catch() encadenado solo a la promesa no lo alcanza a cubrir. El correo es
+  // best-effort — nunca debe tumbar la creación de la notificación, y se llama sin
+  // await para no demorar la respuesta al servicio que la disparó.
+  private async enviarCorreo(dto: CreateNotificacionDto) {
+    try {
+      const authUrl = this.config.getOrThrow<string>("AUTH_SERVICE_URL");
+      const usuario = await this.http.get<UsuarioInterno | null>(`${authUrl}/usuarios/${dto.destinatarioUserId}/interno`);
+      if (!usuario?.correo) return;
+      await this.email.enviarNotificacion(usuario.correo, dto);
+    } catch (err) {
+      this.logger.warn(`No se pudo mandar el correo de la notificación a ${dto.destinatarioUserId} (tipo=${dto.tipo}): ${err instanceof Error ? err.message : err}`);
+    }
   }
 
   async marcarLeida(userId: string, id: string) {

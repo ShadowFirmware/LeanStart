@@ -63,8 +63,17 @@ export class CanvasService {
         update: nuevo,
       }),
       this.prisma.empresa.update({ where: { id: empresaId }, data: { canvasBloques } }),
+      this.prisma.canvasVersion.create({ data: { empresaId, ...nuevo, canvasBloques } }),
     ]);
 
     return canvas;
+  }
+
+  async historial(user: AuthUser, empresaId: string) {
+    await this.empresas.obtener(user, empresaId);
+    return this.prisma.canvasVersion.findMany({
+      where: { empresaId },
+      orderBy: { createdAt: "desc" },
+    });
   }
 }

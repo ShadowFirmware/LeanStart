@@ -4,10 +4,12 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthController } from "./auth.controller";
 import { UsuariosController } from "./usuarios.controller";
 import { PrivilegiosController } from "./privilegios.controller";
+import { BitacoraController } from "./bitacora.controller";
 import { HealthController } from "./health.controller";
 import { AuthService } from "../molecules/auth.service";
 import { UsuariosService } from "../molecules/usuarios.service";
 import { PrivilegiosService } from "../molecules/privilegios.service";
+import { BitacoraService } from "../molecules/bitacora.service";
 import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
 import { EmailService } from "../molecules/email.service";
 
@@ -22,7 +24,7 @@ import { EmailService } from "../molecules/email.service";
       }),
     }),
   ],
-  controllers: [AuthController, UsuariosController, PrivilegiosController, HealthController],
-  providers: [AuthService, UsuariosService, PrivilegiosService, SeedsAlexaService, EmailService],
+  controllers: [AuthController, UsuariosController, PrivilegiosController, BitacoraController, HealthController],
+  providers: [AuthService, UsuariosService, PrivilegiosService, BitacoraService, SeedsAlexaService, EmailService],
 })
 export class AuthModule {}

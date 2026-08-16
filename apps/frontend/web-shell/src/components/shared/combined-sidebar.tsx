@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Building2, Bell, History, Users, ShieldCheck,
-  ClipboardList, TrendingUp, BarChart3, LogOut, Menu, X,
+  ClipboardList, TrendingUp, BarChart3, ScrollText, LogOut, Menu, X,
 } from "lucide-react";
 import type { Role } from "@leanstart/commons";
 import { cerrarSesionBackend, cerrarSesionUnaVez, useHasHydrated } from "@leanstart/commons";
@@ -102,6 +102,7 @@ export function CombinedSidebar({ roles, userName, userEmail }: CombinedSidebarP
           { href: "/administrador/criterios-evaluacion", label: "Criterios de Evaluación", icon: ClipboardList },
           { href: "/administrador/viabilidad", label: "Viabilidad", icon: TrendingUp },
           { href: "/administrador/reportes", label: "Reportes", icon: BarChart3 },
+          { href: "/administrador/bitacora", label: "Bitácora", icon: ScrollText },
         ];
     }
   }

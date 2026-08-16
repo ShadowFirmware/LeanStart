@@ -5,6 +5,7 @@ import { InternalHttpClient } from "@leanstart/backend-commons";
 import { AuthController } from "./auth.controller";
 import { UsuariosController } from "./usuarios.controller";
 import { PrivilegiosController } from "./privilegios.controller";
+import { BitacoraController } from "./bitacora.controller";
 import { EmpresasController } from "./empresas.controller";
 import { PublicController } from "./public.controller";
 import { CanvasController } from "./canvas.controller";
@@ -40,6 +41,7 @@ const jwtModule = JwtModule.registerAsync({
     AuthController,
     UsuariosController,
     PrivilegiosController,
+    BitacoraController,
     EmpresasController,
     PublicController,
     CanvasController,

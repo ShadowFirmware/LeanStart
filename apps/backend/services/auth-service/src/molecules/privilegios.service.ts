@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { ACCIONES, MODULOS, type Accion, type Modulo, type Privilegio } from "@leanstart/backend-commons";
 import { PrismaService } from "../prisma/prisma.service";
+import { BitacoraService } from "./bitacora.service";
 
 @Injectable()
 export class PrivilegiosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bitacora: BitacoraService
+  ) {}
 
   /** Shape que consume el front (`session.user.privilegios`): un array por módulo con sus acciones. */
   async getPrivilegiosDeRol(rolId: string): Promise<Privilegio[]> {
@@ -28,7 +32,7 @@ export class PrivilegiosService {
     });
   }
 
-  async toggleAccion(rolId: string, modulo: Modulo, accion: Accion) {
+  async toggleAccion(actorUserId: string, rolId: string, modulo: Modulo, accion: Accion) {
     const existente = await this.prisma.privilegio.findUnique({
       where: { rolId_modulo_accion: { rolId, modulo, accion } },
     });
@@ -37,10 +41,18 @@ export class PrivilegiosService {
     } else {
       await this.prisma.privilegio.create({ data: { rolId, modulo, accion } });
     }
+    await this.bitacora.registrar(actorUserId, {
+      servicio: "auth",
+      accion: "privilegios.toggle_accion",
+      entidadTipo: "rol",
+      entidadId: rolId,
+      entidadDescripcion: rolId,
+      detalle: `${modulo}.${accion}`,
+    });
     return this.getPrivilegiosDeRol(rolId);
   }
 
-  async toggleModuloCompleto(rolId: string, modulo: Modulo) {
+  async toggleModuloCompleto(actorUserId: string, rolId: string, modulo: Modulo) {
     const actuales = await this.prisma.privilegio.findMany({ where: { rolId, modulo } });
     const tieneTodas = actuales.length === ACCIONES.length;
 
@@ -54,10 +66,18 @@ export class PrivilegiosService {
             }),
           ]),
     ]);
+    await this.bitacora.registrar(actorUserId, {
+      servicio: "auth",
+      accion: "privilegios.toggle_modulo",
+      entidadTipo: "rol",
+      entidadId: rolId,
+      entidadDescripcion: rolId,
+      detalle: modulo,
+    });
     return this.getPrivilegiosDeRol(rolId);
   }
 
-  async toggleAccionColumna(rolId: string, accion: Accion) {
+  async toggleAccionColumna(actorUserId: string, rolId: string, accion: Accion) {
     const filas = await this.prisma.privilegio.findMany({ where: { rolId, accion } });
     const todosLaTienen = filas.length === MODULOS.length;
 
@@ -72,16 +92,32 @@ export class PrivilegiosService {
             }),
           ]),
     ]);
+    await this.bitacora.registrar(actorUserId, {
+      servicio: "auth",
+      accion: "privilegios.toggle_columna",
+      entidadTipo: "rol",
+      entidadId: rolId,
+      entidadDescripcion: rolId,
+      detalle: accion,
+    });
     return this.getPrivilegiosDeRol(rolId);
   }
 
-  async setTodos(rolId: string, activar: boolean) {
+  async setTodos(actorUserId: string, rolId: string, activar: boolean) {
     await this.prisma.privilegio.deleteMany({ where: { rolId } });
     if (activar) {
       await this.prisma.privilegio.createMany({
         data: MODULOS.flatMap((modulo) => ACCIONES.map((accion) => ({ rolId, modulo, accion }))),
       });
     }
+    await this.bitacora.registrar(actorUserId, {
+      servicio: "auth",
+      accion: "privilegios.set_todos",
+      entidadTipo: "rol",
+      entidadId: rolId,
+      entidadDescripcion: rolId,
+      detalle: activar ? "otorgar todos" : "revocar todos",
+    });
     return this.getPrivilegiosDeRol(rolId);
   }
 
@@ -121,6 +157,7 @@ export class PrivilegiosService {
    * usuario ya tendría solo por sus roles — el resto se borra (o ni se toca).
    */
   async setCeldasUsuario(
+    actorUserId: string,
     userId: string,
     cambios: Array<{ modulo: Modulo; accion: Accion; activar: boolean }>
   ): Promise<Privilegio[]> {
@@ -144,6 +181,16 @@ export class PrivilegiosService {
         })
       ),
     ]);
+    if (cambios.length > 0) {
+      await this.bitacora.registrar(actorUserId, {
+        servicio: "auth",
+        accion: "privilegios.set_celdas",
+        entidadTipo: "usuario",
+        entidadId: userId,
+        entidadDescripcion: user.nombre,
+        detalle: `${cambios.length} celda(s) modificada(s)`,
+      });
+    }
     return this.getPrivilegiosEfectivos(userId, roles);
   }
 }

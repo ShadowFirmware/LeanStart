@@ -24,6 +24,11 @@ const INK = "#1A1626";
 const MUTED = "#6B6580";
 const LINE = "#E4E0EC";
 const ACCENT = "#7C3AED";
+const ACCENT_2 = "#AE6CFD";
+
+// Márgenes del PDF descargado (independientes de los del "Imprimir" vía @media print).
+const MARGIN_MM = 14;
+const PIE_MM = 6;
 
 const SUBLABEL: React.CSSProperties = {
   fontSize: 11,
@@ -75,25 +80,70 @@ export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comenta
           import("jspdf"),
           import("html2canvas"),
         ]);
-        const canvas = await html2canvas(printRef.current!, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" });
-        const imgData = canvas.toDataURL("image/png");
+
+        const node = printRef.current!;
+
+        // Huecos "seguros" para cortar entre páginas: el borde inferior de cada tarjeta
+        // marcada con data-pdf-section, en px del propio documento (sin escalar por html2canvas).
+        // Así ninguna tarjeta queda partida a la mitad entre dos páginas.
+        const nodeTop = node.getBoundingClientRect().top;
+        const cortesSeguros = Array.from(node.querySelectorAll<HTMLElement>("[data-pdf-section]"))
+          .map((el) => el.getBoundingClientRect().bottom - nodeTop)
+          .sort((a, b) => a - b);
+
+        const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" });
 
         const pdf = new jsPDF({ unit: "mm", format: "a4" });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const contentWidthMm = pageWidth - MARGIN_MM * 2;
+        const contentHeightMm = pageHeight - MARGIN_MM * 2 - PIE_MM;
 
-        let heightLeft = imgHeight;
-        let position = 0;
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position -= pageHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
+        const pxToMm = contentWidthMm / node.offsetWidth;
+        const totalAltoMm = node.scrollHeight * pxToMm;
+
+        // Primera pasada: decide dónde corta cada página (sin dibujar nada todavía),
+        // para poder mostrar "Página X de N" en el pie sin adivinar el total de antemano.
+        const segmentos: { desdeMm: number; hastaMm: number }[] = [];
+        let posicion = 0;
+        while (posicion < totalAltoMm - 0.5) {
+          const limiteMecanico = Math.min(posicion + contentHeightMm, totalAltoMm);
+          let corte = limiteMecanico;
+          if (limiteMecanico < totalAltoMm - 0.5) {
+            const candidato = cortesSeguros.filter((c) => c > posicion + 20 && c <= limiteMecanico).pop();
+            if (candidato) corte = candidato;
+          }
+          segmentos.push({ desdeMm: posicion, hastaMm: corte });
+          posicion = corte;
         }
+
+        const escalaPxPorMm = canvas.width / contentWidthMm;
+        const fecha = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+
+        segmentos.forEach((seg, i) => {
+          if (i > 0) pdf.addPage();
+
+          const yPxInicio = Math.round(seg.desdeMm * escalaPxPorMm);
+          const yPxFin = Math.min(canvas.height, Math.round(seg.hastaMm * escalaPxPorMm));
+          const altoPx = Math.max(1, yPxFin - yPxInicio);
+
+          // Se recorta la porción de esta página del canvas fuente (no se reutiliza la
+          // imagen completa desplazada): así el margen inferior queda blanco de verdad,
+          // en vez de depender de que el borde físico de la página "tape" el resto.
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width;
+          slice.height = altoPx;
+          slice.getContext("2d")!.drawImage(canvas, 0, yPxInicio, canvas.width, altoPx, 0, 0, canvas.width, altoPx);
+
+          const altoMm = altoPx / escalaPxPorMm;
+          pdf.addImage(slice.toDataURL("image/png"), "PNG", MARGIN_MM, MARGIN_MM, contentWidthMm, altoMm);
+
+          // Pie de página: texto nativo de jsPDF (no forma parte de la imagen rasterizada, sale nítido).
+          pdf.setFontSize(8);
+          pdf.setTextColor(140, 138, 148);
+          pdf.text(`LeanStart · ${fecha}`, MARGIN_MM, pageHeight - 6);
+          pdf.text(`Página ${i + 1} de ${segmentos.length}`, pageWidth - MARGIN_MM, pageHeight - 6, { align: "right" });
+        });
 
         pdf.save(nombreArchivo(empresa, esBoleta));
       },
@@ -173,11 +223,14 @@ export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comenta
         <div
           ref={printRef}
           className="print-area w-full max-w-[820px] rounded-lg"
-          style={{ backgroundColor: "#FFFFFF", color: INK, padding: "40px", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: "#FFFFFF", color: INK, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Encabezado */}
-          <div className="flex items-start justify-between gap-4" style={{ borderBottom: `2px solid ${INK}`, paddingBottom: 16 }}>
+          {/* Encabezado: banda de color a todo el ancho, tipo membrete */}
+          <div
+            className="flex items-start justify-between gap-4"
+            style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_2})`, padding: "28px 40px", color: "#FFFFFF" }}
+          >
             <div className="flex items-center gap-4 min-w-0">
               {empresa.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -186,37 +239,39 @@ export function ReporteDocumento({ tipo, empresa, autorEmpresa, calculo, comenta
                   alt={empresa.nombre}
                   style={{
                     width: 56, height: 56, borderRadius: 12, padding: 6, boxSizing: "border-box",
-                    objectFit: "contain", background: "#F1ECFB", border: `1px solid ${LINE}`,
+                    objectFit: "contain", background: "#FFFFFF",
                   }}
                 />
               ) : (
-                <div style={{ width: 56, height: 56, borderRadius: 12, background: "#F1ECFB", color: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 24 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 12, background: "#FFFFFF", color: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 24 }}>
                   {empresa.nombre.charAt(0)}
                 </div>
               )}
               <div className="min-w-0">
-                <p style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>
+                <p style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
                   LeanStart · {esBoleta ? "Boleta de evaluación" : "Reporte Lean Canvas"}
                 </p>
-                <h1 style={{ fontSize: 22, fontWeight: 700, margin: "2px 0 0", wordBreak: "break-word" }}>{empresa.nombre}</h1>
-                <p style={{ fontSize: 13, color: MUTED }}>{GIRO_LABELS[empresa.giro]}</p>
+                <h1 style={{ fontSize: 22, fontWeight: 700, margin: "2px 0 0", wordBreak: "break-word", color: "#FFFFFF" }}>{empresa.nombre}</h1>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{GIRO_LABELS[empresa.giro]}</p>
               </div>
             </div>
-            <div style={{ textAlign: "right", fontSize: 11, color: MUTED, whiteSpace: "nowrap" }}>
+            <div style={{ textAlign: "right", fontSize: 11, color: "rgba(255,255,255,0.85)", whiteSpace: "nowrap" }}>
               <p>Emprendedor: {autorEmpresa}</p>
               <p style={{ marginTop: 2 }}>Creada el {empresa.creadaEn}</p>
             </div>
           </div>
 
-          {esBoleta ? (
-            <BoletaBody empresa={empresa} calculo={calculo} />
-          ) : (
-            <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} />
-          )}
+          <div style={{ padding: "28px 40px 40px" }}>
+            {esBoleta ? (
+              <BoletaBody empresa={empresa} calculo={calculo} />
+            ) : (
+              <CanvasBody empresa={empresa} comentarioEvaluador={comentarioEvaluador} calculo={calculo} />
+            )}
 
-          {/* Pie */}
-          <div style={{ marginTop: 28, paddingTop: 12, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, textAlign: "center" }}>
-            Documento generado por LeanStart · Plataforma de validación de ideas de negocio
+            {/* Pie */}
+            <div style={{ marginTop: 28, paddingTop: 12, borderTop: `1px solid ${LINE}`, fontSize: 10, color: MUTED, textAlign: "center" }}>
+              Documento generado por LeanStart · Plataforma de validación de ideas de negocio
+            </div>
           </div>
         </div>
 
@@ -272,7 +327,7 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
     <>
       {/* Datos principales */}
       <SectionTitle>Datos principales</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+      <div data-pdf-section style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
         {datos.map((d) => (
           <div key={d.label} style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 12, fontSize: 13 }}>
             <span style={{ color: MUTED, fontWeight: 600 }}>{d.label}</span>
@@ -283,7 +338,7 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
 
       {/* Criterios de evaluación */}
       <SectionTitle>Criterios de evaluación</SectionTitle>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table data-pdf-section style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
           <tr style={{ textAlign: "left", color: MUTED, borderBottom: `1px solid ${LINE}` }}>
             <th style={{ padding: "6px 8px", fontWeight: 600 }}>Criterio</th>
@@ -313,7 +368,7 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
 
       {/* Calificaciones */}
       <SectionTitle>Calificación y viabilidad</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+      <div data-pdf-section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         {scores.map((s) => (
           <div key={s.label} style={{ border: `1px solid ${s.destacado ? ACCENT : LINE}`, background: s.destacado ? "#F5F0FE" : "#FFFFFF", borderRadius: 12, padding: 14 }}>
             <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: MUTED, fontWeight: 600 }}>{s.label}</p>
@@ -324,7 +379,7 @@ function BoletaBody({ empresa, calculo }: { empresa: Empresa; calculo: ReporteCa
       </div>
 
       {/* Viabilidad */}
-      <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 12, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14 }}>
+      <div data-pdf-section style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 12, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14 }}>
         <span style={{ fontSize: 13, color: MUTED, fontWeight: 600 }}>Nivel de viabilidad</span>
         {calculo.nivel ? (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: calculo.nivel.color }}>
@@ -351,7 +406,7 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
   return (
     <>
       {/* Datos base */}
-      <div style={{ marginTop: 18, marginBottom: 6, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 13 }}>
+      <div data-pdf-section style={{ marginTop: 18, marginBottom: 6, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 13 }}>
         <div>
           <p style={{ color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Descripción</p>
           <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{empresa.descripcion || "—"}</p>
@@ -367,7 +422,7 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
         {CANVAS_BLOCKS.map((b) => {
           const valores = canvas ? canvasValor(canvas[b.key]) : [];
           return (
-            <div key={b.key} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
+            <div key={b.key} data-pdf-section style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>{b.label}</p>
               {valores.length === 0 ? (
                 <p style={{ fontSize: 12, color: MUTED }}>—</p>
@@ -388,7 +443,7 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
 
       {/* Comentario general del evaluador */}
       <p style={SUBLABEL}>Comentario general del evaluador</p>
-      <div style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, background: "#FAF8FF", breakInside: "avoid" }}>
+      <div data-pdf-section style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 14, background: "#FAF8FF", breakInside: "avoid" }}>
         {comentarioEvaluador.trim() ? (
           <p style={{ fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5 }}>{comentarioEvaluador}</p>
         ) : (
@@ -402,7 +457,7 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
           <p style={{ ...SUBLABEL, marginTop: 16 }}>Comentarios por criterio del evaluador</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {comentariosPorCriterio.map((c) => (
-              <div key={c.id} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
+              <div key={c.id} data-pdf-section style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12, breakInside: "avoid" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
                   <p style={{ fontSize: 12.5, fontWeight: 700, color: INK, wordBreak: "break-word" }}>{c.nombre}</p>
                   <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, whiteSpace: "nowrap" }}>{c.puntos} / {c.peso}</span>
@@ -419,7 +474,8 @@ function CanvasBody({ empresa, comentarioEvaluador, calculo }: {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#1A1626", margin: "26px 0 12px", paddingBottom: 4, borderBottom: "1px solid #E4E0EC" }}>
+    <h2 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: INK, margin: "26px 0 12px" }}>
+      <span style={{ width: 4, height: 14, borderRadius: 2, background: `linear-gradient(180deg, ${ACCENT}, ${ACCENT_2})`, flexShrink: 0 }} />
       {children}
     </h2>
   );

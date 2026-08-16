@@ -91,7 +91,16 @@ export class EmpresasService {
   async cambiarEstado(user: AuthUser, id: string, estado: EstadoEmpresa) {
     const empresa = await this.obtener(user, id);
     this.estadoService.validarTransicion(empresa.estado as EstadoEmpresa, estado);
-    return this.prisma.empresa.update({ where: { id }, data: { estado } });
+    const actualizada = await this.prisma.empresa.update({ where: { id }, data: { estado } });
+
+    void this.registrarBitacora(user, {
+      accion: "empresa.cambiar_estado",
+      entidadId: id,
+      entidadDescripcion: empresa.nombre,
+      detalle: `${empresa.estado} → ${estado}`,
+    });
+
+    return actualizada;
   }
 
   /** Usado por el saga de finalizar evaluación (evaluaciones-service), sin scoping de usuario. */
@@ -143,6 +152,12 @@ export class EmpresasService {
       empresaNombre: empresa.nombre,
       empresaId: id,
     });
+    void this.registrarBitacora(user, {
+      accion: "empresa.asignar_mentor",
+      entidadId: id,
+      entidadDescripcion: empresa.nombre,
+      detalle: `mentorId: ${mentorId}`,
+    });
 
     return actualizada;
   }
@@ -158,6 +173,12 @@ export class EmpresasService {
       mensaje: `"${empresa.nombre}" ya está en manos del equipo evaluador.`,
       empresaNombre: empresa.nombre,
       empresaId: id,
+    });
+    void this.registrarBitacora(user, {
+      accion: "empresa.asignar_evaluador",
+      entidadId: id,
+      entidadDescripcion: empresa.nombre,
+      detalle: `evaluadorId: ${evaluadorId}`,
     });
 
     return actualizada;
@@ -175,6 +196,23 @@ export class EmpresasService {
       await this.http.post(`${baseUrl}/notificaciones`, { destinatarioUserId, ...data });
     } catch (err) {
       this.logger.warn(`No se pudo notificar a ${destinatarioUserId} (tipo=${data.tipo}): ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
+  /** Igual de best-effort que `notificar` — la auditoría nunca debe tumbar la acción que registra. */
+  private async registrarBitacora(
+    actor: AuthUser,
+    data: { accion: string; entidadId: string; entidadDescripcion: string; detalle?: string }
+  ) {
+    try {
+      const authUrl = this.config.getOrThrow<string>("AUTH_SERVICE_URL");
+      await this.http.post(
+        `${authUrl}/bitacora/interno`,
+        { servicio: "empresas", entidadTipo: "empresa", ...data },
+        actor
+      );
+    } catch (err) {
+      this.logger.warn(`No se pudo registrar en bitácora (accion=${data.accion}): ${err instanceof Error ? err.message : err}`);
     }
   }
 }

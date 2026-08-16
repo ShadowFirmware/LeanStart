@@ -26,6 +26,7 @@ model User {
   semillasAlexa SemillaAlexa[]
   resetTokens   PasswordResetToken[]
   privilegiosOverride UsuarioPrivilegio[]
+  bitacoraEntradas   Bitacora[]
 
   @@map("users")
 }
@@ -95,4 +96,27 @@ model UsuarioPrivilegio {
 
   @@unique([userId, modulo, accion])
   @@map("usuario_privilegios")
+}
+
+/// Registro de acciones administrativas sensibles (usuarios/roles/privilegios en
+/// auth-service, y acciones equivalentes en empresas-service/evaluaciones-service
+/// que llegan vía POST /bitacora/interno). El actor siempre es un User de esta
+/// misma base — se resuelve con un include normal, sin denormalizar nombre/correo.
+model Bitacora {
+  id                 String   @id @default(uuid())
+  actorUserId        String
+  servicio           String
+  accion             String
+  entidadTipo        String?
+  entidadId          String?
+  entidadDescripcion String?
+  detalle            String?
+  createdAt          DateTime @default(now())
+
+  actor User @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([servicio, accion])
+  @@index([createdAt])
+  @@map("bitacora")
 }

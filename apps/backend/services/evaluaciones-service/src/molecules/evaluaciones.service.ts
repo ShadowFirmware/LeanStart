@@ -168,6 +168,22 @@ export class EvaluacionesService {
       })
       .catch(() => undefined);
 
+    // Igual de best-effort: la auditoría nunca debe tumbar "finalizar".
+    void this.http
+      .post(
+        `${this.config.getOrThrow<string>("AUTH_SERVICE_URL")}/bitacora/interno`,
+        {
+          servicio: "evaluaciones",
+          accion: accionResultante === "publicado" ? "evaluacion.publicar" : "evaluacion.devolver",
+          entidadTipo: "empresa",
+          entidadId: empresaId,
+          entidadDescripcion: empresa.nombre,
+          detalle: `scoreFinal: ${calculo.scoreFinal}`,
+        },
+        actingAs
+      )
+      .catch(() => undefined);
+
     return { ...calculo, accionResultante };
   }
 }

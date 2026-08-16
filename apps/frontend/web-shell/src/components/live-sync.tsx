@@ -7,7 +7,7 @@ import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { modoDemo, useUsuariosStore, usePerfilStore } from "@leanstart/commons";
 import {
   useCriteriosStore, useEvaluacionesStore, usePrivilegiosStore,
-  useReportesGeneradosStore, useViabilidadStore, useRolesStore,
+  useReportesGeneradosStore, useViabilidadStore, useRolesStore, useBitacoraStore,
 } from "@leanstart/administrador-front";
 
 /**
@@ -36,6 +36,7 @@ const STORES = [
   { key: "leanstart-criterios", store: useCriteriosStore },
   { key: "leanstart-roles", store: useRolesStore },
   { key: "leanstart-viabilidad", store: useViabilidadStore },
+  { key: "leanstart-bitacora", store: useBitacoraStore },
 ] as const;
 
 /**
@@ -72,6 +73,7 @@ export function LiveSync() {
 
     if (roles?.includes("administrador")) {
       useUsuariosStore.getState().cargarUsuarios().catch(() => {});
+      useBitacoraStore.getState().cargarBitacora().catch(() => {});
     }
     if (roles?.includes("administrador") || roles?.includes("evaluador")) {
       useCriteriosStore.getState().cargarCriterios().catch(() => {});

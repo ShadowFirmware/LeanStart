@@ -12,6 +12,7 @@ import { Button, modoDemo, useAccion, useHasHydrated, ViewSkeleton } from "@lean
 import { useEmpresasStore, type CanvasData, DEFAULT_CANVAS } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
+import { HistorialCanvasButton } from "../components/historial-canvas";
 
 /* ─── Colores por bloque ─── */
 const C = {
@@ -281,7 +282,10 @@ export function CanvasView({
 
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: "var(--text-strong)" }}>Lean Canvas</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold" style={{ color: "var(--text-strong)" }}>Lean Canvas</h1>
+              <HistorialCanvasButton empresaId={id} canvasActual={canvas} />
+            </div>
             {empresa.estado === "borrador" && (
               <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
                 {canvasBloques} de 9 bloques completados
