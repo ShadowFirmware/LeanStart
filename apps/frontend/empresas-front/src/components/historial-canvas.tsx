@@ -33,6 +33,12 @@ const BLOQUES: { key: keyof CanvasData; label: string; tipo: "single" | "multi" 
   { key: "fuentesIngresos", label: "Fuentes de ingresos", tipo: "multi" },
 ];
 
+const CANVAS_VACIO: CanvasData = {
+  problema: [], solucion: "", pvp: "", ventajaInjusta: "",
+  segmentosClientes: [], metricasClave: [], canales: [],
+  estructuraCostos: [], fuentesIngresos: [],
+};
+
 function formatFecha(iso: string): string {
   return new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
@@ -86,10 +92,9 @@ function BloqueDiff({ label, tipo, valorAnterior, valorActual }: {
 
 interface HistorialCanvasButtonProps {
   empresaId: string;
-  canvasActual: CanvasData;
 }
 
-export function HistorialCanvasButton({ empresaId, canvasActual }: HistorialCanvasButtonProps) {
+export function HistorialCanvasButton({ empresaId }: HistorialCanvasButtonProps) {
   const [abierto, setAbierto] = useState(false);
   const [versiones, setVersiones] = useState<CanvasVersionApi[]>([]);
   const [seleccionada, setSeleccionada] = useState<string | null>(null);
@@ -108,7 +113,15 @@ export function HistorialCanvasButton({ empresaId, canvasActual }: HistorialCanv
     );
   }
 
-  const version = versiones.find((v) => v.id === seleccionada);
+  const indiceSeleccionado = versiones.findIndex((v) => v.id === seleccionada);
+  const version = versiones[indiceSeleccionado];
+  // La versión anterior EN EL TIEMPO a la seleccionada (la próxima en el array,
+  // que viene ordenado de más reciente a más antigua) — no el estado actual del
+  // canvas, que sigue cambiando con cada guardado nuevo. Así el diff de una
+  // versión queda fijo: muestra solo lo que cambió en ESE guardado puntual, y
+  // guardar algo después no le mueve el diff a las versiones ya pasadas.
+  const versionAnterior = indiceSeleccionado >= 0 ? versiones[indiceSeleccionado + 1] : undefined;
+  const datosAnteriores = versionAnterior ? versionAData(versionAnterior) : CANVAS_VACIO;
 
   return (
     <>
@@ -170,24 +183,27 @@ export function HistorialCanvasButton({ empresaId, canvasActual }: HistorialCanv
                 </div>
                 <div className="flex-1 overflow-y-auto pr-1">
                   <p className="text-xs mb-3" style={{ color: "var(--text-faint)" }}>
-                    Comparando la versión seleccionada contra el estado actual del canvas. En <span style={{ color: "#EF4444" }}>rojo</span> lo que había, en <span style={{ color: "#10B981" }}>verde</span> lo que hay ahora.
+                    {versionAnterior
+                      ? "Cambios de este guardado respecto al anterior."
+                      : "Primer guardado — todo el contenido es nuevo."}{" "}
+                    En <span style={{ color: "#EF4444" }}>rojo</span> lo que había, en <span style={{ color: "#10B981" }}>verde</span> lo que quedó.
                   </p>
                   {version && BLOQUES.every((b) => {
-                    const anterior = versionAData(version)[b.key];
-                    const actual = canvasActual[b.key] ?? (b.tipo === "single" ? "" : []);
+                    const anterior = datosAnteriores[b.key];
+                    const actual = versionAData(version)[b.key];
                     if (b.tipo === "single") return (anterior as string).trim() === (actual as string).trim();
                     return diffLista(anterior as string[], actual as string[]).agregados.length === 0
                       && diffLista(anterior as string[], actual as string[]).quitados.length === 0;
                   }) ? (
-                    <p className="text-sm" style={{ color: "var(--text-faint)" }}>Sin diferencias con el canvas actual.</p>
+                    <p className="text-sm" style={{ color: "var(--text-faint)" }}>Este guardado no cambió nada.</p>
                   ) : (
                     version && BLOQUES.map((b) => (
                       <BloqueDiff
                         key={b.key}
                         label={b.label}
                         tipo={b.tipo}
-                        valorAnterior={versionAData(version)[b.key]}
-                        valorActual={canvasActual[b.key] ?? (b.tipo === "single" ? "" : [])}
+                        valorAnterior={datosAnteriores[b.key]}
+                        valorActual={versionAData(version)[b.key]}
                       />
                     ))
                   )}

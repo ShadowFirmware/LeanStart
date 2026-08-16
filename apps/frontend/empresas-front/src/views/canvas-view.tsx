@@ -284,7 +284,7 @@ export function CanvasView({
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold" style={{ color: "var(--text-strong)" }}>Lean Canvas</h1>
-              <HistorialCanvasButton empresaId={id} canvasActual={canvas} />
+              <HistorialCanvasButton empresaId={id} />
             </div>
             {empresa.estado === "borrador" && (
               <p className="text-sm mt-0.5" style={{ color: "var(--text-dim)" }}>
