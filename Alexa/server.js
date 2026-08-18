@@ -20,7 +20,9 @@ const express = require('express');
 const { ExpressAdapter } = require('ask-sdk-express-adapter');
 const { skillBuilder } = require('./index');
 
-const PORT = process.env.ALEXA_PORT || 5000;
+// PORT: usada por Railway (y plataformas similares) para asignar el puerto
+// público del servicio; ALEXA_PORT queda como respaldo para desarrollo local.
+const PORT = process.env.PORT || process.env.ALEXA_PORT || 5000;
 
 // Alexa firma cada petición HTTPS entrante; un endpoint personalizado real
 // debe verificar esa firma y el timestamp (por eso true/true por default).
