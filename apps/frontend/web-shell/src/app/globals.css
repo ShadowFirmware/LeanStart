@@ -141,6 +141,19 @@
   --shadow-card-hover: 0 2px 6px rgba(20, 18, 45, 0.07), 0 14px 32px rgba(20, 18, 45, 0.11);
   --shadow-sidebar:    1px 0 20px rgba(20, 18, 45, 0.05);
 
+  /* Bloques del Lean Canvas — más vivos en claro (los tonos casi negros del
+     oscuro se ven pesados/apagados sobre un fondo blanco); mismo matiz por
+     bloque en los dos temas, solo cambia qué tan oscuro es. */
+  --canvas-problema:           #C2255C;
+  --canvas-solucion:           #0C8040;
+  --canvas-metricas-clave:     #0E7490;
+  --canvas-pvp:                #7C3AED;
+  --canvas-ventaja-injusta:    #B36106;
+  --canvas-canales:            #C93E14;
+  --canvas-segmentos-clientes: #2563EB;
+  --canvas-estructura-costos:  #5B21B6;
+  --canvas-fuentes-ingresos:   #036B9E;
+
   color-scheme: light;
 }
 
@@ -205,6 +218,17 @@
   --shadow-card:       0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.22);
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.40), 0 16px 34px rgba(0, 0, 0, 0.32);
   --shadow-sidebar:    none;
+
+  /* Bloques del Lean Canvas — tonos oscuros originales, se ven bien contra el fondo casi negro. */
+  --canvas-problema:           #8A1A5E;
+  --canvas-solucion:           #1A6A3A;
+  --canvas-metricas-clave:     #0A4A5C;
+  --canvas-pvp:                #5C18A0;
+  --canvas-ventaja-injusta:    #9A5A10;
+  --canvas-canales:            #8A2810;
+  --canvas-segmentos-clientes: #103E8A;
+  --canvas-estructura-costos:  #28108A;
+  --canvas-fuentes-ingresos:   #105C8A;
 
   color-scheme: dark;
 }

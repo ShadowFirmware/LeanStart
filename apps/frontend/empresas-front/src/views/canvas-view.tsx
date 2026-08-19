@@ -14,17 +14,20 @@ import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEsta
 import { ObservacionesButton } from "../components/observaciones-button";
 import { HistorialCanvasButton } from "../components/historial-canvas";
 
-/* ─── Colores por bloque ─── */
+/* ─── Colores por bloque ───
+   Referencian variables CSS (definidas en globals.css) que cambian entre
+   tema claro/oscuro — mismo matiz por bloque, pero más vivo en claro (los
+   tonos casi negros del oscuro se ven pesados sobre un fondo blanco). */
 const C = {
-  problema:          "#8A1A5E",
-  solucion:          "#1A6A3A",
-  metricasClave:     "#0A4A5C",
-  pvp:               "#5C18A0",
-  ventajaInjusta:    "#9A5A10",
-  canales:           "#8A2810",
-  segmentosClientes: "#103E8A",
-  estructuraCostos:  "#28108A",
-  fuentesIngresos:   "#105C8A",
+  problema:          "var(--canvas-problema)",
+  solucion:          "var(--canvas-solucion)",
+  metricasClave:     "var(--canvas-metricas-clave)",
+  pvp:               "var(--canvas-pvp)",
+  ventajaInjusta:    "var(--canvas-ventaja-injusta)",
+  canales:           "var(--canvas-canales)",
+  segmentosClientes: "var(--canvas-segmentos-clientes)",
+  estructuraCostos:  "var(--canvas-estructura-costos)",
+  fuentesIngresos:   "var(--canvas-fuentes-ingresos)",
 };
 
 type BlockKey = keyof CanvasData;
