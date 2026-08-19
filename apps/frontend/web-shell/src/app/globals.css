@@ -141,18 +141,50 @@
   --shadow-card-hover: 0 2px 6px rgba(20, 18, 45, 0.07), 0 14px 32px rgba(20, 18, 45, 0.11);
   --shadow-sidebar:    1px 0 20px rgba(20, 18, 45, 0.05);
 
-  /* Bloques del Lean Canvas — más vivos en claro (los tonos casi negros del
-     oscuro se ven pesados/apagados sobre un fondo blanco); mismo matiz por
-     bloque en los dos temas, solo cambia qué tan oscuro es. */
-  --canvas-problema:           #C2255C;
-  --canvas-solucion:           #0C8040;
-  --canvas-metricas-clave:     #0E7490;
-  --canvas-pvp:                #7C3AED;
-  --canvas-ventaja-injusta:    #B36106;
-  --canvas-canales:            #C93E14;
-  --canvas-segmentos-clientes: #2563EB;
-  --canvas-estructura-costos:  #5B21B6;
-  --canvas-fuentes-ingresos:   #036B9E;
+  /* Bloques del Lean Canvas.
+     "-solid" es el color de identidad de cada bloque — se define UNA sola
+     vez aquí y no se redefine en .dark, así que vale igual en los dos temas
+     (se usa para acentos chicos, como el ícono del modal, donde un color
+     vivo con ícono blanco encima se ve bien sin importar el tema).
+     "-bg"/"-fg" sí cambian por tema: en claro, tarjeta suave (tinte al 12%)
+     con texto/ícono del color sólido — el estilo de "chip" que ya usan los
+     badges de estado en el resto de la app. En oscuro se redefinen más abajo
+     con el estilo anterior (tarjeta de color sólido, texto blanco). */
+  --canvas-problema-solid:           #C2255C;
+  --canvas-solucion-solid:           #0C8040;
+  --canvas-metricas-clave-solid:     #0E7490;
+  --canvas-pvp-solid:                #7C3AED;
+  --canvas-ventaja-injusta-solid:    #B36106;
+  --canvas-canales-solid:            #C93E14;
+  --canvas-segmentos-clientes-solid: #2563EB;
+  --canvas-estructura-costos-solid:  #5B21B6;
+  --canvas-fuentes-ingresos-solid:   #036B9E;
+
+  --canvas-problema-bg:           rgba(194, 37, 92, 0.12);
+  --canvas-solucion-bg:           rgba(12, 128, 64, 0.12);
+  --canvas-metricas-clave-bg:     rgba(14, 116, 144, 0.12);
+  --canvas-pvp-bg:                rgba(124, 58, 237, 0.12);
+  --canvas-ventaja-injusta-bg:    rgba(179, 97, 6, 0.12);
+  --canvas-canales-bg:            rgba(201, 62, 20, 0.12);
+  --canvas-segmentos-clientes-bg: rgba(37, 99, 235, 0.12);
+  --canvas-estructura-costos-bg:  rgba(91, 33, 182, 0.12);
+  --canvas-fuentes-ingresos-bg:   rgba(3, 107, 158, 0.12);
+
+  --canvas-problema-fg:           var(--canvas-problema-solid);
+  --canvas-solucion-fg:           var(--canvas-solucion-solid);
+  --canvas-metricas-clave-fg:     var(--canvas-metricas-clave-solid);
+  --canvas-pvp-fg:                var(--canvas-pvp-solid);
+  --canvas-ventaja-injusta-fg:    var(--canvas-ventaja-injusta-solid);
+  --canvas-canales-fg:            var(--canvas-canales-solid);
+  --canvas-segmentos-clientes-fg: var(--canvas-segmentos-clientes-solid);
+  --canvas-estructura-costos-fg:  var(--canvas-estructura-costos-solid);
+  --canvas-fuentes-ingresos-fg:   var(--canvas-fuentes-ingresos-solid);
+
+  --canvas-body:         #2D2B36;
+  --canvas-hint:         var(--text-dim);
+  --canvas-divider:      var(--border-subtle);
+  --canvas-bullet:       rgba(20, 18, 40, 0.30);
+  --canvas-hover-border: rgba(20, 18, 40, 0.15);
 
   color-scheme: light;
 }
@@ -219,16 +251,34 @@
   --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.40), 0 16px 34px rgba(0, 0, 0, 0.32);
   --shadow-sidebar:    none;
 
-  /* Bloques del Lean Canvas — tonos oscuros originales, se ven bien contra el fondo casi negro. */
-  --canvas-problema:           #8A1A5E;
-  --canvas-solucion:           #1A6A3A;
-  --canvas-metricas-clave:     #0A4A5C;
-  --canvas-pvp:                #5C18A0;
-  --canvas-ventaja-injusta:    #9A5A10;
-  --canvas-canales:            #8A2810;
-  --canvas-segmentos-clientes: #103E8A;
-  --canvas-estructura-costos:  #28108A;
-  --canvas-fuentes-ingresos:   #105C8A;
+  /* Bloques del Lean Canvas — estilo original: tarjeta de color sólido y
+     oscuro (se ve bien contra el fondo casi negro) con texto/ícono blanco
+     encima. "-solid" no se redefine aquí a propósito (ver comentario en :root). */
+  --canvas-problema-bg:           #8A1A5E;
+  --canvas-solucion-bg:           #1A6A3A;
+  --canvas-metricas-clave-bg:     #0A4A5C;
+  --canvas-pvp-bg:                #5C18A0;
+  --canvas-ventaja-injusta-bg:    #9A5A10;
+  --canvas-canales-bg:            #8A2810;
+  --canvas-segmentos-clientes-bg: #103E8A;
+  --canvas-estructura-costos-bg:  #28108A;
+  --canvas-fuentes-ingresos-bg:   #105C8A;
+
+  --canvas-problema-fg:           #FFFFFF;
+  --canvas-solucion-fg:           #FFFFFF;
+  --canvas-metricas-clave-fg:     #FFFFFF;
+  --canvas-pvp-fg:                #FFFFFF;
+  --canvas-ventaja-injusta-fg:    #FFFFFF;
+  --canvas-canales-fg:            #FFFFFF;
+  --canvas-segmentos-clientes-fg: #FFFFFF;
+  --canvas-estructura-costos-fg:  #FFFFFF;
+  --canvas-fuentes-ingresos-fg:   #FFFFFF;
+
+  --canvas-body:         rgba(255, 255, 255, 0.82);
+  --canvas-hint:         rgba(255, 255, 255, 0.55);
+  --canvas-divider:      rgba(255, 255, 255, 0.12);
+  --canvas-bullet:       rgba(255, 255, 255, 0.35);
+  --canvas-hover-border: rgba(255, 255, 255, 0.30);
 
   color-scheme: dark;
 }

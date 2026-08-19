@@ -16,18 +16,25 @@ import { HistorialCanvasButton } from "../components/historial-canvas";
 
 /* ─── Colores por bloque ───
    Referencian variables CSS (definidas en globals.css) que cambian entre
-   tema claro/oscuro — mismo matiz por bloque, pero más vivo en claro (los
-   tonos casi negros del oscuro se ven pesados sobre un fondo blanco). */
-const C = {
-  problema:          "var(--canvas-problema)",
-  solucion:          "var(--canvas-solucion)",
-  metricasClave:     "var(--canvas-metricas-clave)",
-  pvp:               "var(--canvas-pvp)",
-  ventajaInjusta:    "var(--canvas-ventaja-injusta)",
-  canales:           "var(--canvas-canales)",
-  segmentosClientes: "var(--canvas-segmentos-clientes)",
-  estructuraCostos:  "var(--canvas-estructura-costos)",
-  fuentesIngresos:   "var(--canvas-fuentes-ingresos)",
+   tema claro/oscuro: en oscuro, tarjeta de color sólido con texto blanco
+   (el diseño original); en claro, tarjeta con tinte suave del color y texto
+   del color sólido encima — el mismo estilo de "chip" que ya usan los badges
+   de estado en el resto de la app, en vez de bloques de color fuerte que se
+   ven pesados/chocan entre sí sobre un fondo blanco.
+   "solid" es el color de identidad del bloque, igual en los dos temas — se
+   usa para acentos chicos (el ícono del modal) donde un color vivo con
+   ícono blanco encima se ve bien sin importar el tema. */
+interface ColorBloque { bg: string; fg: string; solid: string }
+const C: Record<BlockKey, ColorBloque> = {
+  problema:          { bg: "var(--canvas-problema-bg)",           fg: "var(--canvas-problema-fg)",           solid: "var(--canvas-problema-solid)" },
+  solucion:          { bg: "var(--canvas-solucion-bg)",           fg: "var(--canvas-solucion-fg)",           solid: "var(--canvas-solucion-solid)" },
+  metricasClave:     { bg: "var(--canvas-metricas-clave-bg)",     fg: "var(--canvas-metricas-clave-fg)",     solid: "var(--canvas-metricas-clave-solid)" },
+  pvp:               { bg: "var(--canvas-pvp-bg)",                fg: "var(--canvas-pvp-fg)",                solid: "var(--canvas-pvp-solid)" },
+  ventajaInjusta:    { bg: "var(--canvas-ventaja-injusta-bg)",    fg: "var(--canvas-ventaja-injusta-fg)",    solid: "var(--canvas-ventaja-injusta-solid)" },
+  segmentosClientes: { bg: "var(--canvas-segmentos-clientes-bg)", fg: "var(--canvas-segmentos-clientes-fg)", solid: "var(--canvas-segmentos-clientes-solid)" },
+  canales:           { bg: "var(--canvas-canales-bg)",            fg: "var(--canvas-canales-fg)",            solid: "var(--canvas-canales-solid)" },
+  estructuraCostos:  { bg: "var(--canvas-estructura-costos-bg)",  fg: "var(--canvas-estructura-costos-fg)",  solid: "var(--canvas-estructura-costos-solid)" },
+  fuentesIngresos:   { bg: "var(--canvas-fuentes-ingresos-bg)",   fg: "var(--canvas-fuentes-ingresos-fg)",   solid: "var(--canvas-fuentes-ingresos-solid)" },
 };
 
 type BlockKey = keyof CanvasData;
@@ -46,22 +53,22 @@ const BLOCK_META: Record<BlockKey, {
   max?: number;
   placeholder: string;
 }> = {
-  problema:          { icon: AlertCircle,  title: "Problema",                color: C.problema,          type: "multi",  max: 5, hint: "Lista los 5 principales problemas de tus clientes",          placeholder: "Ej. Alto costo de los servicios actuales" },
-  solucion:          { icon: Lightbulb,    title: "Solución",                color: C.solucion,          type: "single",         hint: "Las características más importantes de tu solución",         placeholder: "Describe las características principales de tu solución..." },
-  pvp:               { icon: Sparkles,     title: "Propuesta de valor única",color: C.pvp,               type: "single",         hint: "Mensaje claro que distingue tu oferta de todas las demás",  placeholder: "Ej. La única plataforma que permite a emprendedores..." },
-  ventajaInjusta:    { icon: Lock,         title: "Ventaja injusta",         color: C.ventajaInjusta,    type: "single",         hint: "Algo que no puede ser copiado o comprado fácilmente",       placeholder: "Ej. Acceso exclusivo a datos de..." },
-  segmentosClientes: { icon: Users,        title: "Segmentos de clientes",   color: C.segmentosClientes, type: "multi",  max: 5, hint: "Clientes y usuarios objetivo",                              placeholder: "Ej. Estudiantes universitarios 18-24 años" },
-  metricasClave:     { icon: BarChart2,    title: "Métricas clave",          color: C.metricasClave,     type: "multi",  max: 5, hint: "Indicadores que reflejan el estado de tu negocio",         placeholder: "Ej. Usuarios activos diarios" },
-  canales:           { icon: Share2,       title: "Canales",                 color: C.canales,           type: "multi",  max: 5, hint: "Rutas para llegar a tus clientes",                         placeholder: "Ej. Redes sociales" },
-  estructuraCostos:  { icon: TrendingDown, title: "Estructura de costos",    color: C.estructuraCostos,  type: "multi",  max: 8, hint: "Costos fijos y variables principales",                     placeholder: "Ej. Servidores cloud ($500/mes)" },
-  fuentesIngresos:   { icon: TrendingUp,   title: "Fuentes de ingresos",     color: C.fuentesIngresos,   type: "multi",  max: 5, hint: "Cómo y cuánto cobra tu empresa",                           placeholder: "Ej. Suscripción mensual $99" },
+  problema:          { icon: AlertCircle,  title: "Problema",                color: C.problema.solid,          type: "multi",  max: 5, hint: "Lista los 5 principales problemas de tus clientes",          placeholder: "Ej. Alto costo de los servicios actuales" },
+  solucion:          { icon: Lightbulb,    title: "Solución",                color: C.solucion.solid,          type: "single",         hint: "Las características más importantes de tu solución",         placeholder: "Describe las características principales de tu solución..." },
+  pvp:               { icon: Sparkles,     title: "Propuesta de valor única",color: C.pvp.solid,               type: "single",         hint: "Mensaje claro que distingue tu oferta de todas las demás",  placeholder: "Ej. La única plataforma que permite a emprendedores..." },
+  ventajaInjusta:    { icon: Lock,         title: "Ventaja injusta",         color: C.ventajaInjusta.solid,    type: "single",         hint: "Algo que no puede ser copiado o comprado fácilmente",       placeholder: "Ej. Acceso exclusivo a datos de..." },
+  segmentosClientes: { icon: Users,        title: "Segmentos de clientes",   color: C.segmentosClientes.solid, type: "multi",  max: 5, hint: "Clientes y usuarios objetivo",                              placeholder: "Ej. Estudiantes universitarios 18-24 años" },
+  metricasClave:     { icon: BarChart2,    title: "Métricas clave",          color: C.metricasClave.solid,     type: "multi",  max: 5, hint: "Indicadores que reflejan el estado de tu negocio",         placeholder: "Ej. Usuarios activos diarios" },
+  canales:           { icon: Share2,       title: "Canales",                 color: C.canales.solid,           type: "multi",  max: 5, hint: "Rutas para llegar a tus clientes",                         placeholder: "Ej. Redes sociales" },
+  estructuraCostos:  { icon: TrendingDown, title: "Estructura de costos",    color: C.estructuraCostos.solid,  type: "multi",  max: 8, hint: "Costos fijos y variables principales",                     placeholder: "Ej. Servidores cloud ($500/mes)" },
+  fuentesIngresos:   { icon: TrendingUp,   title: "Fuentes de ingresos",     color: C.fuentesIngresos.solid,   type: "multi",  max: 5, hint: "Cómo y cuánto cobra tu empresa",                           placeholder: "Ej. Suscripción mensual $99" },
 };
 
 /* ─── Bloque del canvas ─── */
 function Block({
-  icon: Icon, title, hint, color, style, children, onClick, tieneComentarioPendiente,
+  icon: Icon, title, hint, bg, fg, style, children, onClick, tieneComentarioPendiente,
 }: {
-  icon: React.ElementType; title: string; hint: string; color: string;
+  icon: React.ElementType; title: string; hint: string; bg: string; fg: string;
   style?: React.CSSProperties; children?: React.ReactNode; onClick?: () => void;
   tieneComentarioPendiente?: boolean;
 }) {
@@ -73,14 +80,14 @@ function Block({
       onMouseLeave={() => setHovered(false)}
       style={{
         position: "relative",
-        backgroundColor: color,
+        backgroundColor: bg,
         borderRadius: 14,
         padding: "20px 20px 18px",
         display: "flex",
         flexDirection: "column",
         gap: 8,
         ...style,
-        border: `2px solid ${onClick && hovered ? "rgba(255,255,255,0.3)" : "transparent"}`,
+        border: `2px solid ${onClick && hovered ? "var(--canvas-hover-border)" : "transparent"}`,
         cursor: onClick ? "pointer" : "default",
         transition: "border-color 0.15s",
       }}
@@ -95,16 +102,16 @@ function Block({
             height: 10,
             borderRadius: "50%",
             backgroundColor: "#EF4444",
-            border: "2px solid rgba(0,0,0,0.2)",
+            border: "2px solid var(--surface-profile)",
           }}
         />
       )}
-      <Icon size={18} color="rgba(255,255,255,0.85)" strokeWidth={2} />
+      <Icon size={18} color={fg} strokeWidth={2} />
       <div>
-        <p style={{ color: "white", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1.3 }}>
+        <p style={{ color: fg, fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1.3 }}>
           {title}
         </p>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>
+        <p style={{ color: "var(--canvas-hint)", fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>
           {hint}
         </p>
       </div>
@@ -125,11 +132,11 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
     return (
       <p
         style={{
-          color: "rgba(255,255,255,0.82)",
+          color: "var(--canvas-body)",
           fontSize: 11,
           lineHeight: 1.6,
           marginTop: 2,
-          borderTop: "1px solid rgba(255,255,255,0.12)",
+          borderTop: "1px solid var(--canvas-divider)",
           paddingTop: 8,
           overflowWrap: "anywhere",
           wordBreak: "break-word",
@@ -164,13 +171,13 @@ function BlockContent({ blockKey, canvas }: { blockKey: BlockKey; canvas: Canvas
         columnGap: dosColumnas ? 14 : undefined,
         rowGap: 4,
         gap: dosColumnas ? undefined : 4,
-        borderTop: "1px solid rgba(255,255,255,0.12)",
+        borderTop: "1px solid var(--canvas-divider)",
         paddingTop: 8,
       }}
     >
       {items.map((item, i) => (
-        <li key={i} style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, lineHeight: 1.4, display: "flex", gap: 5, alignItems: "flex-start", minWidth: 0 }}>
-          <span style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>·</span>
+        <li key={i} style={{ color: "var(--canvas-body)", fontSize: 11, lineHeight: 1.4, display: "flex", gap: 5, alignItems: "flex-start", minWidth: 0 }}>
+          <span style={{ color: "var(--canvas-bullet)", flexShrink: 0 }}>·</span>
           <span style={{ overflowWrap: "anywhere", wordBreak: "break-word", minWidth: 0, flex: 1 }}>{item}</span>
         </li>
       ))}
@@ -315,52 +322,52 @@ export function CanvasView({
 
             {/* Col 1: Problema (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={AlertCircle} title="Problema" hint={BLOCK_META.problema.hint} color={C.problema} style={{ flex: 1 }} onClick={() => handleOpen("problema")} tieneComentarioPendiente={tieneComentarioPendiente("problema")}>
+              <Block icon={AlertCircle} title="Problema" hint={BLOCK_META.problema.hint} bg={C.problema.bg} fg={C.problema.fg} style={{ flex: 1 }} onClick={() => handleOpen("problema")} tieneComentarioPendiente={tieneComentarioPendiente("problema")}>
                 <BlockContent blockKey="problema" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 2 fila 1: Solución */}
-            <Block icon={Lightbulb} title="Solución" hint={BLOCK_META.solucion.hint} color={C.solucion} style={{ gridRow: 1 }} onClick={() => handleOpen("solucion")} tieneComentarioPendiente={tieneComentarioPendiente("solucion")}>
+            <Block icon={Lightbulb} title="Solución" hint={BLOCK_META.solucion.hint} bg={C.solucion.bg} fg={C.solucion.fg} style={{ gridRow: 1 }} onClick={() => handleOpen("solucion")} tieneComentarioPendiente={tieneComentarioPendiente("solucion")}>
               <BlockContent blockKey="solucion" canvas={canvas} />
             </Block>
 
             {/* Col 3: PVP (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={Sparkles} title="Propuesta de valor única" hint={BLOCK_META.pvp.hint} color={C.pvp} style={{ flex: 1 }} onClick={() => handleOpen("pvp")} tieneComentarioPendiente={tieneComentarioPendiente("pvp")}>
+              <Block icon={Sparkles} title="Propuesta de valor única" hint={BLOCK_META.pvp.hint} bg={C.pvp.bg} fg={C.pvp.fg} style={{ flex: 1 }} onClick={() => handleOpen("pvp")} tieneComentarioPendiente={tieneComentarioPendiente("pvp")}>
                 <BlockContent blockKey="pvp" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 4 fila 1: Ventaja injusta */}
-            <Block icon={Lock} title="Ventaja injusta" hint={BLOCK_META.ventajaInjusta.hint} color={C.ventajaInjusta} style={{ gridRow: 1 }} onClick={() => handleOpen("ventajaInjusta")} tieneComentarioPendiente={tieneComentarioPendiente("ventajaInjusta")}>
+            <Block icon={Lock} title="Ventaja injusta" hint={BLOCK_META.ventajaInjusta.hint} bg={C.ventajaInjusta.bg} fg={C.ventajaInjusta.fg} style={{ gridRow: 1 }} onClick={() => handleOpen("ventajaInjusta")} tieneComentarioPendiente={tieneComentarioPendiente("ventajaInjusta")}>
               <BlockContent blockKey="ventajaInjusta" canvas={canvas} />
             </Block>
 
             {/* Col 5: Segmentos (span 2 filas) */}
             <div style={{ gridRow: "1 / 3", display: "flex", flexDirection: "column", gap: GAP }}>
-              <Block icon={Users} title="Segmentos de clientes" hint={BLOCK_META.segmentosClientes.hint} color={C.segmentosClientes} style={{ flex: 1 }} onClick={() => handleOpen("segmentosClientes")} tieneComentarioPendiente={tieneComentarioPendiente("segmentosClientes")}>
+              <Block icon={Users} title="Segmentos de clientes" hint={BLOCK_META.segmentosClientes.hint} bg={C.segmentosClientes.bg} fg={C.segmentosClientes.fg} style={{ flex: 1 }} onClick={() => handleOpen("segmentosClientes")} tieneComentarioPendiente={tieneComentarioPendiente("segmentosClientes")}>
                 <BlockContent blockKey="segmentosClientes" canvas={canvas} />
               </Block>
             </div>
 
             {/* Col 2 fila 2: Métricas clave */}
-            <Block icon={BarChart2} title="Métricas clave" hint={BLOCK_META.metricasClave.hint} color={C.metricasClave} style={{ gridRow: 2 }} onClick={() => handleOpen("metricasClave")} tieneComentarioPendiente={tieneComentarioPendiente("metricasClave")}>
+            <Block icon={BarChart2} title="Métricas clave" hint={BLOCK_META.metricasClave.hint} bg={C.metricasClave.bg} fg={C.metricasClave.fg} style={{ gridRow: 2 }} onClick={() => handleOpen("metricasClave")} tieneComentarioPendiente={tieneComentarioPendiente("metricasClave")}>
               <BlockContent blockKey="metricasClave" canvas={canvas} />
             </Block>
 
             {/* Col 4 fila 2: Canales */}
-            <Block icon={Share2} title="Canales" hint={BLOCK_META.canales.hint} color={C.canales} style={{ gridRow: 2 }} onClick={() => handleOpen("canales")} tieneComentarioPendiente={tieneComentarioPendiente("canales")}>
+            <Block icon={Share2} title="Canales" hint={BLOCK_META.canales.hint} bg={C.canales.bg} fg={C.canales.fg} style={{ gridRow: 2 }} onClick={() => handleOpen("canales")} tieneComentarioPendiente={tieneComentarioPendiente("canales")}>
               <BlockContent blockKey="canales" canvas={canvas} />
             </Block>
           </div>
 
           {/* Fila 3: Costos + Ingresos */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: GAP, marginTop: GAP }}>
-            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} color={C.estructuraCostos} style={{ minHeight: 210 }} onClick={() => handleOpen("estructuraCostos")} tieneComentarioPendiente={tieneComentarioPendiente("estructuraCostos")}>
+            <Block icon={TrendingDown} title="Estructura de costos" hint={BLOCK_META.estructuraCostos.hint} bg={C.estructuraCostos.bg} fg={C.estructuraCostos.fg} style={{ minHeight: 210 }} onClick={() => handleOpen("estructuraCostos")} tieneComentarioPendiente={tieneComentarioPendiente("estructuraCostos")}>
               <BlockContent blockKey="estructuraCostos" canvas={canvas} />
             </Block>
-            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} color={C.fuentesIngresos} style={{ minHeight: 210 }} onClick={() => handleOpen("fuentesIngresos")} tieneComentarioPendiente={tieneComentarioPendiente("fuentesIngresos")}>
+            <Block icon={TrendingUp} title="Fuentes de ingresos" hint={BLOCK_META.fuentesIngresos.hint} bg={C.fuentesIngresos.bg} fg={C.fuentesIngresos.fg} style={{ minHeight: 210 }} onClick={() => handleOpen("fuentesIngresos")} tieneComentarioPendiente={tieneComentarioPendiente("fuentesIngresos")}>
               <BlockContent blockKey="fuentesIngresos" canvas={canvas} />
             </Block>
           </div>
