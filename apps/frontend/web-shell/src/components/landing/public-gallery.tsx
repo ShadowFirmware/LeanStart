@@ -17,6 +17,8 @@ interface EmpresaPublica {
   giro: GiroEmpresa;
   descripcion: string;
   logoUrl?: string;
+  /** Solo se usa para elegir/ordenar la vitrina (ver `seleccionarDestacadas`) — no se muestra. */
+  scoreFinal?: number;
 }
 
 function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
@@ -26,7 +28,29 @@ function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
     giro: e.giro as GiroEmpresa,
     descripcion: e.descripcion as string,
     logoUrl: (e.logoUrl as string) ?? undefined,
+    scoreFinal: (e.scoreFinal as number) ?? undefined,
   };
+}
+
+const MAX_VITRINA = 7;
+
+/**
+ * La vitrina muestra como máximo `MAX_VITRINA` empresas, elegidas por
+ * calificación (`scoreFinal`) de mayor a menor. Cuando hay empate en el
+ * corte, gana la más nueva: no se reordena por fecha a propósito — como
+ * `Array.prototype.sort` es estable y ambas fuentes (el endpoint público,
+ * que pide `orderBy: updatedAt desc`, y el store de demo, que antepone las
+ * empresas nuevas) ya entregan las más recientes primero, un sort estable
+ * por calificación conserva ese orden entre empates sin tener que comparar
+ * fechas a mano. Así, si llega una empresa nueva con la misma calificación
+ * que una ya publicada, la nueva desplaza a la vieja al quedar antes en el
+ * empate; y si el carrusel ya tiene 7 y llega una con mejor calificación
+ * que la más baja, esa última queda fuera del `slice`.
+ */
+function seleccionarDestacadas(empresas: EmpresaPublica[]): EmpresaPublica[] {
+  return [...empresas]
+    .sort((a, b) => (b.scoreFinal ?? -Infinity) - (a.scoreFinal ?? -Infinity))
+    .slice(0, MAX_VITRINA);
 }
 
 // Deterministas (no Math.random): el server y el primer render del cliente
@@ -36,6 +60,11 @@ const PARTICULAS = Array.from({ length: 22 }, (_, i) => ({
   delay: (i * 0.5) % 9,
   duration: 7 + (i % 5) * 1.6,
   drift: (i % 2 === 0 ? 1 : -1) * (16 + (i % 3) * 12),
+  // Antes solo subían 140px, así que se quedaban en el hueco vacío debajo del
+  // carrusel y nunca llegaban a cruzar detrás de las tarjetas. Ahora suben
+  // 640–960px — suficiente para atravesar toda la sección (encabezado +
+  // carrusel), variado por partícula para que no suban todas "en fila".
+  rise: 640 + (i % 5) * 80,
   size: 2 + (i % 3),
 }));
 
@@ -83,9 +112,10 @@ export function PublicGallery() {
       .catch(() => setPublicasReal([]));
   }, []);
 
-  const publicadas: EmpresaPublica[] = modoDemo()
+  const publicadasBrutas: EmpresaPublica[] = modoDemo()
     ? (hydrated ? empresasDemo : []).filter((e) => e.estado === "publicado")
     : publicasReal;
+  const publicadas = seleccionarDestacadas(publicadasBrutas);
 
   // duration más alto que el default (25) para que el desplazamiento interno de
   // Embla dure aproximadamente lo mismo que la transición de 700ms de la tarjeta
@@ -207,8 +237,9 @@ export function PublicGallery() {
               height: p.size,
               backgroundColor: "var(--brand-2)",
               boxShadow: "0 0 6px 1px var(--brand-glow)",
-              // @ts-expect-error -- custom property leído por @keyframes lp-particle-float
+              // @ts-expect-error -- custom properties leídas por @keyframes lp-particle-float
               "--lp-drift": `${p.drift}px`,
+              "--lp-rise": `${p.rise}px`,
               animation: `lp-particle-float ${p.duration}s ease-in-out ${p.delay}s infinite`,
             }}
           />
@@ -268,6 +299,25 @@ export function PublicGallery() {
               const isActive = i === selectedIndex;
               const offset = offsetCircular(i, selectedIndex, total);
               const distancia = Math.min(Math.abs(offset), 2);
+
+              // Con hasta 7 tarjetas en la vitrina, las que quedan a más de 2 slides de
+              // la activa ya son casi invisibles (opacidad mínima + blur), pero sin este
+              // corte igual reciben la transición completa (transform 3D + blur + opacity,
+              // 700ms) en CADA cambio de slide — trabajo de más que no se alcanza a ver y
+              // que se suma al costo de animar la tarjeta activa al mismo tiempo. Fuera de
+              // ese rango se pinta un marcador vacío (mismo tamaño, sin animar) que solo
+              // reserva el espacio para que Embla siga calculando el ancho del carrusel bien.
+              if (Math.abs(offset) > 2) {
+                return (
+                  <div
+                    key={empresa.id}
+                    className="shrink-0 grow-0"
+                    style={{ flexBasis: "85%", maxWidth: 720, paddingLeft: 16 }}
+                  >
+                    <div style={{ minHeight: 360 }} />
+                  </div>
+                );
+              }
 
               return (
                 <div

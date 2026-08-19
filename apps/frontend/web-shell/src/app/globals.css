@@ -495,7 +495,7 @@ nextjs-portal {
   0% { transform: translateY(0) translateX(0); opacity: 0; }
   10% { opacity: 1; }
   90% { opacity: 1; }
-  100% { transform: translateY(-140px) translateX(var(--lp-drift, 20px)); opacity: 0; }
+  100% { transform: translateY(calc(-1 * var(--lp-rise, 640px))) translateX(var(--lp-drift, 20px)); opacity: 0; }
 }
 @keyframes lp-shimmer-sweep {
   0% { transform: translateX(-150%) skewX(-20deg); }
