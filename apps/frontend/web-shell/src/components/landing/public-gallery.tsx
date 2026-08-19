@@ -399,8 +399,14 @@ export function PublicGallery() {
                           }}
                         />
 
+                        {/* Antes esto (y el título/descripción de abajo) tenían `key={...-${isActive}}`
+                            para forzar que la animación de entrada se repitiera en cada cambio de
+                            slide — pero eso hacía que React desmontara y volviera a montar todo el
+                            logo/título/descripción en CADA cambio (hasta 3 subárboles completos, con
+                            imagen incluida), que era el verdadero origen del "tirón". Alternar
+                            `animation` entre `undefined` y el valor real ya reinicia la animación sin
+                            necesidad de remontar nada. */}
                         <div
-                          key={`logo-${empresa.id}-${isActive}`}
                           className="relative"
                           style={{ animation: isActive ? "lp-content-in 500ms cubic-bezier(0.22,1,0.36,1) both" : undefined }}
                         >
@@ -433,7 +439,6 @@ export function PublicGallery() {
                         </div>
 
                         <div
-                          key={`titulo-${empresa.id}-${isActive}`}
                           style={{ animation: isActive ? "lp-content-in 500ms 80ms cubic-bezier(0.22,1,0.36,1) both" : undefined }}
                         >
                           <p className="text-2xl md:text-4xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
@@ -448,7 +453,6 @@ export function PublicGallery() {
                         </div>
 
                         <p
-                          key={`desc-${empresa.id}-${isActive}`}
                           className="text-sm md:text-base leading-relaxed line-clamp-2 break-words max-w-md"
                           style={{
                             color: "var(--text-dim)",
