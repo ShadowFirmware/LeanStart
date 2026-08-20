@@ -116,6 +116,16 @@ export function UsuariosView() {
       form.setError("password", { message: "La contraseña es obligatoria" });
       return;
     }
+
+    const correoNormalizado = values.correo.trim().toLowerCase();
+    const yaExiste = usuarios.some(
+      (u) => u.id !== editTarget?.id && u.correo.trim().toLowerCase() === correoNormalizado
+    );
+    if (yaExiste) {
+      form.setError("correo", { message: `Ya existe una cuenta con el correo "${values.correo.trim()}".` });
+      return;
+    }
+
     await ejecutarGuardado(
       async () => {
         if (editTarget) {
@@ -130,7 +140,7 @@ export function UsuariosView() {
       },
       {
         etiqueta: editTarget ? "Guardando usuario" : "Creando usuario",
-        onError: () => toast.error("No se pudo guardar el usuario."),
+        onError: (err) => toast.error(err instanceof Error ? err.message : "No se pudo guardar el usuario."),
       }
     );
   }

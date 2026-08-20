@@ -525,6 +525,15 @@ export function EmpresaDetailView({
   }
 
   async function onSubmit(values: FormValues) {
+    const nombreNormalizado = values.nombre.trim().toLowerCase();
+    const yaExiste = empresas.some(
+      (e) => e.id !== id && e.nombre.trim().toLowerCase() === nombreNormalizado
+    );
+    if (yaExiste) {
+      form.setError("nombre", { message: `Ya tienes una empresa registrada con el nombre "${values.nombre.trim()}".` });
+      return;
+    }
+
     await guardado.ejecutar(
       async () => {
         let logoUrl = empresa?.logoUrl;
@@ -547,7 +556,7 @@ export function EmpresaDetailView({
       },
       {
         etiqueta: "Guardando empresa",
-        onError: () => toast.error("No se pudo actualizar la empresa."),
+        onError: (err) => toast.error(err instanceof Error ? err.message : "No se pudo actualizar la empresa."),
       }
     );
   }

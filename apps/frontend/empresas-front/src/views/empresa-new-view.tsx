@@ -66,6 +66,7 @@ export function EmpresaNewView() {
   const currentUser = useCurrentUser();
   const agregarEmpresa = useEmpresasStore((s) => s.agregarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
+  const empresasExistentes = useEmpresasStore((s) => s.empresas);
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -108,6 +109,15 @@ export function EmpresaNewView() {
   }
 
   async function onSubmit(values: FormValues) {
+    const nombreNormalizado = values.nombre.trim().toLowerCase();
+    const yaExiste = empresasExistentes.some(
+      (e) => e.nombre.trim().toLowerCase() === nombreNormalizado
+    );
+    if (yaExiste) {
+      form.setError("nombre", { message: `Ya tienes una empresa registrada con el nombre "${values.nombre.trim()}".` });
+      return;
+    }
+
     setLoading(true);
     try {
       // En modo real el logo se sube por separado (necesita el id de la empresa),
@@ -137,8 +147,9 @@ export function EmpresaNewView() {
 
       toast.success(`"${values.nombre}" fue registrada correctamente.`);
       router.push(`/emprendedor/empresas/${id}`);
-    } catch {
-      toast.error("No se pudo registrar la empresa. Inténtalo de nuevo.");
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : undefined;
+      toast.error(mensaje || "No se pudo registrar la empresa. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
