@@ -16,8 +16,9 @@ interface EmpresaPublica {
   nombre: string;
   giro: GiroEmpresa;
   descripcion: string;
-  scoreFinal?: number;
   logoUrl?: string;
+  /** Solo se usa para elegir/ordenar la vitrina (ver `seleccionarDestacadas`) — no se muestra. */
+  scoreFinal?: number;
 }
 
 function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
@@ -26,9 +27,30 @@ function mapEmpresaPublica(e: Record<string, unknown>): EmpresaPublica {
     nombre: e.nombre as string,
     giro: e.giro as GiroEmpresa,
     descripcion: e.descripcion as string,
-    scoreFinal: (e.scoreFinal as number) ?? undefined,
     logoUrl: (e.logoUrl as string) ?? undefined,
+    scoreFinal: (e.scoreFinal as number) ?? undefined,
   };
+}
+
+const MAX_VITRINA = 7;
+
+/**
+ * La vitrina muestra como máximo `MAX_VITRINA` empresas, elegidas por
+ * calificación (`scoreFinal`) de mayor a menor. Cuando hay empate en el
+ * corte, gana la más nueva: no se reordena por fecha a propósito — como
+ * `Array.prototype.sort` es estable y ambas fuentes (el endpoint público,
+ * que pide `orderBy: updatedAt desc`, y el store de demo, que antepone las
+ * empresas nuevas) ya entregan las más recientes primero, un sort estable
+ * por calificación conserva ese orden entre empates sin tener que comparar
+ * fechas a mano. Así, si llega una empresa nueva con la misma calificación
+ * que una ya publicada, la nueva desplaza a la vieja al quedar antes en el
+ * empate; y si el carrusel ya tiene 7 y llega una con mejor calificación
+ * que la más baja, esa última queda fuera del `slice`.
+ */
+function seleccionarDestacadas(empresas: EmpresaPublica[]): EmpresaPublica[] {
+  return [...empresas]
+    .sort((a, b) => (b.scoreFinal ?? -Infinity) - (a.scoreFinal ?? -Infinity))
+    .slice(0, MAX_VITRINA);
 }
 
 // Deterministas (no Math.random): el server y el primer render del cliente
@@ -38,6 +60,11 @@ const PARTICULAS = Array.from({ length: 22 }, (_, i) => ({
   delay: (i * 0.5) % 9,
   duration: 7 + (i % 5) * 1.6,
   drift: (i % 2 === 0 ? 1 : -1) * (16 + (i % 3) * 12),
+  // Antes solo subían 140px, así que se quedaban en el hueco vacío debajo del
+  // carrusel y nunca llegaban a cruzar detrás de las tarjetas. Ahora suben
+  // 640–960px — suficiente para atravesar toda la sección (encabezado +
+  // carrusel), variado por partícula para que no suban todas "en fila".
+  rise: 640 + (i % 5) * 80,
   size: 2 + (i % 3),
 }));
 
@@ -55,70 +82,6 @@ function offsetCircular(i: number, seleccionado: number, total: number): number 
   if (diff > total / 2) diff -= total;
   if (diff < -total / 2) diff += total;
   return diff;
-}
-
-/** Progreso 0→valor con easing, reproducido de nuevo cada vez que `activo` pasa
- *  a true (no solo la primera vez que la tarjeta aparece en pantalla). Un solo
- *  reloj alimenta tanto el número como el anillo de <ScoreRing/>. */
-function useConteo(valor: number, activo: boolean, duracionMs = 1100): number {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    if (!activo) return;
-    let raf = 0;
-    const inicio = performance.now();
-    function tick(ahora: number) {
-      const t = Math.min(1, (ahora - inicio) / duracionMs);
-      const suavizado = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(valor * suavizado));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [activo, valor, duracionMs]);
-  return display;
-}
-
-/** Medalla circular de calificación: el anillo se dibuja al mismo ritmo que
- *  cuenta el número, como un indicador de carga que "llega" al valor final. */
-function ScoreRing({ valor, activo }: { valor: number; activo: boolean }) {
-  const display = useConteo(valor, activo);
-  const size = 60;
-  const grosor = 5;
-  const radio = (size - grosor) / 2;
-  const circunferencia = 2 * Math.PI * radio;
-  const offset = circunferencia * (1 - display / 100);
-
-  return (
-    <div
-      className="absolute top-5 right-5 flex items-center justify-center"
-      style={{ width: size, height: size, filter: "drop-shadow(0 4px 14px rgba(16,185,129,0.35))" }}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 absolute inset-0">
-        <circle cx={size / 2} cy={size / 2} r={radio} fill="none" stroke="var(--border-subtle)" strokeWidth={grosor} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radio}
-          fill="none"
-          stroke="url(#lp-score-gradient)"
-          strokeWidth={grosor}
-          strokeLinecap="round"
-          strokeDasharray={circunferencia}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 160ms linear" }}
-        />
-        <defs>
-          <linearGradient id="lp-score-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#34D399" />
-            <stop offset="100%" stopColor="#10B981" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <span className="text-[13px] font-bold" style={{ color: "#10B981" }}>
-        {display}
-      </span>
-    </div>
-  );
 }
 
 function manejarSpotlight(e: React.MouseEvent<HTMLDivElement>) {
@@ -149,14 +112,21 @@ export function PublicGallery() {
       .catch(() => setPublicasReal([]));
   }, []);
 
-  const publicadas: EmpresaPublica[] = modoDemo()
+  const publicadasBrutas: EmpresaPublica[] = modoDemo()
     ? (hydrated ? empresasDemo : []).filter((e) => e.estado === "publicado")
     : publicasReal;
+  const publicadas = seleccionarDestacadas(publicadasBrutas);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" });
+  // duration más alto que el default (25) para que el desplazamiento interno de
+  // Embla dure aproximadamente lo mismo que la transición de 700ms de la tarjeta
+  // (rotateY/scale/blur) — con el default, Embla terminaba de mover el carrusel
+  // antes de que la tarjeta terminara su animación, y ese desfase se sentía como
+  // un "tirón" al cambiar de slide.
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center", duration: 34 });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const orbRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
+  const parallaxFrame = useRef(0);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -187,14 +157,20 @@ export function PublicGallery() {
 
   // Parallax de fondo: cada órbita se mueve a su propia velocidad según qué tan
   // lejos esté el mouse del centro de la sección — no toca React state (solo
-  // escribe transform directo vía ref) para que sea perfectamente fluido.
+  // escribe transform directo vía ref). El mousemove puede disparar decenas de
+  // veces por segundo; sin acotarlo a un solo write por frame, cada evento
+  // repintaba 3 blurs grandes de inmediato y eso era lo que se sentía "lageado"
+  // (sobre todo justo al pasar el mouse para pausar el carrusel).
   function manejarParallax(e: React.MouseEvent<HTMLElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    orbRefs.forEach((ref, i) => {
-      const factor = PARALLAX_FACTORES[i];
-      if (ref.current) ref.current.style.transform = `translate3d(${px * factor}px, ${py * factor}px, 0)`;
+    cancelAnimationFrame(parallaxFrame.current);
+    parallaxFrame.current = requestAnimationFrame(() => {
+      orbRefs.forEach((ref, i) => {
+        const factor = PARALLAX_FACTORES[i];
+        if (ref.current) ref.current.style.transform = `translate3d(${px * factor}px, ${py * factor}px, 0)`;
+      });
     });
   }
 
@@ -261,8 +237,9 @@ export function PublicGallery() {
               height: p.size,
               backgroundColor: "var(--brand-2)",
               boxShadow: "0 0 6px 1px var(--brand-glow)",
-              // @ts-expect-error -- custom property leído por @keyframes lp-particle-float
+              // @ts-expect-error -- custom properties leídas por @keyframes lp-particle-float
               "--lp-drift": `${p.drift}px`,
+              "--lp-rise": `${p.rise}px`,
               animation: `lp-particle-float ${p.duration}s ease-in-out ${p.delay}s infinite`,
             }}
           />
@@ -322,6 +299,25 @@ export function PublicGallery() {
               const isActive = i === selectedIndex;
               const offset = offsetCircular(i, selectedIndex, total);
               const distancia = Math.min(Math.abs(offset), 2);
+
+              // Con hasta 7 tarjetas en la vitrina, las que quedan a más de 2 slides de
+              // la activa ya son casi invisibles (opacidad mínima + blur), pero sin este
+              // corte igual reciben la transición completa (transform 3D + blur + opacity,
+              // 700ms) en CADA cambio de slide — trabajo de más que no se alcanza a ver y
+              // que se suma al costo de animar la tarjeta activa al mismo tiempo. Fuera de
+              // ese rango se pinta un marcador vacío (mismo tamaño, sin animar) que solo
+              // reserva el espacio para que Embla siga calculando el ancho del carrusel bien.
+              if (Math.abs(offset) > 2) {
+                return (
+                  <div
+                    key={empresa.id}
+                    className="shrink-0 grow-0"
+                    style={{ flexBasis: "85%", maxWidth: 720, paddingLeft: 16 }}
+                  >
+                    <div style={{ minHeight: 360 }} />
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -453,12 +449,14 @@ export function PublicGallery() {
                           }}
                         />
 
-                        {isActive && typeof empresa.scoreFinal === "number" && (
-                          <ScoreRing valor={empresa.scoreFinal} activo={isActive} />
-                        )}
-
+                        {/* Antes esto (y el título/descripción de abajo) tenían `key={...-${isActive}}`
+                            para forzar que la animación de entrada se repitiera en cada cambio de
+                            slide — pero eso hacía que React desmontara y volviera a montar todo el
+                            logo/título/descripción en CADA cambio (hasta 3 subárboles completos, con
+                            imagen incluida), que era el verdadero origen del "tirón". Alternar
+                            `animation` entre `undefined` y el valor real ya reinicia la animación sin
+                            necesidad de remontar nada. */}
                         <div
-                          key={`logo-${empresa.id}-${isActive}`}
                           className="relative"
                           style={{ animation: isActive ? "lp-content-in 500ms cubic-bezier(0.22,1,0.36,1) both" : undefined }}
                         >
@@ -491,7 +489,6 @@ export function PublicGallery() {
                         </div>
 
                         <div
-                          key={`titulo-${empresa.id}-${isActive}`}
                           style={{ animation: isActive ? "lp-content-in 500ms 80ms cubic-bezier(0.22,1,0.36,1) both" : undefined }}
                         >
                           <p className="text-2xl md:text-4xl font-bold break-words" style={{ color: "var(--text-strong)" }}>{empresa.nombre}</p>
@@ -506,7 +503,6 @@ export function PublicGallery() {
                         </div>
 
                         <p
-                          key={`desc-${empresa.id}-${isActive}`}
                           className="text-sm md:text-base leading-relaxed line-clamp-2 break-words max-w-md"
                           style={{
                             color: "var(--text-dim)",

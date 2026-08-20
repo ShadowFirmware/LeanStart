@@ -13,7 +13,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input,
-  usePagination, PaginationBar, useHasHydrated, useAccion, ViewSkeleton,
+  usePagination, PaginationBar, useHasHydrated, useAccion, ViewSkeleton, usePrivilegios,
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import { useUsuariosStore, type Role, type Usuario, type EstadoUsuario } from "@leanstart/commons";
@@ -61,6 +61,9 @@ const inputStyle = {
 
 export function UsuariosView() {
   const hydrated = useHasHydrated();
+  const { puede } = usePrivilegios();
+  const puedeCrear = puede("usuarios", "crear");
+  const puedeEditar = puede("usuarios", "editar");
   const usuarios = useUsuariosStore((s) => s.usuarios);
   const crearUsuario = useUsuariosStore((s) => s.crearUsuario);
   const editarUsuario = useUsuariosStore((s) => s.editarUsuario);
@@ -159,14 +162,16 @@ export function UsuariosView() {
             Administra las cuentas y roles de la plataforma.
           </p>
         </div>
-        <Button
-          onClick={abrirCrear}
-          className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
-          style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
-        >
-          <Plus className="w-4 h-4" />
-          Crear usuario
-        </Button>
+        {puedeCrear && (
+          <Button
+            onClick={abrirCrear}
+            className="h-9 px-4 text-sm font-medium border-0 shrink-0 justify-center w-full sm:w-auto"
+            style={{ background: "var(--brand-gradient)", color: "var(--brand-fg)" }}
+          >
+            <Plus className="w-4 h-4" />
+            Crear usuario
+          </Button>
+        )}
       </div>
 
       {/* Búsqueda + filtros por rol */}
@@ -279,37 +284,39 @@ export function UsuariosView() {
                   {estadoConfig.label}
                 </span>
 
-                {/* Acciones */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="shrink-0"
-                        style={{ color: "var(--text-dim)" }}
-                        aria-label="Acciones de usuario"
-                      />
-                    }
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => abrirEditar(u)}>
-                      <Pencil className="w-3.5 h-3.5" /> Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      variant={u.estado === "activo" ? "destructive" : "default"}
-                      onClick={() => toggleEstado(u)}
+                {/* Acciones — solo si el privilegio real lo permite, no solo el rol */}
+                {puedeEditar && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="shrink-0"
+                          style={{ color: "var(--text-dim)" }}
+                          aria-label="Acciones de usuario"
+                        />
+                      }
                     >
-                      {u.estado === "activo" ? (
-                        <><Ban className="w-3.5 h-3.5" /> Desactivar</>
-                      ) : (
-                        <><CheckCircle2 className="w-3.5 h-3.5" /> Activar</>
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <MoreVertical className="w-4 h-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => abrirEditar(u)}>
+                        <Pencil className="w-3.5 h-3.5" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant={u.estado === "activo" ? "destructive" : "default"}
+                        onClick={() => toggleEstado(u)}
+                      >
+                        {u.estado === "activo" ? (
+                          <><Ban className="w-3.5 h-3.5" /> Desactivar</>
+                        ) : (
+                          <><CheckCircle2 className="w-3.5 h-3.5" /> Activar</>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             );
           })}

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, Roles, type AuthUser } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, Roles, type AuthUser } from "@leanstart/backend-commons";
 import { EvaluacionesService } from "../molecules/evaluaciones.service";
 import { SetComentarioCriterioDto, SetComentarioDto, SetPuntajeDto } from "../atoms/evaluacion.dto";
 
@@ -12,6 +12,7 @@ export class EvaluacionesController {
 
   @Get(":empresaId")
   @Roles("evaluador", "administrador", "emprendedor")
+  @RequierePrivilegio("evaluaciones", "ver")
   @ApiOperation({ summary: "Borrador/resultado de la evaluación de una empresa (el emprendedor solo ve la suya, ya finalizada)" })
   @ApiParam({ name: "empresaId" })
   obtener(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {
@@ -19,6 +20,7 @@ export class EvaluacionesController {
   }
 
   @Patch(":empresaId/puntaje")
+  @RequierePrivilegio("evaluaciones", "editar")
   @ApiOperation({ summary: "Calificar un criterio (0-100)" })
   @ApiParam({ name: "empresaId" })
   setPuntaje(@Param("empresaId") empresaId: string, @Body() dto: SetPuntajeDto) {
@@ -26,6 +28,7 @@ export class EvaluacionesController {
   }
 
   @Patch(":empresaId/comentario-criterio")
+  @RequierePrivilegio("evaluaciones", "editar")
   @ApiOperation({ summary: "Comentar un criterio puntual" })
   @ApiParam({ name: "empresaId" })
   setComentarioCriterio(@Param("empresaId") empresaId: string, @Body() dto: SetComentarioCriterioDto) {
@@ -33,6 +36,7 @@ export class EvaluacionesController {
   }
 
   @Patch(":empresaId/comentario")
+  @RequierePrivilegio("evaluaciones", "editar")
   @ApiOperation({ summary: "Comentario general del evaluador" })
   @ApiParam({ name: "empresaId" })
   setComentario(@Param("empresaId") empresaId: string, @Body() dto: SetComentarioDto) {
@@ -40,6 +44,7 @@ export class EvaluacionesController {
   }
 
   @Post(":empresaId/finalizar")
+  @RequierePrivilegio("evaluaciones", "aprobar")
   @ApiOperation({ summary: "Finalizar evaluación: calcula el score y publica o devuelve el proyecto" })
   @ApiParam({ name: "empresaId" })
   finalizar(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string) {

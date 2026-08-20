@@ -223,7 +223,9 @@ Configuración inicial:
 
 ## Infraestructura
 
-* AWS
+* Railway (despliegue por servicio: api-gateway, auth-service, empresas-service, evaluaciones-service, notificaciones-service, web-shell, Alexa — cada uno con su propio `railway.json`/Dockerfile)
+* Upstash Redis (gestionado, TLS) para rate-limiting de login
+* Migración planeada a AWS (RDS, S3, y evaluando Amplify/ECS para el resto) como siguiente etapa, una vez cerrado el alcance funcional actual
 
 ## Seguridad
 
