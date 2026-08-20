@@ -53,6 +53,16 @@ export default function LoginPage() {
       return;
     }
 
+    // Quien redirige a la home del rol tras un login correcto es el middleware
+    // (proxy.ts), al re-ejecutarse con router.refresh(). Pero si llegamos aquí con
+    // ?sesion=expirada ese rebote está desactivado a propósito — es la marca que
+    // corta el bucle de cierre de sesión — así que hay que recargar sin ella para
+    // que el middleware vuelva a hacer su trabajo.
+    if (new URLSearchParams(window.location.search).has("sesion")) {
+      window.location.replace("/login");
+      return;
+    }
+
     router.refresh();
   }
 

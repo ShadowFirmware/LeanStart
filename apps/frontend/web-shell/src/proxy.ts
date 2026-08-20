@@ -21,6 +21,14 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
+  // Marca que pone cerrarSesionUnaVez (commons/src/lib/api-client.ts) al salir:
+  // botón de cerrar sesión, cierre por inactividad, o forzado por un 401 del
+  // backend. Con ella NO se rebota a la home del rol aunque la cookie parezca
+  // válida — puede haber sido reemitida por una llamada a /api/auth/session en
+  // vuelo justo después de que signOut la borró, y rebotar devuelve al usuario a
+  // una vista que volverá a dar 401 y a cerrar sesión: bucle infinito.
+  const sesionCerrada = req.nextUrl.searchParams.get("sesion") === "cerrada";
+
   // Bypass de autenticación SOLO en modo demo explícito (NEXT_PUBLIC_DEMO_MODE=true):
   // no exige sesión para entrar a rutas protegidas (useCurrentUser cae a un usuario
   // demo por ruta). Pero si SÍ hay una sesión real (p. ej. alguien entró con
@@ -29,7 +37,7 @@ export default auth((req) => {
   // nada visible, porque este bypass nunca redirige.
   if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
     const rolesDemo = session?.user?.roles?.length ? session.user.roles : session?.user?.rol ? [session.user.rol] : undefined;
-    if (pathname === "/login" && rolesDemo?.length) {
+    if (pathname === "/login" && rolesDemo?.length && !sesionCerrada) {
       return NextResponse.redirect(new URL(ROLE_HOME[rolesDemo[0]], req.url));
     }
     return NextResponse.next();
@@ -43,7 +51,7 @@ export default auth((req) => {
     pathname === "/recuperar" ||
     pathname === "/restablecer"
   ) {
-    if (session?.user?.roles?.length) {
+    if (session?.user?.roles?.length && !sesionCerrada) {
       return NextResponse.redirect(
         new URL(ROLE_HOME[session.user.roles[0]], req.url)
       );

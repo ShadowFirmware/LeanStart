@@ -28,7 +28,23 @@ let sesionCerrandose = false;
 export function cerrarSesionUnaVez(): void {
   if (sesionCerrandose) return;
   sesionCerrandose = true;
-  void signOut({ callbackUrl: "/login" });
+  // Se navega con ?sesion=cerrada, y el middleware NO rebota a la home del rol
+  // cuando ve esa marca. Sin ella el cierre entra en bucle infinito y la pantalla
+  // parpadea sola: borrar la cookie no basta, porque el SessionProvider y cada
+  // getSession() de apiFetch REEMITEN la cookie de sesión; una de esas llamadas en
+  // vuelo la resucita justo después de que signOut la borró, el middleware ve
+  // sesión válida en /login, manda a la home del rol, esa vista vuelve a recibir
+  // 401 y a llamar aquí. `sesionCerrandose` no corta el ciclo porque es estado de
+  // módulo y cada navegación completa lo reinicia.
+  void signOut({ redirect: false }).finally(() => {
+    // Estando ya en /login NO se vuelve a navegar. Renavegar remonta la app y
+    // reinicia `sesionCerrandose`, así que el siguiente 401 (LiveSync vive en el
+    // layout raíz y también corre en /login) dispararía otro cierre, y otra
+    // navegación, indefinidamente. Sin navegación el guard se mantiene y el ciclo
+    // muere en el primer intento.
+    if (window.location.pathname === "/login") return;
+    window.location.replace("/login?sesion=cerrada");
+  });
 }
 
 interface ApiFetchOptions extends RequestInit {
