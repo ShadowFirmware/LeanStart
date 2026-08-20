@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
-import { Button, Input, useCurrentUser } from "@leanstart/commons";
+import { apiFetch, Button, Input, useCurrentUser } from "@leanstart/commons";
 
-// Servicio backend temporal para el login por semilla de la skill de Alexa
-// (ver /seed-service en la raíz del repo). Todavía no es el backend real.
-const SEED_API_URL = process.env.NEXT_PUBLIC_SEED_API_URL || "http://localhost:3001";
+interface GenerarSemillaResponse {
+  seed: string;
+  expiraEn: string;
+}
 
 export function AlexaPanel() {
   const currentUser = useCurrentUser();
@@ -26,22 +27,13 @@ export function AlexaPanel() {
     setSeed(null);
 
     try {
-      const res = await fetch(`${SEED_API_URL}/auth/seeds/generate`, {
+      const data = await apiFetch<GenerarSemillaResponse>("/auth/seeds/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim() }),
+        body: JSON.stringify({ nombre: username.trim() }),
       });
-
-      if (!res.ok) {
-        throw new Error("El servicio de semillas respondió con un error.");
-      }
-
-      const data = await res.json();
       setSeed(data.seed);
-    } catch {
-      setError(
-        `No se pudo conectar con el servicio de semillas (${SEED_API_URL}). ¿Está corriendo "npm start" en /seed-service?`
-      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo generar la semilla.");
     } finally {
       setLoading(false);
     }
