@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,11 +21,17 @@ import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/logo";
 
-const registroSchema = z.object({
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(80, "Máximo 80 caracteres"),
-  email: z.email("Correo electrónico inválido"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(72, "Máximo 72 caracteres"),
-});
+const registroSchema = z
+  .object({
+    nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(80, "Máximo 80 caracteres"),
+    email: z.email("Correo electrónico inválido"),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(72, "Máximo 72 caracteres"),
+    confirmPassword: z.string().min(1, "Confirma tu contraseña"),
+  })
+  .refine((valores) => valores.password === valores.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Las contraseñas no coinciden",
+  });
 
 type RegistroFormValues = z.infer<typeof registroSchema>;
 
@@ -33,11 +39,22 @@ export default function RegistroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<RegistroFormValues>({
     resolver: zodResolver(registroSchema),
-    defaultValues: { nombre: "", email: "", password: "" },
+    defaultValues: { nombre: "", email: "", password: "", confirmPassword: "" },
   });
+
+  const password = form.watch("password");
+  const confirmPassword = form.watch("confirmPassword");
+
+  // Revalida la confirmación en cuanto cambia cualquiera de los dos campos, para que
+  // el "no coinciden" aparezca mientras se escribe y no solo al enviar. Solo cuando ya
+  // se escribió algo en el segundo campo: si no, marcaríamos error nada más empezar.
+  useEffect(() => {
+    if (confirmPassword) void form.trigger("confirmPassword");
+  }, [password, confirmPassword, form]);
 
   async function onSubmit(values: RegistroFormValues) {
     setLoading(true);
@@ -49,12 +66,16 @@ export default function RegistroPage() {
           nombre: values.nombre,
           correo: values.email,
           password: values.password,
+          // El servidor vuelve a comprobar que coincidan; no se guarda en la BD.
+          confirmPassword: values.confirmPassword,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        const mensaje = Array.isArray(data.message) ? data.message.join(", ") : data.message;
+        const mensaje = Array.isArray(data.message)
+          ? data.message.join(", ")
+          : (data.message ?? data.error);
         toast.error(mensaje ?? "No se pudo crear la cuenta. Inténtalo de nuevo.");
         return;
       }
@@ -223,6 +244,42 @@ export default function RegistroPage() {
                         onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }: { field: ControllerRenderProps<RegistroFormValues, "confirmPassword"> }) => (
+                <FormItem className="gap-1.5">
+                  <FormLabel
+                    className="text-xs font-medium uppercase tracking-wider"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    Confirmar contraseña
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Repite tu contraseña"
+                        className="input-auth focus-visible:ring-0 pr-11"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                        style={{ color: "var(--text-dim)" }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-strong)")}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </FormControl>
