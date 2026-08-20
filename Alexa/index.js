@@ -74,22 +74,27 @@ const DEFAULT_LOCALE = 'es-MX';
 
 const languageStrings = {
   'es-MX': {
-    WELCOME_MESSAGE: "¡Hola! Estoy aquí para ayudarte con tu mini empresa. Si quieres saber el estado o los comentarios de tus proyectos, primero di 'iniciar sesión'. Si no, puedes usar la guía con normalidad diciendo, por ejemplo, 'ayuda con un proyecto'.",
+    WELCOME_MESSAGE: "¡Hola! Estoy aquí para ayudarte con tu mini empresa. Si quieres saber el estado o los comentarios de tus proyectos, primero di 'iniciar sesión'. Si no, puedes usar la guía con normalidad diciendo, por ejemplo, 'ayuda con un proyecto'. Si en algún momento te pierdes, solo di 'ayuda'.",
     MENU_MESSAGE: "Puedo ayudarte de tres formas: pídeme ayuda con tu proyecto, pregúntame el estado de tu proyecto, o pídeme los comentarios que haya dejado tu mentor. ¿Qué necesitas?",
     OVERVIEW_MESSAGE: "Estas son las 4 fases: primera, creación de tu mini empresa; segunda, registro de productos o servicios; tercera, construcción del Canvas; y cuarta, validación de tu hipótesis. Dime el número de la fase que quieras conocer a detalle.",
     OVERVIEW_REPROMPT: "¿De cuál fase necesitas un ejemplo detallado?",
-    HELP_MESSAGE: "Claro, recuerda que puedes explorar las fases del proyecto, el canvas o la hipótesis sin necesidad de iniciar sesión. Para las fases, solo dime un número del 1 al 4, como 'la fase 2'. Para el canvas o la hipótesis, dime el nombre de la parte, por ejemplo 'la propuesta de valor' o 'el diseño del experimento'. Si quieres el estado de tu proyecto o los comentarios de tu mentor, primero di 'iniciar sesión'. ¿En qué te ayudo?",
+    HELP_MESSAGE: "Claro, recuerda que puedes explorar las fases del proyecto, el canvas o la hipótesis sin necesidad de iniciar sesión. Para las fases, solo dime un número del 1 al 4, como 'la fase 2'. Para el canvas o la hipótesis, dime el nombre de la parte, por ejemplo 'la propuesta de valor' o 'el diseño del experimento'. Si quieres el estado de tu proyecto o los comentarios de tu mentor, primero di 'iniciar sesión'. Y si no escuchaste bien algo, solo di 'repite'. ¿En qué te ayudo?",
     CANCEL_MESSAGE: "Entendido, cancelé eso. ¿Te ayudo con otra fase, el canvas o la hipótesis?",
     STOP_MESSAGE: "¡Mucho éxito con tu mini empresa! Vuelve cuando quieras. ¡Hasta luego!",
-    FALLBACK_MESSAGE: "Lo siento, no entendí tu petición. Recuerda que solo puedo ayudarte con las fases del proyecto, el Lean Canvas o la hipótesis. ¿En qué te ayudo?",
+    FALLBACK_MESSAGE: "Lo siento, no entendí lo que dijiste. Recuerda que puedes decir 'ayuda' en cualquier momento para saber qué te puedo decir. ¿En qué te ayudo?",
     NEEDS_LOGIN_MESSAGE: "Antes de continuar necesito verificar tu identidad. Di 'inicia sesión' para darme tu nombre y tu semilla de acceso.",
+    ROLE_NOT_ALLOWED_MESSAGE: "Esta función es solo para cuentas de emprendedor. Si eres mentor o evaluador, usa la aplicación web para consultar esto. ¿Necesitas algo más?",
     SESSION_EXPIRED_MESSAGE: "Tu sesión expiró. Di 'inicia sesión' para verificar tu identidad de nuevo.",
     PHASE_NOT_FOUND_MESSAGE: "No tengo información para ese número de fase. Recuerda que son 4 en total. ¿De cuál necesitas ayuda?",
     CANVAS_STEP_NOT_FOUND_MESSAGE: "No tengo información para esa parte del canvas. ¿Puedes decirme el nombre de nuevo, por ejemplo el problema o la propuesta de valor?",
     HYPOTHESIS_STEP_NOT_FOUND_MESSAGE: "No tengo información para esa parte de la hipótesis. ¿Puedes decirme el nombre de nuevo, por ejemplo el diseño del experimento?",
+    LIST_CONJUNCTION: 'y',
+    PROGRESS_MESSAGE: "Dame un segundo, estoy revisando eso.",
     PROJECTS_FETCH_ERROR_MESSAGE: "Tuve un problema para consultar tus proyectos. Intenta de nuevo en un momento.",
     NO_PROJECTS_MESSAGE: "No encontré proyectos registrados a tu nombre todavía.",
     NEED_ANYTHING_ELSE: "¿Necesitas algo más?",
+    ASK_COMMENTS_MESSAGE: "¿Quieres que te diga si tu mentor dejó comentarios en este proyecto?",
+    COMMENTS_OFFER_DECLINED: "Entendido. ¿Necesitas algo más?",
     CANVAS_CLOSING: "Si quieres profundizar en otra parte del canvas, solo dime su nombre, por ejemplo 'los canales' o 'las métricas clave'.",
     HYPOTHESIS_CLOSING: "Si quieres ver otra parte de la hipótesis, solo dime su nombre, como 'el registro de resultados'.",
     PHASES: {
@@ -186,42 +191,47 @@ const languageStrings = {
       UNKNOWN: "No pude verificar tus datos.",
     },
     ERRORS: {
-      DEFAULT: "Lo siento, tuve un problema para procesar tu petición. ¿Puedes repetirla? Recuerda que puedo ayudarte con las fases del proyecto, el canvas o la hipótesis.",
+      DEFAULT: "Lo siento, tuve un problema para procesar tu petición. ¿Puedes repetirla? Recuerda que también puedes decir 'ayuda' para conocer tus opciones.",
       NETWORK: "Tuve un problema de conexión con el servidor. Intenta de nuevo en un momento.",
       INVALID_RESPONSE: "Tuve un problema generando la respuesta. Intenta de nuevo.",
       REQUEST: "Tuve un problema entendiendo parte de tu petición. ¿Puedes repetirla?",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Vamos a intentarlo de nuevo. ¿Cuál es tu nombre?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Vamos a intentarlo de nuevo, o di 'cancela' si prefieres dejarlo por ahora. ¿Cuál es tu nombre?`,
       loginSuccess: (username, menuMessage) => `Listo, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Hola de nuevo, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `cómo va mi proyecto ${name}`,
       commentsExampleQuestion: (name) => `cuántos comentarios tiene ${name}`,
       multipleProjects: (nombres, exampleQuestion) => `Tienes varios proyectos: ${nombres}. Vuelve a preguntar diciendo el nombre, por ejemplo "${exampleQuestion}".`,
       singleProjectNotFound: (nombres) => `No encontré un proyecto con ese nombre. Tu proyecto registrado es ${nombres}.`,
-      projectStatus: (nombre, estadoLabel) => `Tu proyecto ${nombre} está ${estadoLabel}. ¿Necesitas algo más?`,
+      projectStatus: (nombre, estadoLabel) => `Tu proyecto ${nombre} está ${estadoLabel}.`,
       noComments: (nombre) => `Tu mentor todavía no ha dejado comentarios en ${nombre}. ¿Necesitas algo más?`,
       commentsPlural: (count) => (count === 1 ? 'comentario' : 'comentarios'),
-      withComments: (count, plural, nombre, listado) => `Tu mentor dejó ${count} ${plural} en ${nombre}: ${listado}`,
+      withComments: (count, plural, nombre) => `Tu mentor dejó ${count} ${plural} en ${nombre}. ¿Necesitas algo más?`,
     },
   },
   'en-US': {
-    WELCOME_MESSAGE: "Hi! I'm here to help you with your mini company. If you want to know the status or the comments on your projects, first say 'log in'. Otherwise, you can use the guide normally by saying, for example, 'help with a project'.",
+    WELCOME_MESSAGE: "Hi! I'm here to help you with your mini company. If you want to know the status or the comments on your projects, first say 'log in'. Otherwise, you can use the guide normally by saying, for example, 'help with a project'. If you ever get lost, just say 'help'.",
     MENU_MESSAGE: "I can help you in three ways: ask me for help with your project, ask me the status of your project, or ask me for the comments your mentor left. What do you need?",
     OVERVIEW_MESSAGE: "These are the 4 phases: first, creating your mini company; second, registering your products or services; third, building your Canvas; and fourth, validating your hypothesis. Tell me the number of the phase you'd like to know in detail.",
     OVERVIEW_REPROMPT: "Which phase would you like a detailed example of?",
-    HELP_MESSAGE: "Sure, remember you can explore the project's phases, the canvas, or the hypothesis without needing to log in. For the phases, just tell me a number from 1 to 4, like 'phase 2'. For the canvas or the hypothesis, tell me the name of the part, for example 'the value proposition' or 'the experiment design'. If you want your project's status or your mentor's comments, first say 'log in'. What can I help you with?",
+    HELP_MESSAGE: "Sure, remember you can explore the project's phases, the canvas, or the hypothesis without needing to log in. For the phases, just tell me a number from 1 to 4, like 'phase 2'. For the canvas or the hypothesis, tell me the name of the part, for example 'the value proposition' or 'the experiment design'. If you want your project's status or your mentor's comments, first say 'log in'. And if you didn't catch something, just say 'repeat'. What can I help you with?",
     CANCEL_MESSAGE: "Got it, I canceled that. Would you like help with another phase, the canvas, or the hypothesis?",
     STOP_MESSAGE: "Good luck with your mini company! Come back anytime. Goodbye!",
-    FALLBACK_MESSAGE: "Sorry, I didn't understand that request. Remember I can only help you with the project's phases, the Lean Canvas, or the hypothesis. What can I help you with?",
+    FALLBACK_MESSAGE: "Sorry, I didn't understand what you said. Remember you can say 'help' anytime to hear what I can do. What can I help you with?",
     NEEDS_LOGIN_MESSAGE: "Before continuing I need to verify your identity. Say 'log in' to give me your name and your access seed.",
+    ROLE_NOT_ALLOWED_MESSAGE: "This feature is only available for entrepreneur accounts. If you're a mentor or evaluator, please use the web app for this. Do you need anything else?",
     SESSION_EXPIRED_MESSAGE: "Your session expired. Say 'log in' to verify your identity again.",
     PHASE_NOT_FOUND_MESSAGE: "I don't have information for that phase number. Remember there are 4 in total. Which one do you need help with?",
     CANVAS_STEP_NOT_FOUND_MESSAGE: "I don't have information for that part of the canvas. Can you tell me the name again, for example the problem or the value proposition?",
     HYPOTHESIS_STEP_NOT_FOUND_MESSAGE: "I don't have information for that part of the hypothesis. Can you tell me the name again, for example the experiment design?",
+    LIST_CONJUNCTION: 'and',
+    PROGRESS_MESSAGE: "Just a second, let me check that.",
     PROJECTS_FETCH_ERROR_MESSAGE: "I had a problem checking your projects. Please try again in a moment.",
     NO_PROJECTS_MESSAGE: "I couldn't find any projects registered under your name yet.",
     NEED_ANYTHING_ELSE: "Do you need anything else?",
+    ASK_COMMENTS_MESSAGE: "Would you like me to tell you if your mentor left any comments on this project?",
+    COMMENTS_OFFER_DECLINED: "Got it. Do you need anything else?",
     CANVAS_CLOSING: "If you want to dive into another part of the canvas, just tell me its name, for example 'the channels' or 'the key metrics'.",
     HYPOTHESIS_CLOSING: "If you want to see another part of the hypothesis, just tell me its name, like 'the results log'.",
     PHASES: {
@@ -318,23 +328,23 @@ const languageStrings = {
       UNKNOWN: "I couldn't verify your information.",
     },
     ERRORS: {
-      DEFAULT: "Sorry, I had a problem processing your request. Can you repeat it? Remember I can help you with the project's phases, the canvas, or the hypothesis.",
+      DEFAULT: "Sorry, I had a problem processing your request. Can you repeat it? Remember you can also say 'help' to hear your options.",
       NETWORK: "I had a connection problem reaching the server. Please try again in a moment.",
       INVALID_RESPONSE: "I had a problem generating the response. Please try again.",
       REQUEST: "I had trouble understanding part of your request. Can you repeat it?",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Let's try again. What's your name?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Let's try again, or say 'cancel' if you'd rather leave it for now. What's your name?`,
       loginSuccess: (username, menuMessage) => `Great, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Welcome back, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `how's my project ${name} going`,
       commentsExampleQuestion: (name) => `how many comments does ${name} have`,
       multipleProjects: (nombres, exampleQuestion) => `You have several projects: ${nombres}. Ask again saying the name, for example "${exampleQuestion}".`,
       singleProjectNotFound: (nombres) => `I couldn't find a project with that name. Your registered project is ${nombres}.`,
-      projectStatus: (nombre, estadoLabel) => `Your project ${nombre} is ${estadoLabel}. Do you need anything else?`,
+      projectStatus: (nombre, estadoLabel) => `Your project ${nombre} is ${estadoLabel}.`,
       noComments: (nombre) => `Your mentor hasn't left any comments on ${nombre} yet. Do you need anything else?`,
       commentsPlural: (count) => (count === 1 ? 'comment' : 'comments'),
-      withComments: (count, plural, nombre, listado) => `Your mentor left ${count} ${plural} on ${nombre}: ${listado}`,
+      withComments: (count, plural, nombre) => `Your mentor left ${count} ${plural} on ${nombre}. Do you need anything else?`,
     },
   },
 };
@@ -417,6 +427,14 @@ function classifyErrorType(error) {
 // =========================================================================
 const SEED_API_URL = process.env.SEED_API_URL || 'http://localhost:3001';
 
+// Alexa corta la conexión sola a los ~8s si el endpoint no respondió nada
+// (y ahí sí muestra su propio error genérico, feo, que puede sacar al
+// usuario de la skill). REQUEST_TIMEOUT_MS es a propósito más corto que
+// eso: así, si el backend se tarda, es NUESTRO código el que corta la
+// espera primero y responde algo controlado (ver classifyErrorType/
+// resources.ERRORS.NETWORK), no Alexa.
+const REQUEST_TIMEOUT_MS = 6000;
+
 // Único helper HTTP: postJson/getJson eran casi idénticos salvo el método y
 // si llevaban body; getJson además necesitaba poder mandar el header
 // "Authorization" para las llamadas ya autenticadas.
@@ -456,6 +474,9 @@ function requestJson(method, url, { body, headers } = {}) {
       });
     });
 
+    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      request.destroy(new Error(`Request timeout after ${REQUEST_TIMEOUT_MS}ms: ${method} ${url}`));
+    });
     request.on('error', reject);
     if (payload !== undefined) request.write(payload);
     request.end();
@@ -475,7 +496,7 @@ async function validateSeedWithBackend(nombre, seed) {
     const { statusCode, body } = await postJson(`${SEED_API_URL}/auth/seeds/validate`, { nombre, seed });
     const accessToken = body && body.valid && body.auth && body.auth.accessToken;
     if (statusCode >= 200 && statusCode < 300 && accessToken) {
-      return { valid: true, accessToken, nombre: body.auth.user.nombre };
+      return { valid: true, accessToken, nombre: body.auth.user.nombre, rol: body.auth.user.rol };
     }
     return { valid: false, reason: (body && body.reason) || 'UNKNOWN' };
   } catch (error) {
@@ -526,22 +547,104 @@ async function fetchObservacionesForEmpresa(accessToken, empresaId) {
   }
 }
 
-// Si el usuario dio un nombre de proyecto, busca coincidencia parcial
-// (case-insensitive). Si no dio nombre, solo se resuelve solo cuando hay
-// exactamente una empresa; con varias, se deja que el handler pida que
-// repita la pregunta con el nombre (nombreProyecto no tiene elicitación
-// configurada en el modelo de interacción).
-function resolveProject(empresas, nombreProyecto) {
-  if (!nombreProyecto) {
-    return empresas.length === 1 ? empresas[0] : null;
+// =========================================================================
+// Progressive Response: le pide a Alexa que diga una frase corta ("dame un
+// segundo...") MIENTRAS el handler sigue esperando la llamada al backend
+// (login, empresas, observaciones), en vez de dejar al usuario en
+// silencio hasta que la respuesta final esté lista. Es un directive aparte
+// (Alexa.getDirectiveServiceClient), no la respuesta normal del handler,
+// así que un fallo aquí nunca debe tumbar la respuesta real: si algo sale
+// mal (por ejemplo, sin apiAccessToken en pruebas locales por curl), solo
+// se registra el error y la skill sigue su flujo normal sin la frase de
+// espera.
+// =========================================================================
+async function sendProgressiveResponse(handlerInput, speechText) {
+  try {
+    const requestId = handlerInput.requestEnvelope.request.requestId;
+    const directiveServiceClient = handlerInput.serviceClientFactory.getDirectiveServiceClient();
+    await directiveServiceClient.enqueue({
+      header: { requestId },
+      directive: { type: 'VoicePlayer.Speak', speech: speechText },
+    });
+  } catch (error) {
+    console.error(`~~~~ Error al mandar progressive response: ${error}`);
   }
-  const normalized = nombreProyecto.trim().toLowerCase();
-  return empresas.find((p) => p.nombre.toLowerCase().includes(normalized)) || null;
+}
+
+// Consulta y arma el texto de "cuántos comentarios tiene {empresa}", usado
+// tanto por GetMentorCommentsIntentHandler como por la confirmación de
+// "sí" después de preguntar el estado de un proyecto (ver
+// GetProjectStatusIntentHandler y YesNoIntentHandler) para no duplicar la
+// misma lógica en los dos lugares.
+async function fetchCommentsSpeech(accessToken, empresa, resources) {
+  const observacionesResult = await fetchObservacionesForEmpresa(accessToken, empresa.id);
+
+  if (!observacionesResult.ok) {
+    if (observacionesResult.reason === 'UNAUTHORIZED') {
+      return { unauthorized: true };
+    }
+    return { speakOutput: resources.PROJECTS_FETCH_ERROR_MESSAGE };
+  }
+
+  const comentarios = observacionesResult.observaciones;
+  if (comentarios.length === 0) {
+    return { speakOutput: resources.TEMPLATES.noComments(empresa.nombre) };
+  }
+  const plural = resources.TEMPLATES.commentsPlural(comentarios.length);
+  return { speakOutput: resources.TEMPLATES.withComments(comentarios.length, plural, empresa.nombre) };
+}
+
+// Si el usuario dio un nombre de proyecto, busca coincidencia parcial
+// (case-insensitive). Si no dio nombre: primero intenta el "proyecto
+// activo" que haya quedado guardado en la sesión de una pregunta anterior
+// (activeProjectId, ver GetProjectStatusIntentHandler/
+// GetMentorCommentsIntentHandler), y si no hay ninguno, solo se resuelve
+// solo cuando hay exactamente una empresa; con varias y sin proyecto
+// activo, se deja que el handler pida que repita la pregunta con el
+// nombre (nombreProyecto no tiene elicitación configurada en el modelo de
+// interacción).
+function resolveProject(empresas, nombreProyecto, activeProjectId) {
+  if (nombreProyecto) {
+    const normalized = nombreProyecto.trim().toLowerCase();
+    return empresas.find((p) => p.nombre.toLowerCase().includes(normalized)) || null;
+  }
+  if (activeProjectId) {
+    const activeProject = empresas.find((p) => p.id === activeProjectId);
+    if (activeProject) return activeProject;
+  }
+  return empresas.length === 1 ? empresas[0] : null;
 }
 
 function isAuthenticated(handlerInput) {
   const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
   return !!(sessionAttributes && sessionAttributes.authenticated && sessionAttributes.accessToken);
+}
+
+// =========================================================================
+// Protección por rol: GetProjectStatusIntent/GetMentorCommentsIntent (y su
+// seguimiento de "sí, dime los comentarios") consultan /empresas, que en
+// el backend regresa cosas distintas según el rol (whereScope en
+// empresas-service): al emprendedor sus propias empresas, al mentor las
+// que mentorea, al evaluador las que evalúa. Pero el LENGUAJE de la skill
+// ("tu mini empresa", "tu proyecto") solo tiene sentido para quien es
+// dueño del proyecto. Por eso, aparte del scoping por fila que ya hace el
+// backend, la skill bloquea estas funciones a cualquier rol que no sea
+// "emprendedor" — un mentor o evaluador que inicie sesión por voz puede
+// usar el resto de la guía, pero no esta parte.
+// =========================================================================
+const REQUIRED_ROLE_FOR_PROJECT_INTENTS = 'emprendedor';
+
+function hasRequiredRole(handlerInput, requiredRole) {
+  const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+  return !!(sessionAttributes && sessionAttributes.rol === requiredRole);
+}
+
+function buildRoleNotAllowedResponse(handlerInput) {
+  const resources = getResources(handlerInput);
+  return handlerInput.responseBuilder
+    .speak(resources.ROLE_NOT_ALLOWED_MESSAGE)
+    .reprompt(resources.ROLE_NOT_ALLOWED_MESSAGE)
+    .getResponse();
 }
 
 // Limpia la sesión cuando el access token ya no sirve (expiró o fue
@@ -552,6 +655,8 @@ function clearAuthentication(handlerInput) {
   delete sessionAttributes.authenticated;
   delete sessionAttributes.username;
   delete sessionAttributes.accessToken;
+  delete sessionAttributes.activeProjectId;
+  delete sessionAttributes.rol;
   handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 }
 
@@ -576,6 +681,16 @@ function buildLoginRequiredResponse(handlerInput) {
     .speak(resources.NEEDS_LOGIN_MESSAGE)
     .reprompt(resources.NEEDS_LOGIN_MESSAGE)
     .getResponse();
+}
+
+// Arma una lista en lenguaje natural ("a, b y c"), no "a y b y c": con 2
+// elementos usa la conjunción entre ambos; con 3 o más, coma entre todos
+// menos el último, y la conjunción antes del último. Usado para leer los
+// nombres de las empresas cuando hay que pedirle al usuario que elija.
+function joinWithConjunction(items, conjunction) {
+  if (items.length <= 1) return items.join('');
+  if (items.length === 2) return items.join(` ${conjunction} `);
+  return `${items.slice(0, -1).join(', ')} ${conjunction} ${items[items.length - 1]}`;
 }
 
 // =========================================================================
@@ -611,7 +726,12 @@ function getResolvedSlotId(handlerInput, slotName) {
 }
 
 // =========================================================================
-// LaunchRequest + StartProjectGuideIntent
+// LaunchRequest + StartProjectGuideIntent + AMAZON.NavigateHomeIntent
+// (los tres regresan al mismo punto de partida: bienvenida o menú si ya
+// hay sesión). AMAZON.NavigateHomeIntent estaba declarado en ambos modelos
+// de interacción (models/es-MX.json, models/en-US.json) pero SIN handler:
+// cualquier usuario que la disparara (p. ej. "ve al inicio") caía al
+// ErrorHandler genérico en vez de recibir una respuesta útil.
 // =========================================================================
 const LaunchAndStartHandler = {
   canHandle(handlerInput) {
@@ -626,8 +746,11 @@ const LaunchAndStartHandler = {
     if (requestType === 'LaunchRequest') {
       return true;
     }
-    return requestType === 'IntentRequest'
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'StartProjectGuideIntent';
+    if (requestType !== 'IntentRequest') {
+      return false;
+    }
+    const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+    return intentName === 'StartProjectGuideIntent' || intentName === 'AMAZON.NavigateHomeIntent';
   },
   handle(handlerInput) {
     try {
@@ -676,6 +799,7 @@ const LoginIntentHandler = {
       const nombreUsuario = getResolvedSlotId(handlerInput, 'nombreUsuario');
       const semilla = getResolvedSlotId(handlerInput, 'semilla');
 
+      await sendProgressiveResponse(handlerInput, resources.PROGRESS_MESSAGE);
       const result = await validateSeedWithBackend(nombreUsuario, semilla);
 
       if (!result.valid) {
@@ -695,6 +819,7 @@ const LoginIntentHandler = {
       sessionAttributes.authenticated = true;
       sessionAttributes.username = result.nombre;
       sessionAttributes.accessToken = result.accessToken;
+      sessionAttributes.rol = result.rol;
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
       const speakOutput = resources.TEMPLATES.loginSuccess(result.nombre, resources.MENU_MESSAGE);
@@ -921,9 +1046,14 @@ const GetProjectStatusIntentHandler = {
       if (!isAuthenticated(handlerInput)) {
         return buildLoginRequiredResponse(handlerInput);
       }
+      if (!hasRequiredRole(handlerInput, REQUIRED_ROLE_FOR_PROJECT_INTENTS)) {
+        return buildRoleNotAllowedResponse(handlerInput);
+      }
 
-      const { accessToken } = handlerInput.attributesManager.getSessionAttributes();
+      const { accessToken, activeProjectId } = handlerInput.attributesManager.getSessionAttributes();
       const nombreProyecto = getResolvedSlotId(handlerInput, 'nombreProyecto');
+
+      await sendProgressiveResponse(handlerInput, resources.PROGRESS_MESSAGE);
       const result = await fetchEmpresasForUser(accessToken);
 
       if (!result.ok) {
@@ -944,19 +1074,31 @@ const GetProjectStatusIntentHandler = {
           .getResponse();
       }
 
-      const empresa = resolveProject(empresas, nombreProyecto);
+      const empresa = resolveProject(empresas, nombreProyecto, activeProjectId);
 
       if (!empresa) {
-        const nombres = empresas.map((p) => p.nombre).join(' y ');
+        const nombres = joinWithConjunction(empresas.map((p) => p.nombre), resources.LIST_CONJUNCTION);
         const speakOutput = empresas.length > 1
           ? resources.TEMPLATES.multipleProjects(nombres, resources.TEMPLATES.statusExampleQuestion(empresas[0].nombre))
           : resources.TEMPLATES.singleProjectNotFound(nombres);
         return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
       }
 
+      // Se recuerda como "proyecto activo" de la sesión: si en la siguiente
+      // pregunta el usuario no vuelve a decir el nombre, se reusa este.
+      // pendingCommentsProjectId marca que la PRÓXIMA respuesta "sí"/"no"
+      // es la respuesta a "¿quieres que te diga si tiene comentarios?"
+      // (ver YesNoIntentHandler), para no obligar al usuario a decir el
+      // intent de comentarios completo si ya se lo estamos ofreciendo.
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      sessionAttributes.activeProjectId = empresa.id;
+      sessionAttributes.pendingCommentsProjectId = empresa.id;
+      sessionAttributes.pendingCommentsProjectName = empresa.nombre;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
       const estadoLabel = resources.ESTADO_LABELS[empresa.estado] || empresa.estado;
-      const speakOutput = resources.TEMPLATES.projectStatus(empresa.nombre, estadoLabel);
-      return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.NEED_ANYTHING_ELSE).getResponse();
+      const speakOutput = `${resources.TEMPLATES.projectStatus(empresa.nombre, estadoLabel)} ${resources.ASK_COMMENTS_MESSAGE}`;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.ASK_COMMENTS_MESSAGE).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en GetProjectStatusIntentHandler: ${error}`);
       return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
@@ -979,9 +1121,14 @@ const GetMentorCommentsIntentHandler = {
       if (!isAuthenticated(handlerInput)) {
         return buildLoginRequiredResponse(handlerInput);
       }
+      if (!hasRequiredRole(handlerInput, REQUIRED_ROLE_FOR_PROJECT_INTENTS)) {
+        return buildRoleNotAllowedResponse(handlerInput);
+      }
 
-      const { accessToken } = handlerInput.attributesManager.getSessionAttributes();
+      const { accessToken, activeProjectId } = handlerInput.attributesManager.getSessionAttributes();
       const nombreProyecto = getResolvedSlotId(handlerInput, 'nombreProyecto');
+
+      await sendProgressiveResponse(handlerInput, resources.PROGRESS_MESSAGE);
       const empresasResult = await fetchEmpresasForUser(accessToken);
 
       if (!empresasResult.ok) {
@@ -1002,40 +1149,118 @@ const GetMentorCommentsIntentHandler = {
           .getResponse();
       }
 
-      const empresa = resolveProject(empresas, nombreProyecto);
+      const empresa = resolveProject(empresas, nombreProyecto, activeProjectId);
 
       if (!empresa) {
-        const nombres = empresas.map((p) => p.nombre).join(' y ');
+        const nombres = joinWithConjunction(empresas.map((p) => p.nombre), resources.LIST_CONJUNCTION);
         const speakOutput = empresas.length > 1
           ? resources.TEMPLATES.multipleProjects(nombres, resources.TEMPLATES.commentsExampleQuestion(empresas[0].nombre))
           : resources.TEMPLATES.singleProjectNotFound(nombres);
         return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
       }
 
-      const observacionesResult = await fetchObservacionesForEmpresa(accessToken, empresa.id);
+      // Se recuerda como "proyecto activo" de la sesión, igual que en
+      // GetProjectStatusIntentHandler.
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      sessionAttributes.activeProjectId = empresa.id;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
-      if (!observacionesResult.ok) {
-        if (observacionesResult.reason === 'UNAUTHORIZED') {
+      // Solo se dice CUÁNTOS comentarios hay, nunca su contenido: para leer el
+      // detalle de cada observación el usuario debe ir a la app web.
+      const commentsResult = await fetchCommentsSpeech(accessToken, empresa, resources);
+      if (commentsResult.unauthorized) {
+        return buildSessionExpiredResponse(handlerInput);
+      }
+      return handlerInput.responseBuilder.speak(commentsResult.speakOutput).reprompt(resources.NEED_ANYTHING_ELSE).getResponse();
+    } catch (error) {
+      console.error(`~~~~ Error en GetMentorCommentsIntentHandler: ${error}`);
+      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+    }
+  },
+};
+
+// =========================================================================
+// AMAZON.RepeatIntent + AMAZON.YesIntent/AMAZON.NoIntent: red de seguridad
+// contra salidas accidentales. La causa más común de que un usuario
+// termine saliendo de la skill sin querer es no entender/no escuchar bien
+// una respuesta y quedarse callado hasta que Alexa cierra la sesión por
+// timeout; poder decir "repite" evita eso. YesIntent/NoIntent no se usan
+// para ningún diálogo de confirmación hoy, pero si Alexa los dispara por
+// una interpretación ambigua, sin handler caerían al ErrorHandler
+// genérico — aquí se atajan con un mensaje que reencauza al usuario en
+// vez de un error, sin terminar la sesión.
+// =========================================================================
+const RepeatIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.RepeatIntent';
+  },
+  handle(handlerInput) {
+    const resources = getResources(handlerInput);
+    try {
+      const { lastSpeech, lastReprompt } = handlerInput.attributesManager.getSessionAttributes();
+      if (!lastSpeech) {
+        return handlerInput.responseBuilder.speak(resources.MENU_MESSAGE).reprompt(resources.MENU_MESSAGE).getResponse();
+      }
+      return handlerInput.responseBuilder.speak(lastSpeech).reprompt(lastReprompt || lastSpeech).getResponse();
+    } catch (error) {
+      console.error(`~~~~ Error en RepeatIntentHandler: ${error}`);
+      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+    }
+  },
+};
+
+const YesNoIntentHandler = {
+  canHandle(handlerInput) {
+    const requestType = Alexa.getRequestType(handlerInput.requestEnvelope);
+    if (requestType !== 'IntentRequest') return false;
+    const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+    return intentName === 'AMAZON.YesIntent' || intentName === 'AMAZON.NoIntent';
+  },
+  async handle(handlerInput) {
+    const resources = getResources(handlerInput);
+    try {
+      // Si el turno anterior fue GetProjectStatusIntent ofreciendo leer los
+      // comentarios (ver GetProjectStatusIntentHandler), este "sí"/"no" le
+      // responde a ESA pregunta en vez del genérico menú de abajo.
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const { pendingCommentsProjectId, pendingCommentsProjectName, accessToken } = sessionAttributes;
+      const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+
+      if (pendingCommentsProjectId) {
+        delete sessionAttributes.pendingCommentsProjectId;
+        delete sessionAttributes.pendingCommentsProjectName;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        if (intentName === 'AMAZON.NoIntent') {
+          return handlerInput.responseBuilder
+            .speak(resources.COMMENTS_OFFER_DECLINED)
+            .reprompt(resources.NEED_ANYTHING_ELSE)
+            .getResponse();
+        }
+
+        if (!isAuthenticated(handlerInput)) {
+          return buildLoginRequiredResponse(handlerInput);
+        }
+        if (!hasRequiredRole(handlerInput, REQUIRED_ROLE_FOR_PROJECT_INTENTS)) {
+          return buildRoleNotAllowedResponse(handlerInput);
+        }
+
+        await sendProgressiveResponse(handlerInput, resources.PROGRESS_MESSAGE);
+        const empresa = { id: pendingCommentsProjectId, nombre: pendingCommentsProjectName };
+        const commentsResult = await fetchCommentsSpeech(accessToken, empresa, resources);
+        if (commentsResult.unauthorized) {
           return buildSessionExpiredResponse(handlerInput);
         }
         return handlerInput.responseBuilder
-          .speak(resources.PROJECTS_FETCH_ERROR_MESSAGE)
-          .reprompt(resources.PROJECTS_FETCH_ERROR_MESSAGE)
+          .speak(commentsResult.speakOutput)
+          .reprompt(resources.NEED_ANYTHING_ELSE)
           .getResponse();
       }
 
-      const comentarios = observacionesResult.observaciones;
-      let speakOutput;
-      if (comentarios.length === 0) {
-        speakOutput = resources.TEMPLATES.noComments(empresa.nombre);
-      } else {
-        const listado = comentarios.map((c) => c.comentario).join(' ');
-        const plural = resources.TEMPLATES.commentsPlural(comentarios.length);
-        speakOutput = resources.TEMPLATES.withComments(comentarios.length, plural, empresa.nombre, listado);
-      }
-      return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.NEED_ANYTHING_ELSE).getResponse();
+      return handlerInput.responseBuilder.speak(resources.MENU_MESSAGE).reprompt(resources.MENU_MESSAGE).getResponse();
     } catch (error) {
-      console.error(`~~~~ Error en GetMentorCommentsIntentHandler: ${error}`);
+      console.error(`~~~~ Error en YesNoIntentHandler: ${error}`);
       return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
     }
   },
@@ -1165,6 +1390,37 @@ const ErrorHandler = {
 };
 
 // =========================================================================
+// ResponseInterceptor: guarda el último "speak"/"reprompt" en las session
+// attributes después de CADA respuesta, para que AMAZON.RepeatIntent pueda
+// repetirlo sin que cada handler tenga que guardarlo por su cuenta. Se
+// registra después de que el handler ya construyó su respuesta, así que
+// nunca puede ser la causa de que un handler falle.
+// =========================================================================
+function stripSpeakTag(ssml) {
+  return String(ssml).replace(/^<speak>/, '').replace(/<\/speak>$/, '');
+}
+
+const LastResponseInterceptor = {
+  process(handlerInput, response) {
+    try {
+      const speechSsml = response && response.outputSpeech && response.outputSpeech.ssml;
+      if (!speechSsml) return;
+
+      const repromptSsml = response.reprompt
+        && response.reprompt.outputSpeech
+        && response.reprompt.outputSpeech.ssml;
+
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      sessionAttributes.lastSpeech = stripSpeakTag(speechSsml);
+      sessionAttributes.lastReprompt = repromptSsml ? stripSpeakTag(repromptSsml) : sessionAttributes.lastSpeech;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+    } catch (error) {
+      console.error(`~~~~ Error en LastResponseInterceptor: ${error}`);
+    }
+  },
+};
+
+// =========================================================================
 // Registro de handlers
 // =========================================================================
 // No se llama `.lambda()` ni `.create()` aquí todavía: se exporta el
@@ -1186,11 +1442,14 @@ const skillBuilder = Alexa.SkillBuilders.custom()
     GetProjectStatusIntentHandler,
     GetMentorCommentsIntentHandler,
     HelpIntentHandler,
+    RepeatIntentHandler,
+    YesNoIntentHandler,
     CancelAndStopIntentHandler,
     FallbackIntentHandler,
     SessionEndedRequestHandler,
   )
   .addRequestInterceptors(LocalizationInterceptor)
+  .addResponseInterceptors(LastResponseInterceptor)
   .addErrorHandlers(ErrorHandler);
 
 exports.skillBuilder = skillBuilder;
