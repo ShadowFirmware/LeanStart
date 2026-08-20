@@ -23,3 +23,24 @@ model Notificacion {
   @@index([destinatarioUserId])
   @@map("notificaciones")
 }
+
+/// Correos que llegan a la casilla de recepción de Resend (Inbound) — el
+/// api-gateway verifica la firma del webhook y reenvía el evento ya validado
+/// acá. Por ahora solo se guarda el metadata para tener un registro de que
+/// llegó; el cuerpo/adjuntos se agregan más adelante cuando se construya el
+/// flujo real de soporte técnico / reportar empresa (que decide qué hacer
+/// con cada uno según `destinatarios`).
+model CorreoEntrante {
+  id             String   @id @default(uuid())
+  /// Id que le da Resend al correo — evita duplicarlo si reintenta el webhook.
+  resendId       String   @unique
+  remitente      String
+  destinatarios  String[]
+  asunto         String
+  recibidoEn     DateTime
+  procesado      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([procesado])
+  @@map("correos_entrantes")
+}
