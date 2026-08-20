@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   useUsuariosStore, useCurrentUser, useHasHydrated, useAccion,
-  usePagination, PaginationBar, GIRO_LABELS, ESTADO_EMPRESA_CONFIG, EmpresaLogo, ViewSkeleton,
+  usePagination, PaginationBar, GIRO_LABELS, ESTADO_EMPRESA_CONFIG, EmpresaLogo, ViewSkeleton, usePrivilegios,
 } from "@leanstart/commons";
 import { toast } from "sonner";
 import type { EstadoEmpresa, GiroEmpresa } from "@leanstart/commons";
@@ -110,6 +110,8 @@ export function EmpresasListView({
 }: EmpresasListViewProps = {}) {
   const hydrated = useHasHydrated();
   const currentUser = useCurrentUser();
+  const { puede } = usePrivilegios();
+  const puedeEliminarEmpresa = puede("empresas", "eliminar");
   const todasLasEmpresas = useEmpresasStore((s) => s.empresas);
   const eliminarEmpresa = useEmpresasStore((s) => s.eliminarEmpresa);
   const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
@@ -389,8 +391,9 @@ export function EmpresasListView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {empresasPagina.map((empresa) => {
             const estadoConfig = ESTADO_EMPRESA_CONFIG[empresa.estado];
-            // El emprendedor solo puede eliminar mientras el proyecto está en captura o le toca atender observaciones.
-            const puedeEditar = !readOnly && (
+            // El emprendedor solo puede eliminar mientras el proyecto está en captura o le toca atender observaciones,
+            // y solo si su rol tiene el privilegio "empresas:eliminar" (el backend lo exige igual — ver empresas.controller.ts).
+            const puedeEditar = !readOnly && puedeEliminarEmpresa && (
               empresa.estado === "borrador" ||
               empresa.estado === "observaciones_pendientes" ||
               empresa.estado === "devuelto"

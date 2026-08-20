@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, Roles, type AuthUser } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, Roles, type AuthUser } from "@leanstart/backend-commons";
 import { EmpresasService } from "../molecules/empresas.service";
 import { CreateEmpresaDto, UpdateEmpresaDto } from "../atoms/empresa.dto";
 import { ActualizarNivelInternoDto, AsignarDto, CambiarEstadoDto, CambiarEstadoInternoDto } from "../atoms/estado.dto";
@@ -38,12 +38,14 @@ export class EmpresasController {
 
   @Post()
   @Roles("emprendedor")
+  @RequierePrivilegio("empresas", "crear")
   @ApiOperation({ summary: "Crear empresa" })
   crear(@CurrentUser() user: AuthUser, @Body() dto: CreateEmpresaDto) {
     return this.empresas.crear(user, dto);
   }
 
   @Patch(":id")
+  @RequierePrivilegio("empresas", "editar")
   @ApiOperation({ summary: "Editar datos generales de la empresa" })
   @ApiParam({ name: "id" })
   actualizar(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateEmpresaDto) {
@@ -51,6 +53,7 @@ export class EmpresasController {
   }
 
   @Delete(":id")
+  @RequierePrivilegio("empresas", "eliminar")
   @ApiOperation({ summary: "Eliminar empresa" })
   @ApiParam({ name: "id" })
   eliminar(@CurrentUser() user: AuthUser, @Param("id") id: string) {

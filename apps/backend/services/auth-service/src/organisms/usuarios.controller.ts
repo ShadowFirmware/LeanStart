@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, Roles, type AuthUser } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, Roles, type AuthUser } from "@leanstart/backend-commons";
 import { UsuariosService } from "../molecules/usuarios.service";
 import { CreateUsuarioDto, UpdateUsuarioDto } from "../atoms/usuario.dto";
 
@@ -25,12 +25,14 @@ export class UsuariosController {
   }
 
   @Post()
+  @RequierePrivilegio("usuarios", "crear")
   @ApiOperation({ summary: "Crear usuario (contraseña temporal, el usuario la cambia luego)" })
   crear(@CurrentUser() user: AuthUser, @Body() dto: CreateUsuarioDto) {
     return this.usuarios.crear(user.id, dto);
   }
 
   @Patch(":id")
+  @RequierePrivilegio("usuarios", "editar")
   @ApiOperation({ summary: "Editar usuario" })
   @ApiParam({ name: "id" })
   editar(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateUsuarioDto) {
@@ -38,6 +40,7 @@ export class UsuariosController {
   }
 
   @Patch(":id/activar")
+  @RequierePrivilegio("usuarios", "editar")
   @ApiOperation({ summary: "Activar usuario" })
   @ApiParam({ name: "id" })
   activar(@CurrentUser() user: AuthUser, @Param("id") id: string) {
@@ -45,6 +48,7 @@ export class UsuariosController {
   }
 
   @Patch(":id/desactivar")
+  @RequierePrivilegio("usuarios", "editar")
   @ApiOperation({ summary: "Desactivar usuario" })
   @ApiParam({ name: "id" })
   desactivar(@CurrentUser() user: AuthUser, @Param("id") id: string) {

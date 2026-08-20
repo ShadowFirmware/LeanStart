@@ -106,6 +106,28 @@ Cada servicio trae su `.env.example`. Las que deben coincidir **entre servicios*
 - `JWT_SECRET`: igual en `auth-service` (firma el token) y `api-gateway` (lo valida).
 - `INTERNAL_KEY`: igual en los 5 proyectos (api-gateway + 4 servicios).
 
-## Fuera de alcance de esta primera entrega
+## Patrones de diseño aplicados
 
-El frontend (`apps/frontend/*`) sigue en modo demo (Zustand + localStorage) — no se modificó. Conectarlo al backend real (reemplazar los stores por llamadas a `NEXT_PUBLIC_API_URL` apuntando al api-gateway) es un paso posterior independiente.
+No son patrones GoF "de manual" añadidos por completitud — cada uno resuelve un problema concreto que ya existía en el código:
+
+- **Strategy vía Guards** (`RolesGuard`, `PrivilegiosGuard`, `GatewayKeyGuard`): cada guard encapsula una estrategia de autorización intercambiable que Nest resuelve por reflexión (`@Roles`, `@RequierePrivilegio`), sin que el controller sepa cómo se decide el acceso. Permite apilar rol (grueso) + privilegio (módulo+acción, fino) sin duplicar lógica en cada endpoint — ver más abajo.
+- **Facade/Adapter** (`InternalHttpClient`): esconde fetch nativo + headers de confianza (`x-internal-key`, `x-user-*`) detrás de una API mínima (`get/post/patch/delete`), así ningún servicio arma esos headers a mano ni repite el parseo de errores upstream.
+- **Repository delgado** (`PrismaService` por servicio): aísla el resto del código de los detalles del driver adapter (`@prisma/adapter-pg`) — si cambia cómo se conecta Prisma, solo cambia ese archivo.
+- **DTO como frontera de I/O**: todo controller recibe/devuelve DTOs validados con `class-validator`, nunca entidades de Prisma crudas — evita que un cambio de esquema filtre campos internos a la respuesta HTTP.
+
+## Multirol y multiprivilegio — cómo se aplican de verdad
+
+Dos capas, no una:
+
+1. **Rol** (`@Roles(...)` + `RolesGuard`): grueso — "¿este endpoint es para administradores?".
+2. **Privilegio** (`@RequierePrivilegio(modulo, accion)` + `PrivilegiosGuard`): fino — el JWT lleva los privilegios del usuario (tabla `Privilegio`, editable desde `/administrador/roles-privilegios`), el gateway los reenvía en `x-user-privilegios` a los servicios internos, y cada mutación relevante (`empresas`, `productos`, `lean_canvas`, `hipotesis`, `usuarios`, `evaluaciones`) exige el privilegio exacto — no solo el rol. Antes de esto, un mentor o evaluador con acceso de *lectura* a una empresa ajena podía, en teoría, llamar directo a `PATCH /empresas/:id/canvas` porque el único chequeo era de visibilidad, no de acción; con `@RequierePrivilegio("lean_canvas", "editar")` esa ruta ahora la cierra el propio backend, no solo el hecho de que el frontend no muestre el botón.
+
+El frontend espeja la misma regla con `usePrivilegios().puede(modulo, accion)` (`apps/frontend/commons/src/hooks/use-privilegios.ts`) para ocultar la acción en la UI — pero la fuente de verdad es siempre el guard del backend.
+
+## Automated tests y CI
+
+`packages/backend-commons` y `evaluaciones-service` tienen pruebas unitarias con Jest (`pnpm test` en cada uno): los guards de autorización (incluyendo los casos negativos de `PrivilegiosGuard`/`RolesGuard`) y el algoritmo de reordenamiento/inserción de niveles de viabilidad. `.github/workflows/ci.yml` corre esas pruebas y compila los 5 servicios más el frontend en cada push/PR.
+
+## Estado del frontend
+
+El frontend ya no es solo modo demo: `live-sync.tsx` carga empresas, notificaciones, perfil y criterios desde el api-gateway real al iniciar sesión (con polling corto para notificaciones), y `auth.ts` autentica contra `/auth/login`. `NEXT_PUBLIC_DEMO_MODE` sigue existiendo como apagador explícito para desarrollar sin backend levantado, no como el modo por defecto.

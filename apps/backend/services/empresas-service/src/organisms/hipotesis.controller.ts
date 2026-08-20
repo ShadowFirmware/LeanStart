@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, Roles, type AuthUser, type EstadoHipotesis } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, Roles, type AuthUser, type EstadoHipotesis } from "@leanstart/backend-commons";
 import { HipotesisService } from "../molecules/hipotesis.service";
 import { CreateHipotesisDto, ExperimentoDisenoDto, ResultadosHipotesisDto, UpdateHipotesisDto } from "../atoms/hipotesis.dto";
 import { IsIn } from "class-validator";
@@ -18,6 +18,7 @@ export class HipotesisController {
   constructor(private readonly hipotesis: HipotesisService) {}
 
   @Post()
+  @RequierePrivilegio("hipotesis", "crear")
   @ApiOperation({ summary: "Crear hipótesis (fase 1, máx. 3 por empresa)" })
   @ApiParam({ name: "empresaId" })
   crear(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string, @Body() dto: CreateHipotesisDto) {
@@ -25,6 +26,7 @@ export class HipotesisController {
   }
 
   @Patch(":id")
+  @RequierePrivilegio("hipotesis", "editar")
   @ApiOperation({ summary: "Editar título/descripción (fase 1)" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "id" })
@@ -38,6 +40,7 @@ export class HipotesisController {
   }
 
   @Patch(":id/experimento")
+  @RequierePrivilegio("hipotesis", "editar")
   @ApiOperation({ summary: "Diseñar experimento (fase 2)" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "id" })
@@ -51,6 +54,7 @@ export class HipotesisController {
   }
 
   @Patch(":id/resultados")
+  @RequierePrivilegio("hipotesis", "editar")
   @ApiOperation({ summary: "Registrar resultados y evidencia (fase 3)" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "id" })
@@ -65,6 +69,7 @@ export class HipotesisController {
 
   @Patch(":id/validar")
   @Roles("mentor")
+  @RequierePrivilegio("hipotesis", "aprobar")
   @ApiOperation({ summary: "El mentor valida o invalida la hipótesis" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "id" })
@@ -78,6 +83,7 @@ export class HipotesisController {
   }
 
   @Delete(":id")
+  @RequierePrivilegio("hipotesis", "eliminar")
   @ApiOperation({ summary: "Eliminar hipótesis" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "id" })

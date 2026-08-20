@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, type AuthUser } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, type AuthUser } from "@leanstart/backend-commons";
 import { CanvasService } from "../molecules/canvas.service";
 import { UpdateCanvasDto } from "../atoms/canvas.dto";
 
@@ -10,6 +10,7 @@ export class CanvasController {
   constructor(private readonly canvas: CanvasService) {}
 
   @Patch()
+  @RequierePrivilegio("lean_canvas", "editar")
   @ApiOperation({ summary: "Actualizar bloques del Lean Canvas (recalcula canvasBloques)" })
   @ApiParam({ name: "empresaId" })
   actualizar(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string, @Body() dto: UpdateCanvasDto) {

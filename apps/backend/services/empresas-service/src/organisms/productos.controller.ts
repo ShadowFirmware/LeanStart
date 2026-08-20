@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Param, Patch, Post } from "@nestjs/common";
 import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, type AuthUser } from "@leanstart/backend-commons";
+import { CurrentUser, RequierePrivilegio, type AuthUser } from "@leanstart/backend-commons";
 import { ProductosService } from "../molecules/productos.service";
 import { CreateProductoDto, UpdateProductoDto } from "../atoms/producto.dto";
 
@@ -10,6 +10,7 @@ export class ProductosController {
   constructor(private readonly productos: ProductosService) {}
 
   @Post()
+  @RequierePrivilegio("productos", "crear")
   @ApiOperation({ summary: "Agregar producto o servicio" })
   @ApiParam({ name: "empresaId" })
   crear(@CurrentUser() user: AuthUser, @Param("empresaId") empresaId: string, @Body() dto: CreateProductoDto) {
@@ -17,6 +18,7 @@ export class ProductosController {
   }
 
   @Patch(":productoId")
+  @RequierePrivilegio("productos", "editar")
   @ApiOperation({ summary: "Editar producto o servicio" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "productoId" })
@@ -30,6 +32,7 @@ export class ProductosController {
   }
 
   @Delete(":productoId")
+  @RequierePrivilegio("productos", "eliminar")
   @ApiOperation({ summary: "Eliminar producto o servicio" })
   @ApiParam({ name: "empresaId" })
   @ApiParam({ name: "productoId" })
