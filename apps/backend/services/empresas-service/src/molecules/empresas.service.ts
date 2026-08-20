@@ -67,7 +67,7 @@ export class EmpresasService {
   }
 
   async crear(user: AuthUser, dto: CreateEmpresaDto) {
-    await this.assertNombreDisponible(user.id, dto.nombre);
+    await this.assertNombreDisponible(dto.nombre);
     return this.prisma.empresa.create({
       data: {
         ...dto,
@@ -79,30 +79,29 @@ export class EmpresasService {
   }
 
   async actualizar(user: AuthUser, id: string, dto: UpdateEmpresaDto) {
-    const empresa = await this.obtener(user, id);
+    await this.obtener(user, id);
     if (dto.nombre) {
-      await this.assertNombreDisponible(empresa.ownerId, dto.nombre, id);
+      await this.assertNombreDisponible(dto.nombre, id);
     }
     return this.prisma.empresa.update({ where: { id }, data: dto, include: INCLUDE_DETALLE });
   }
 
   /**
-   * Dos empresas del mismo dueño no pueden compartir nombre (comparación sin
-   * mayúsculas/acentos de más ni espacios de sobra) — evita el caso real que
-   * motivó esto: "Levsek" registrada dos veces por error sin que nadie lo notara.
+   * El nombre de una empresa es único en toda la plataforma, sin importar el
+   * dueño (comparación sin mayúsculas/espacios de sobra) — evita el caso real
+   * que motivó esto: "Levsek" registrada dos veces sin que nadie lo notara.
    */
-  private async assertNombreDisponible(ownerId: string, nombre: string, excludeId?: string) {
+  private async assertNombreDisponible(nombre: string, excludeId?: string) {
     const normalizado = nombre.trim();
     const existente = await this.prisma.empresa.findFirst({
       where: {
-        ownerId,
         nombre: { equals: normalizado, mode: "insensitive" },
         ...(excludeId ? { id: { not: excludeId } } : {}),
       },
       select: { id: true },
     });
     if (existente) {
-      throw new ConflictException(`Ya tienes una empresa registrada con el nombre "${normalizado}".`);
+      throw new ConflictException(`Ya existe una empresa registrada con el nombre "${normalizado}".`);
     }
   }
 
