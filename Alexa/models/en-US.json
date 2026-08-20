@@ -673,11 +673,10 @@
                         {
                             "name": "semilla",
                             "type": "AMAZON.FOUR_DIGIT_NUMBER",
-                            "confirmationRequired": true,
+                            "confirmationRequired": false,
                             "elicitationRequired": true,
                             "prompts": {
-                                "elicitation": "Elicit.Slot.LoginIntent.semilla",
-                                "confirmation": "Confirm.Slot.LoginIntent.semilla"
+                                "elicitation": "Elicit.Slot.LoginIntent.semilla"
                             }
                         }
                     ]
@@ -757,19 +756,6 @@
                     {
                         "type": "PlainText",
                         "value": "What's your 4-digit seed?"
-                    }
-                ]
-            },
-            {
-                "id": "Confirm.Slot.LoginIntent.semilla",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "I heard {semilla}, is that right?"
-                    },
-                    {
-                        "type": "PlainText",
-                        "value": "Your seed is {semilla}, correct?"
                     }
                 ]
             },
