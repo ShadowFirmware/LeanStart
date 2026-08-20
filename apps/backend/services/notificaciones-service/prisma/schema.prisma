@@ -26,9 +26,8 @@ model Notificacion {
 
 /// Correos que llegan a la casilla de recepción de Resend (Inbound) — el
 /// api-gateway verifica la firma del webhook y reenvía el evento ya validado
-/// acá. Es el registro crudo de TODO lo que entra; los que traen un
-/// destinatario `reporte-<id>@…` quedan además enganchados a su reporte y se
-/// muestran como respuestas del hilo en el buzón del administrador.
+/// acá. Solo se guarda el metadata, para tener registro de que llegó. No está
+/// conectado al buzón de soporte: ese vive completo dentro de la aplicación.
 model CorreoEntrante {
   id             String   @id @default(uuid())
   /// Id que le da Resend al correo — evita duplicarlo si reintenta el webhook.
@@ -40,27 +39,13 @@ model CorreoEntrante {
   procesado      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  /// Texto plano del correo. Antes no se guardaba (no había flujo que lo
-  /// consumiera); ahora es el contenido de la respuesta, sin él el hilo del
-  /// reporte mostraría remitente y asunto y nada más.
-  cuerpo         String?
-  /// Reporte al que pertenece, resuelto desde el destinatario
-  /// `reporte-<id>@<SOPORTE_INBOUND_DOMAIN>`. Null si el correo llegó a otra
-  /// dirección de la casilla — igual se guarda, para no perder nada.
-  reporteId      String?
-  reporte        ReporteSoporte? @relation(fields: [reporteId], references: [id], onDelete: SetNull)
-
   @@index([procesado])
-  @@index([reporteId])
   @@map("correos_entrantes")
 }
 
 /// Reporte del botón de soporte técnico (Mi perfil → Soporte técnico).
-///
-/// Se guarda ANTES de intentar el correo, y a propósito: el buzón interno
-/// (/administrador/soporte) es la fuente de verdad y el correo es solo el
-/// aviso. Así, si Resend no está configurado o falla, el reporte sigue estando
-/// — antes de esto un fallo de correo lo borraba del mapa.
+/// El buzón vive entero dentro de la aplicación: no se manda ni se recibe
+/// correo por este flujo, el administrador los lee en /administrador/soporte.
 model ReporteSoporte {
   id           String   @id @default(uuid())
   autorUserId  String
@@ -74,13 +59,8 @@ model ReporteSoporte {
   navegador    String?
   /// nuevo | atendido
   estado       String   @default("nuevo")
-  /// Null = el aviso por correo no salió (Resend sin configurar o caído). El
-  /// buzón lo marca, para que nadie dé por hecho que ya le llegó al admin.
-  avisadoEn    DateTime?
   atendidoEn   DateTime?
   createdAt    DateTime @default(now())
-
-  respuestas   CorreoEntrante[]
 
   @@index([estado, createdAt])
   @@map("reportes_soporte")

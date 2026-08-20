@@ -4,13 +4,6 @@ import { apiFetch, modoDemo } from "@leanstart/commons";
 
 export type EstadoReporte = "nuevo" | "atendido";
 
-export interface RespuestaSoporte {
-  id: string;
-  remitente: string;
-  cuerpo: string;
-  recibidaEn: string;
-}
-
 export interface ReporteSoporte {
   id: string;
   autorNombre: string;
@@ -20,10 +13,7 @@ export interface ReporteSoporte {
   mensaje: string;
   navegador?: string;
   estado: EstadoReporte;
-  /** false = el aviso por correo no salió; el reporte solo existe aquí. */
-  avisado: boolean;
   creadoEn: string;
-  respuestas: RespuestaSoporte[];
 }
 
 function fecha(iso: string): string {
@@ -33,7 +23,6 @@ function fecha(iso: string): string {
 }
 
 function mapReporte(r: Record<string, unknown>): ReporteSoporte {
-  const respuestas = (r.respuestas as Record<string, unknown>[] | undefined) ?? [];
   return {
     id: r.id as string,
     autorNombre: r.autorNombre as string,
@@ -43,18 +32,7 @@ function mapReporte(r: Record<string, unknown>): ReporteSoporte {
     mensaje: r.mensaje as string,
     navegador: (r.navegador as string) ?? undefined,
     estado: r.estado as EstadoReporte,
-    avisado: !!r.avisadoEn,
     creadoEn: fecha(r.createdAt as string),
-    respuestas: respuestas
-      // Un correo sin cuerpo no aporta nada al hilo (Resend manda el evento aunque
-      // el mensaje venga vacío o solo en HTML, que no archivamos a propósito).
-      .filter((x) => !!x.cuerpo)
-      .map((x) => ({
-        id: x.id as string,
-        remitente: x.remitente as string,
-        cuerpo: x.cuerpo as string,
-        recibidaEn: fecha(x.recibidoEn as string),
-      })),
   };
 }
 

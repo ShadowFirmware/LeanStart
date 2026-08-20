@@ -17,7 +17,7 @@ export { useReportesGeneradosStore } from "./store/reportes-generados";
 export { useBitacoraStore } from "./store/bitacora";
 export type { EntradaBitacora, ServicioBitacora } from "./store/bitacora";
 export { useSoporteStore } from "./store/soporte";
-export type { ReporteSoporte, RespuestaSoporte, EstadoReporte } from "./store/soporte";
+export type { ReporteSoporte, EstadoReporte } from "./store/soporte";
 export { useRolesStore } from "./store/roles";
 export type { RolPersonalizado } from "./store/roles";
 export type { ReporteGenerado, TipoReporte } from "./store/reportes-generados";

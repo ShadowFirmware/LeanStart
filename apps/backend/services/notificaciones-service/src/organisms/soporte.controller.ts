@@ -10,7 +10,7 @@ export class SoporteController {
   constructor(private readonly soporte: SoporteService) {}
 
   @Post()
-  @ApiOperation({ summary: "Reportar una falla al soporte técnico (se guarda y se avisa por correo)" })
+  @ApiOperation({ summary: "Reportar una falla al soporte técnico (queda en el buzón del administrador)" })
   reportar(@CurrentUser() user: AuthUser, @Body() dto: ReporteSoporteDto) {
     return this.soporte.reportar(dto, user);
   }

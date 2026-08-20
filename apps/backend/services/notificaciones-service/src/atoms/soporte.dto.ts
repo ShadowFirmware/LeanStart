@@ -3,10 +3,10 @@ import { IsIn, IsOptional, IsString, MaxLength, MinLength } from "class-validato
 
 /**
  * Reporte de falla que un usuario manda desde "Mi perfil → Soporte técnico".
- * Se guarda en base (buzón de /administrador/soporte) y además dispara un
- * correo de aviso. La identidad de quien reporta NO viaja en el body — se toma
- * de los headers de identidad que ya validó el gateway, para que nadie pueda
- * reportar en nombre de otro.
+ * Se guarda en base y se lee desde el buzón de /administrador/soporte; no hay
+ * correo de por medio. La identidad de quien reporta NO viaja en el body — se
+ * toma de los headers de identidad que ya validó el gateway, para que nadie
+ * pueda reportar en nombre de otro.
  */
 export class ReporteSoporteDto {
   @ApiProperty({ example: "No carga el canvas de mi empresa", minLength: 5, maxLength: 120 })

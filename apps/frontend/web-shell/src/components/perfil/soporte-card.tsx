@@ -37,11 +37,12 @@ type FormValues = z.infer<typeof schema>;
  * abre el diálogo de reporte. Vive aquí y no en un botón flotante ni en el
  * sidebar para no competir con el resto de la interfaz.
  *
- * El navegador se adjunta solo: es parte del contexto que el administrador
- * necesita para reproducir la falla y que el usuario casi nunca incluye por su
- * cuenta. La ruta NO se manda — desde el perfil siempre sería la misma y
- * despistaría a quien lea el reporte; por eso el formulario pide que el propio
- * usuario diga en qué pantalla ocurrió.
+ * El reporte va al buzón interno del administrador (/administrador/soporte);
+ * no se manda ningún correo. El navegador se adjunta solo: es parte del
+ * contexto que hace falta para reproducir la falla y que el usuario casi nunca
+ * incluye por su cuenta. La ruta NO se manda — desde el perfil siempre sería la
+ * misma y despistaría a quien lea el reporte; por eso el formulario pide que el
+ * propio usuario diga en qué pantalla ocurrió.
  */
 export function SoporteCard() {
   const [abierto, setAbierto] = useState(false);
@@ -75,7 +76,7 @@ export function SoporteCard() {
           }),
           etiquetaCarga: "Enviando reporte",
         });
-        toast.success("Reporte enviado. El equipo de soporte te contestará por correo.");
+        toast.success("Reporte enviado. El equipo de soporte lo revisará.");
         setAbierto(false);
       },
       {
@@ -103,7 +104,7 @@ export function SoporteCard() {
             Soporte técnico
           </h2>
           <p className="text-xs" style={{ color: "var(--text-dim)" }}>
-            ¿Algo no funciona como esperabas? Repórtalo y el equipo lo revisa.
+            ¿Algo no funciona como esperabas? Repórtalo y el administrador lo revisa.
           </p>
         </div>
       </div>
@@ -122,7 +123,7 @@ export function SoporteCard() {
           <DialogHeader>
             <DialogTitle>Soporte técnico</DialogTitle>
             <DialogDescription>
-              Cuéntanos qué falló y lo revisamos. Te contestaremos al correo de tu cuenta.
+              Cuéntanos qué falló y lo revisamos. El reporte le llega al administrador.
             </DialogDescription>
           </DialogHeader>
 
@@ -162,8 +163,8 @@ export function SoporteCard() {
               />
 
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-dim)" }}>
-                Se adjuntarán automáticamente tu nombre, correo, rol y navegador, para ayudarnos a
-                reproducir la falla.
+                Se adjuntarán automáticamente tu nombre, correo, rol y navegador, para ayudar a
+                reproducir la falla y saber cómo contactarte.
               </p>
 
               <DialogFooter>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LifeBuoy, Search, Mail, MailWarning, CornerDownRight, Monitor } from "lucide-react";
+import { LifeBuoy, Search, Mail, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import { usePagination, PaginationBar, useHasHydrated, ViewSkeleton, Button } from "@leanstart/commons";
 import { useSoporteStore, type EstadoReporte, type ReporteSoporte } from "../store/soporte";
@@ -20,9 +20,8 @@ const ESTADO_COLOR: Record<EstadoReporte, string> = {
 };
 
 /**
- * Buzón de soporte del administrador. La lista sale de la base, no de un correo:
- * aunque Resend esté caído o sin configurar, el reporte llega aquí igual — por
- * eso los que no se pudieron avisar se marcan en vez de esconderse.
+ * Buzón de soporte del administrador. Vive entero dentro de la aplicación: los
+ * reportes se guardan en la base y se leen aquí, sin correo de por medio.
  */
 export function SoporteView() {
   const hydrated = useHasHydrated();
@@ -156,23 +155,6 @@ export function SoporteView() {
                       {r.autorNombre} · {r.autorRoles.join(", ")} · {r.creadoEn}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {r.respuestas.length > 0 && (
-                      <span className="inline-flex items-center gap-1 text-xs" style={{ color: "var(--text-dim)" }}>
-                        <CornerDownRight className="w-3.5 h-3.5" />
-                        {r.respuestas.length}
-                      </span>
-                    )}
-                    {!r.avisado && (
-                      <span
-                        className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: "rgba(239,68,68,0.14)", color: "#EF4444" }}
-                        title="El reporte se guardó, pero el aviso por correo no salió. Revisa RESEND_API_KEY."
-                      >
-                        <MailWarning className="w-3 h-3" /> Sin avisar
-                      </span>
-                    )}
-                  </div>
                 </button>
 
                 {expandido && (
@@ -197,31 +179,12 @@ export function SoporteView() {
                       )}
                     </div>
 
-                    {r.respuestas.length > 0 && (
-                      <div className="flex flex-col gap-2">
-                        {r.respuestas.map((resp) => (
-                          <div
-                            key={resp.id}
-                            className="rounded-lg p-3"
-                            style={{ backgroundColor: "var(--hover-surface-2)" }}
-                          >
-                            <p className="text-xs mb-1" style={{ color: "var(--text-dim)" }}>
-                              {resp.remitente} · {resp.recibidaEn}
-                            </p>
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-strong)" }}>
-                              {resp.cuerpo}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
                     <div className="flex items-center gap-3">
                       <Button type="button" variant="outline" className="h-9 rounded-lg text-sm" onClick={() => alternarEstado(r)}>
                         {r.estado === "atendido" ? "Reabrir" : "Marcar como atendido"}
                       </Button>
                       <p className="text-xs" style={{ color: "var(--text-dim)" }}>
-                        Contesta por correo: las respuestas del hilo se archivan aquí.
+                        ¿Necesitas contestarle? Escríbele a su correo desde arriba.
                       </p>
                     </div>
                   </div>
