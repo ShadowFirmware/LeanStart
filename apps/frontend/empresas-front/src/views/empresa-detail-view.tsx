@@ -69,13 +69,18 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 /* ─── Tarjeta de sección ─── */
-function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
+function SectionCard({ title, icon: Icon, action, children, tienePendiente, ocultarCuerpoSiVacio }: {
   title: string;
   icon: React.ElementType;
   action?: React.ReactNode;
   children: React.ReactNode;
   tienePendiente?: boolean;
+  /** Cuando `children` no renderiza nada (p. ej. una condición que da `false`), no
+   *  pinta el cuerpo con padding — evita un bloque vacío debajo del encabezado.
+   *  Por defecto false para no cambiar el comportamiento de las demás secciones. */
+  ocultarCuerpoSiVacio?: boolean;
 }) {
+  const hayCuerpo = !ocultarCuerpoSiVacio || Boolean(children);
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -83,7 +88,7 @@ function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
     >
       <div
         className="flex items-center justify-between gap-3 flex-wrap gap-y-2 px-4 md:px-6 py-4"
-        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+        style={{ borderBottom: hayCuerpo ? "1px solid var(--border-subtle)" : "none" }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <div
@@ -102,7 +107,7 @@ function SectionCard({ title, icon: Icon, action, children, tienePendiente }: {
         </div>
         {action}
       </div>
-      <div className="px-4 md:px-6 py-5">{children}</div>
+      {hayCuerpo && <div className="px-4 md:px-6 py-5">{children}</div>}
     </div>
   );
 }
@@ -1004,6 +1009,7 @@ export function EmpresaDetailView({
         title="Lean Canvas"
         icon={LayoutTemplate}
         tienePendiente={canvasTienePendiente}
+        ocultarCuerpoSiVacio
         action={
           <Link
             href={`${basePath}/${id}/canvas`}
@@ -1018,22 +1024,35 @@ export function EmpresaDetailView({
       >
         {empresa.estado === "borrador" && (
           <>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-sm" style={{ color: "var(--text-dim)" }}>
                 {empresa.canvasBloques ?? 0} de {CANVAS_TOTAL} bloques completados
               </span>
               <span
-                className="text-xs font-semibold"
-                style={{ color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "var(--brand)" : "var(--text-faint)" }}
+                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  color: canvasPct === 100 ? "#10B981" : canvasPct > 0 ? "var(--brand)" : "var(--text-faint)",
+                  backgroundColor: canvasPct === 100 ? "rgba(16,185,129,0.12)" : canvasPct > 0 ? "var(--brand-tint)" : "var(--border-subtle)",
+                }}
               >
                 {canvasPct}%
               </span>
             </div>
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${canvasPct}%`, backgroundColor: canvasPct === 100 ? "#10B981" : "var(--brand)" }}
-              />
+            {/* Un segmento por bloque del canvas en vez de una sola barra continua —
+                da una idea más concreta de cuántos de los 9 faltan de un vistazo. */}
+            <div className="flex gap-1.5">
+              {Array.from({ length: CANVAS_TOTAL }, (_, i) => {
+                const completado = i < (empresa.canvasBloques ?? 0);
+                return (
+                  <div
+                    key={i}
+                    className="flex-1 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      background: completado ? (canvasPct === 100 ? "#10B981" : "var(--brand-gradient)") : "var(--border-subtle)",
+                    }}
+                  />
+                );
+              })}
             </div>
             {puedeEditarProyecto && (empresa.canvasBloques ?? 0) === 0 && (
               <p className="text-xs mt-3" style={{ color: "var(--text-faint)" }}>
