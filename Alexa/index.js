@@ -212,7 +212,7 @@ const languageStrings = {
       GetMentorCommentsIntent: "Tuve un problema consultando los comentarios de tu mentor. Intenta de nuevo en un momento.",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Vamos a intentarlo de nuevo, o di 'cancela' si prefieres dejarlo por ahora. ¿Cuál es tu nombre?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Di 'inicia sesión' cuando quieras intentarlo de nuevo con tu nombre y tu semilla.`,
       loginSuccess: (username, menuMessage) => `Listo, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Hola de nuevo, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `cómo va mi proyecto ${name}`,
@@ -359,7 +359,7 @@ const languageStrings = {
       GetMentorCommentsIntent: "I had a problem checking your mentor's comments. Please try again in a moment.",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Let's try again, or say 'cancel' if you'd rather leave it for now. What's your name?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Say 'log in' whenever you want to try again with your name and seed.`,
       loginSuccess: (username, menuMessage) => `Great, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Welcome back, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `how's my project ${name} going`,
@@ -831,9 +831,21 @@ const LoginIntentHandler = {
       if (!result.valid) {
         const reasonMessage = resources.LOGIN_FAILURE_REASONS[result.reason] || resources.LOGIN_FAILURE_REASONS.UNKNOWN;
         const speakOutput = resources.TEMPLATES.loginRetry(reasonMessage);
+        // NO se reinicia el diálogo con un directive (ver historial: tanto
+        // "slots: {}" como una reconstrucción "completa" del updatedIntent
+        // demostraron ser fráginles con confirmationRequired activo en
+        // "semilla" — Alexa terminaba la sesión con su propio error
+        // genérico antes de que nuestro try/catch pudiera reaccionar,
+        // porque el problema ocurre al procesar el directive del lado de
+        // Alexa, no en el JSON que regresamos). En vez de eso: se responde
+        // con el motivo y se deja la sesión abierta con un reprompt plano,
+        // sin ningún directive. El usuario simplemente vuelve a decir
+        // "inicia sesión" para reintentar desde cero (ese camino, el de
+        // LoginIntentDialogDelegationHandler con addDelegateDirective()
+        // SIN argumentos, es el simple y ya probado que nunca ha fallado).
         return handlerInput.responseBuilder
           .speak(speakOutput)
-          .addDelegateDirective({ name: 'LoginIntent', confirmationStatus: 'NONE', slots: {} })
+          .reprompt(speakOutput)
           .getResponse();
       }
 
