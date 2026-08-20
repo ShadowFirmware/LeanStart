@@ -75,7 +75,7 @@ const DEFAULT_LOCALE = 'es-MX';
 const languageStrings = {
   'es-MX': {
     WELCOME_MESSAGE: "¡Hola! Estoy aquí para ayudarte con tu mini empresa. Si quieres saber el estado o los comentarios de tus proyectos, primero di 'iniciar sesión'. Si no, puedes usar la guía con normalidad diciendo, por ejemplo, 'ayuda con un proyecto'. Si en algún momento te pierdes, solo di 'ayuda'.",
-    MENU_MESSAGE: "Puedo ayudarte de tres formas: pídeme ayuda con tu proyecto, pregúntame el estado de tu proyecto, o pídeme los comentarios que haya dejado tu mentor. ¿Qué necesitas?",
+    MENU_MESSAGE: "Puedo ayudarte de tres formas: di 'dame el menú de fases' para la guía del proyecto, di 'estado de mi proyecto' para saber cómo va, o di 'cuántos comentarios tengo' para ver los de tu mentor. ¿Qué necesitas?",
     OVERVIEW_MESSAGE: "Estas son las 4 fases: primera, creación de tu mini empresa; segunda, registro de productos o servicios; tercera, construcción del Canvas; y cuarta, validación de tu hipótesis. Dime el número de la fase que quieras conocer a detalle.",
     OVERVIEW_REPROMPT: "¿De cuál fase necesitas un ejemplo detallado?",
     HELP_MESSAGE: "Claro, recuerda que puedes explorar las fases del proyecto, el canvas o la hipótesis sin necesidad de iniciar sesión. Para las fases, solo dime un número del 1 al 4, como 'la fase 2'. Para el canvas o la hipótesis, dime el nombre de la parte, por ejemplo 'la propuesta de valor' o 'el diseño del experimento'. Si quieres el estado de tu proyecto o los comentarios de tu mentor, primero di 'iniciar sesión'. Y si no escuchaste bien algo, solo di 'repite'. ¿En qué te ayudo?",
@@ -212,7 +212,7 @@ const languageStrings = {
       GetMentorCommentsIntent: "Tuve un problema consultando los comentarios de tu mentor. Intenta de nuevo en un momento.",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Vamos a intentarlo de nuevo, o di 'cancela' si prefieres dejarlo por ahora. ¿Cuál es tu nombre?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Di 'inicia sesión' cuando quieras intentarlo de nuevo con tu nombre y tu semilla.`,
       loginSuccess: (username, menuMessage) => `Listo, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Hola de nuevo, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `cómo va mi proyecto ${name}`,
@@ -227,7 +227,7 @@ const languageStrings = {
   },
   'en-US': {
     WELCOME_MESSAGE: "Hi! I'm here to help you with your mini company. If you want to know the status or the comments on your projects, first say 'log in'. Otherwise, you can use the guide normally by saying, for example, 'help with a project'. If you ever get lost, just say 'help'.",
-    MENU_MESSAGE: "I can help you in three ways: ask me for help with your project, ask me the status of your project, or ask me for the comments your mentor left. What do you need?",
+    MENU_MESSAGE: "I can help you in three ways: say 'give me the phase menu' for the project guide, say 'status of my project' to check how it's going, or say 'how many comments do i have' to see your mentor's feedback. What do you need?",
     OVERVIEW_MESSAGE: "These are the 4 phases: first, creating your mini company; second, registering your products or services; third, building your Canvas; and fourth, validating your hypothesis. Tell me the number of the phase you'd like to know in detail.",
     OVERVIEW_REPROMPT: "Which phase would you like a detailed example of?",
     HELP_MESSAGE: "Sure, remember you can explore the project's phases, the canvas, or the hypothesis without needing to log in. For the phases, just tell me a number from 1 to 4, like 'phase 2'. For the canvas or the hypothesis, tell me the name of the part, for example 'the value proposition' or 'the experiment design'. If you want your project's status or your mentor's comments, first say 'log in'. And if you didn't catch something, just say 'repeat'. What can I help you with?",
@@ -359,7 +359,7 @@ const languageStrings = {
       GetMentorCommentsIntent: "I had a problem checking your mentor's comments. Please try again in a moment.",
     },
     TEMPLATES: {
-      loginRetry: (reasonMessage) => `${reasonMessage} Let's try again, or say 'cancel' if you'd rather leave it for now. What's your name?`,
+      loginRetry: (reasonMessage) => `${reasonMessage} Say 'log in' whenever you want to try again with your name and seed.`,
       loginSuccess: (username, menuMessage) => `Great, ${username}. ${menuMessage}`,
       launchAuthenticated: (username, menuMessage) => `Welcome back, ${username}. ${menuMessage}`,
       statusExampleQuestion: (name) => `how's my project ${name} going`,
@@ -831,9 +831,21 @@ const LoginIntentHandler = {
       if (!result.valid) {
         const reasonMessage = resources.LOGIN_FAILURE_REASONS[result.reason] || resources.LOGIN_FAILURE_REASONS.UNKNOWN;
         const speakOutput = resources.TEMPLATES.loginRetry(reasonMessage);
+        // NO se reinicia el diálogo con un directive (ver historial: tanto
+        // "slots: {}" como una reconstrucción "completa" del updatedIntent
+        // demostraron ser fráginles con confirmationRequired activo en
+        // "semilla" — Alexa terminaba la sesión con su propio error
+        // genérico antes de que nuestro try/catch pudiera reaccionar,
+        // porque el problema ocurre al procesar el directive del lado de
+        // Alexa, no en el JSON que regresamos). En vez de eso: se responde
+        // con el motivo y se deja la sesión abierta con un reprompt plano,
+        // sin ningún directive. El usuario simplemente vuelve a decir
+        // "inicia sesión" para reintentar desde cero (ese camino, el de
+        // LoginIntentDialogDelegationHandler con addDelegateDirective()
+        // SIN argumentos, es el simple y ya probado que nunca ha fallado).
         return handlerInput.responseBuilder
           .speak(speakOutput)
-          .addDelegateDirective({ name: 'LoginIntent', confirmationStatus: 'NONE', slots: {} })
+          .reprompt(speakOutput)
           .getResponse();
       }
 

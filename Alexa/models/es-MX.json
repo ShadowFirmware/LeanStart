@@ -316,9 +316,6 @@
                         "dame mis proyectos",
                         "estado de proyecto",
                         "estatus de proyecto",
-                        "mi proyecto",
-                        "proyecto",
-                        "proyectos",
                         "cómo van mis proyectos",
                         "cómo va todo con mi proyecto",
                         "avance de mi proyecto",
@@ -708,11 +705,10 @@
                         {
                             "name": "semilla",
                             "type": "AMAZON.FOUR_DIGIT_NUMBER",
-                            "confirmationRequired": true,
+                            "confirmationRequired": false,
                             "elicitationRequired": true,
                             "prompts": {
-                                "elicitation": "Elicit.Slot.LoginIntent.semilla",
-                                "confirmation": "Confirm.Slot.LoginIntent.semilla"
+                                "elicitation": "Elicit.Slot.LoginIntent.semilla"
                             }
                         }
                     ]
@@ -792,19 +788,6 @@
                     {
                         "type": "PlainText",
                         "value": "¿Cuál es tu semilla de 4 dígitos?"
-                    }
-                ]
-            },
-            {
-                "id": "Confirm.Slot.LoginIntent.semilla",
-                "variations": [
-                    {
-                        "type": "PlainText",
-                        "value": "Escuché {semilla}, ¿es correcto?"
-                    },
-                    {
-                        "type": "PlainText",
-                        "value": "Tu semilla es {semilla}, ¿verdad?"
                     }
                 ]
             },
