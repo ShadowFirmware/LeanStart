@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsString, MaxLength, MinLength } from "class-validator";
+import { Match } from "./match.decorator";
 
 export class RegisterDto {
   @ApiProperty({ example: "Juan Pérez" })
@@ -18,4 +19,11 @@ export class RegisterDto {
   @MinLength(8)
   @MaxLength(72)
   password!: string;
+
+  // Se valida aquí también (no solo en el gateway ni en el front) y se descarta:
+  // register() solo lee nombre/correo/password, así que confirmPassword nunca llega a la BD.
+  @ApiProperty({ example: "Sup3rSegura!", description: "Debe ser idéntica a password" })
+  @IsString()
+  @Match("password", { message: "Las contraseñas no coinciden." })
+  confirmPassword!: string;
 }

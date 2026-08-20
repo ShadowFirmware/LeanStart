@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsString, Length, MinLength } from "class-validator";
+import { Match } from "./match.decorator";
 
 export class RegisterDto {
   @ApiProperty({ example: "Juan Pérez" })
@@ -15,6 +16,13 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   password!: string;
+
+  // Nunca se persiste: solo existe para que el servidor confirme que el usuario
+  // escribió la misma contraseña dos veces (no confiamos en la validación del front).
+  @ApiProperty({ example: "Sup3rSegura!", description: "Debe ser idéntica a password" })
+  @IsString()
+  @Match("password", { message: "Las contraseñas no coinciden." })
+  confirmPassword!: string;
 }
 
 export class LoginDto {
