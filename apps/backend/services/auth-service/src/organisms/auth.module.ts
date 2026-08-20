@@ -12,6 +12,7 @@ import { PrivilegiosService } from "../molecules/privilegios.service";
 import { BitacoraService } from "../molecules/bitacora.service";
 import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
 import { EmailService } from "../molecules/email.service";
+import { S3UploadService } from "@leanstart/backend-commons";
 
 @Module({
   imports: [
@@ -25,6 +26,6 @@ import { EmailService } from "../molecules/email.service";
     }),
   ],
   controllers: [AuthController, UsuariosController, PrivilegiosController, BitacoraController, HealthController],
-  providers: [AuthService, UsuariosService, PrivilegiosService, BitacoraService, SeedsAlexaService, EmailService],
+  providers: [AuthService, UsuariosService, PrivilegiosService, BitacoraService, SeedsAlexaService, EmailService, S3UploadService],
 })
 export class AuthModule {}

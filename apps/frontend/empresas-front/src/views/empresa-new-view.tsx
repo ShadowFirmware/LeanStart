@@ -29,7 +29,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa } from "@leanstart/commons";
-import { compressImageToDataUrl, useCurrentUser } from "@leanstart/commons";
+import { compressImageToDataUrl, compressImageToBlob, apiUpload, modoDemo, useCurrentUser } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
@@ -65,8 +65,10 @@ export function EmpresaNewView() {
   const router = useRouter();
   const currentUser = useCurrentUser();
   const agregarEmpresa = useEmpresasStore((s) => s.agregarEmpresa);
+  const actualizarEmpresa = useEmpresasStore((s) => s.actualizarEmpresa);
   const [loading, setLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
@@ -94,8 +96,11 @@ export function EmpresaNewView() {
     }
 
     try {
+      // Solo para la vista previa en pantalla — el archivo real (logoFile) se sube a
+      // S3 después de crear la empresa, cuando ya existe el id que necesita la ruta.
       const dataUrl = await compressImageToDataUrl(file, { maxDimension: 512, mimeType: "image/png" });
       setLogoPreview(dataUrl);
+      setLogoFile(file);
       toast.success(`Imagen "${file.name}" lista.`);
     } catch {
       toast.error("No se pudo leer la imagen.");
@@ -105,14 +110,31 @@ export function EmpresaNewView() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
+      // En modo real el logo se sube por separado (necesita el id de la empresa),
+      // así que aquí se crea sin logoUrl; en demo no hay backend al que subirlo,
+      // así que se conserva el data URL como antes.
       const id = await agregarEmpresa({
         nombre: values.nombre,
         giro: values.giro,
         descripcion: values.descripcion,
         mercadoObjetivo: values.mercadoObjetivo,
-        logoUrl: logoPreview ?? undefined,
+        logoUrl: modoDemo() ? (logoPreview ?? undefined) : undefined,
         ownerId: currentUser?.id,
       });
+
+      if (!modoDemo() && logoFile) {
+        try {
+          const blob = await compressImageToBlob(logoFile, { maxDimension: 512, mimeType: "image/png" });
+          const { logoUrl } = await apiUpload<{ logoUrl: string }>(`/empresas/${id}/logo`, blob, {
+            nombreArchivo: logoFile.name,
+            etiquetaCarga: null,
+          });
+          await actualizarEmpresa(id, { logoUrl });
+        } catch {
+          toast.error("La empresa se creó, pero el logo no se pudo subir. Puedes intentarlo de nuevo después.");
+        }
+      }
+
       toast.success(`"${values.nombre}" fue registrada correctamente.`);
       router.push(`/emprendedor/empresas/${id}`);
     } catch {

@@ -32,7 +32,7 @@ import {
 } from "@leanstart/commons";
 import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
-import { compressImageToDataUrl, modoDemo, useAccion, useHasHydrated, ViewSkeleton, GIRO_LABELS, ESTADO_EMPRESA_CONFIG } from "@leanstart/commons";
+import { compressImageToDataUrl, compressImageToBlob, apiUpload, modoDemo, useAccion, useHasHydrated, ViewSkeleton, GIRO_LABELS, ESTADO_EMPRESA_CONFIG } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
@@ -323,6 +323,7 @@ export function EmpresaDetailView({
 
   const [editando, setEditando] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoLightboxOpen, setLogoLightboxOpen] = useState(false);
   const [asignarTipo, setAsignarTipo] = useState<TipoAsignacion | null>(null);
   const [reportarOpen, setReportarOpen] = useState(false);
@@ -505,8 +506,11 @@ export function EmpresaDetailView({
     }
 
     try {
+      // Vista previa nada más — en modo real el archivo (logoFile) se sube a S3 al
+      // guardar; en demo el data URL sigue siendo el propio valor persistido.
       const dataUrl = await compressImageToDataUrl(file, { maxDimension: 512, mimeType: "image/png" });
       setLogoPreview(dataUrl);
+      setLogoFile(file);
       toast.success(`Imagen "${file.name}" lista. No olvides guardar los cambios.`);
     } catch {
       toast.error("No se pudo leer la imagen.");
@@ -516,15 +520,29 @@ export function EmpresaDetailView({
   function cancelarEdicion() {
     form.reset();
     setLogoPreview(null);
+    setLogoFile(null);
     setEditando(false);
   }
 
   async function onSubmit(values: FormValues) {
     await guardado.ejecutar(
       async () => {
-        await actualizarEmpresa(id, { ...values, logoUrl: logoPreview ?? empresa?.logoUrl });
+        let logoUrl = empresa?.logoUrl;
+        if (!modoDemo() && logoFile) {
+          const blob = await compressImageToBlob(logoFile, { maxDimension: 512, mimeType: "image/png" });
+          const subida = await apiUpload<{ logoUrl: string }>(`/empresas/${id}/logo`, blob, {
+            nombreArchivo: logoFile.name,
+            etiquetaCarga: null,
+          });
+          logoUrl = subida.logoUrl;
+        } else if (modoDemo() && logoPreview) {
+          logoUrl = logoPreview;
+        }
+
+        await actualizarEmpresa(id, { ...values, logoUrl });
         toast.success("Empresa actualizada correctamente.");
         setLogoPreview(null);
+        setLogoFile(null);
         setEditando(false);
       },
       {

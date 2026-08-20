@@ -73,3 +73,53 @@ export async function compressImageToDataUrl(
     URL.revokeObjectURL(objectUrl);
   }
 }
+
+/**
+ * Misma lógica de reescalado que `compressImageToDataUrl`, pero devuelve un
+ * `Blob` en vez de un data URL — para subir el archivo a un endpoint (S3 vía
+ * backend) en vez de embeberlo como texto. Vectores/no-imágenes se devuelven
+ * tal cual (el archivo original), igual que su contraparte.
+ */
+export async function compressImageToBlob(
+  file: File,
+  options: CompressImageOptions = {}
+): Promise<Blob> {
+  const { maxDimension = 1280, quality = 0.72, mimeType = "image/jpeg" } = options;
+
+  if (file.type === "image/svg+xml" || !file.type.startsWith("image/")) {
+    return file;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(objectUrl);
+    let { width, height } = img;
+    if (!width || !height) return file;
+
+    if (width > maxDimension || height > maxDimension) {
+      const scale = maxDimension / Math.max(width, height);
+      width = Math.max(1, Math.round(width * scale));
+      height = Math.max(1, Math.round(height * scale));
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+
+    if (mimeType === "image/jpeg") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+    }
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const compressed = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mimeType, quality));
+    if (!compressed) return file;
+    return compressed.size < file.size ? compressed : file;
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}

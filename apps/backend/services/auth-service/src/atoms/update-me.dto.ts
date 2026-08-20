@@ -14,9 +14,9 @@ export class UpdateMeDto {
   @IsEmail()
   correo?: string;
 
-  @ApiPropertyOptional({ description: "Avatar en data URL (comprimido)." })
+  @ApiPropertyOptional({ description: "URL pública del avatar en S3 (la fija POST /auth/me/avatar; aquí solo se permite limpiarla)." })
   @IsOptional()
   @IsString()
-  @MaxLength(3_000_000)
+  @MaxLength(500)
   avatarUrl?: string;
 }

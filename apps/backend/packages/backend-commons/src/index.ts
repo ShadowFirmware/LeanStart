@@ -14,3 +14,4 @@ export * from "./molecules/http-exception.filter";
 export * from "./molecules/scalar-setup";
 export * from "./molecules/internal-http-client";
 export * from "./molecules/body-limit";
+export * from "./molecules/s3-upload.service";

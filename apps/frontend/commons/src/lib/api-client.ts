@@ -122,3 +122,43 @@ export async function cerrarSesionBackend(): Promise<void> {
   if (modoDemo()) return;
   await apiFetch("/auth/logout", { method: "POST", etiquetaCarga: null }).catch(() => {});
 }
+
+/**
+ * Variante de apiFetch para subir un archivo (multipart/form-data) — a
+ * diferencia de apiFetch, NO fija Content-Type: el navegador debe ponerlo él
+ * mismo con el boundary correcto. El backend sube el archivo a S3 y devuelve
+ * la URL real; nunca se embebe el archivo como base64.
+ */
+export async function apiUpload<T>(
+  path: string,
+  file: File | Blob,
+  options?: { etiquetaCarga?: string | null; campo?: string; nombreArchivo?: string }
+): Promise<T> {
+  const seguir = options?.etiquetaCarga !== null;
+  if (seguir) useCargaStore.getState().iniciar(options?.etiquetaCarga ?? undefined);
+  try {
+    const token = (await getSession() as { accessToken?: string } | null)?.accessToken;
+    const formData = new FormData();
+    formData.append(options?.campo ?? "file", file, options?.nombreArchivo ?? "upload");
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    });
+
+    if (res.status === 401) {
+      cerrarSesionUnaVez();
+    }
+
+    if (!res.ok) {
+      const body: ApiError = await res.json().catch(() => ({}));
+      const mensaje = Array.isArray(body.message) ? body.message.join(", ") : body.message;
+      throw new Error(mensaje ?? `Error ${res.status} al subir archivo a ${path}`);
+    }
+
+    return res.json();
+  } finally {
+    if (seguir) useCargaStore.getState().terminar();
+  }
+}

@@ -13,7 +13,8 @@ import type { ControllerRenderProps } from "react-hook-form";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
   Input, Button,
-  useCurrentUser, usePerfilStore, useHasHydrated, useAccion, compressImageToDataUrl,
+  useCurrentUser, usePerfilStore, useHasHydrated, useAccion,
+  compressImageToDataUrl, compressImageToBlob, apiUpload, modoDemo,
   type Role,
 } from "@leanstart/commons";
 
@@ -78,14 +79,30 @@ export function PerfilView() {
   async function handleAvatarFile(file: File) {
     setSubiendoAvatar(true);
     try {
-      const dataUrl = await compressImageToDataUrl(file, {
+      // Sin backend (modo demo) no hay dónde subir el archivo: se conserva el
+      // fallback histórico de embeberlo como data URL en localStorage.
+      if (modoDemo()) {
+        const dataUrl = await compressImageToDataUrl(file, {
+          maxDimension: 256,
+          quality: 0.8,
+          mimeType: file.type === "image/png" ? "image/png" : "image/jpeg",
+        });
+        setAvatarUrl(dataUrl);
+        return;
+      }
+
+      const blob = await compressImageToBlob(file, {
         maxDimension: 256,
         quality: 0.8,
         mimeType: file.type === "image/png" ? "image/png" : "image/jpeg",
       });
-      setAvatarUrl(dataUrl);
+      const { avatarUrl: subida } = await apiUpload<{ avatarUrl: string }>("/auth/me/avatar", blob, {
+        nombreArchivo: file.name,
+        etiquetaCarga: "Subiendo foto…",
+      });
+      setAvatarUrl(subida);
     } catch {
-      toast.error("No se pudo procesar la imagen.");
+      toast.error("No se pudo subir la imagen.");
     } finally {
       setSubiendoAvatar(false);
     }

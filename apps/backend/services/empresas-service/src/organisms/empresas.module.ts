@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { InternalHttpClient } from "@leanstart/backend-commons";
+import { InternalHttpClient, S3UploadService } from "@leanstart/backend-commons";
 import { EmpresasController } from "./empresas.controller";
 import { PublicController } from "./public.controller";
 import { CanvasController } from "./canvas.controller";
@@ -36,6 +36,7 @@ import { ReportesEmpresaService } from "../molecules/reportes-empresa.service";
     ObservacionesService,
     ReportesEmpresaService,
     InternalHttpClient,
+    S3UploadService,
   ],
 })
 export class EmpresasModule {}

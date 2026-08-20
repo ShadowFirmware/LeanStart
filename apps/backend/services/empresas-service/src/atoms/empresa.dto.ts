@@ -9,9 +9,9 @@ const GIROS = Object.keys(GIRO_LABELS) as GiroEmpresa[];
 const MAX_NOMBRE = 100;
 const MAX_DESCRIPCION = 500;
 const MAX_MERCADO = 500;
-// El logo ya viene comprimido por el cliente (compressImageToDataUrl); este tope solo
-// evita que alguien mande un data URL enorme saltándose esa compresión.
-const MAX_LOGO_LEN = 3_000_000;
+// El logo se sube por separado a S3 vía POST /empresas/:id/logo (S3UploadService) y
+// aquí solo se guarda la URL resultante — nunca un archivo o data URL crudo.
+const MAX_LOGO_LEN = 500;
 
 export class CreateEmpresaDto {
   @ApiProperty({ example: "LeanStart" })
@@ -36,7 +36,7 @@ export class CreateEmpresaDto {
   @MaxLength(MAX_MERCADO)
   mercadoObjetivo!: string;
 
-  @ApiPropertyOptional({ description: "Logo en data URL comprimido." })
+  @ApiPropertyOptional({ description: "Normalmente se omite al crear: el logo se sube después vía POST /empresas/:id/logo, una vez existe el id." })
   @IsOptional()
   @IsString()
   @MaxLength(MAX_LOGO_LEN)

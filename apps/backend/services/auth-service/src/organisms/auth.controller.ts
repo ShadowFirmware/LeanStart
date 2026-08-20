@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Patch, Post } from "@nestjs/common";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, type AuthUser } from "@leanstart/backend-commons";
+import { BadRequestException, Body, Controller, Get, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { CurrentUser, S3UploadService, type AuthUser } from "@leanstart/backend-commons";
 import { AuthService } from "../molecules/auth.service";
 import { SeedsAlexaService } from "../molecules/seeds-alexa.service";
 import { LoginDto } from "../atoms/login.dto";
@@ -15,7 +16,8 @@ import { GenerarSemillaDto, ValidarSemillaDto } from "../atoms/semilla.dto";
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
-    private readonly seedsAlexa: SeedsAlexaService
+    private readonly seedsAlexa: SeedsAlexaService,
+    private readonly s3: S3UploadService
   ) {}
 
   @Post("register")
@@ -52,6 +54,17 @@ export class AuthController {
   @ApiOperation({ summary: "Actualizar perfil propio" })
   updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateMeDto) {
     return this.auth.updateMe(user.id, dto);
+  }
+
+  @Post("me/avatar")
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Subir avatar a S3 y guardarlo como el del usuario actual" })
+  async subirAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException("Falta el archivo (campo 'file').");
+    const avatarUrl = await this.s3.subirImagen(file, `avatars/${user.id}`);
+    await this.auth.updateMe(user.id, { avatarUrl });
+    return { avatarUrl };
   }
 
   @Post("seeds/generate")

@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { CurrentUser, RequierePrivilegio, Roles, type AuthUser } from "@leanstart/backend-commons";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { CurrentUser, RequierePrivilegio, Roles, S3UploadService, type AuthUser } from "@leanstart/backend-commons";
 import { EmpresasService } from "../molecules/empresas.service";
 import { CreateEmpresaDto, UpdateEmpresaDto } from "../atoms/empresa.dto";
 import { ActualizarNivelInternoDto, AsignarDto, CambiarEstadoDto, CambiarEstadoInternoDto } from "../atoms/estado.dto";
@@ -8,7 +9,10 @@ import { ActualizarNivelInternoDto, AsignarDto, CambiarEstadoDto, CambiarEstadoI
 @ApiTags("empresas")
 @Controller("empresas")
 export class EmpresasController {
-  constructor(private readonly empresas: EmpresasService) {}
+  constructor(
+    private readonly empresas: EmpresasService,
+    private readonly s3: S3UploadService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: "Listar empresas visibles para el usuario actual" })
@@ -58,6 +62,19 @@ export class EmpresasController {
   @ApiParam({ name: "id" })
   eliminar(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.empresas.eliminar(user, id);
+  }
+
+  @Post(":id/logo")
+  @RequierePrivilegio("empresas", "editar")
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Subir el logo de la empresa a S3" })
+  @ApiParam({ name: "id" })
+  async subirLogo(@CurrentUser() user: AuthUser, @Param("id") id: string, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException("Falta el archivo (campo 'file').");
+    const logoUrl = await this.s3.subirImagen(file, `logos/${id}`);
+    await this.empresas.actualizar(user, id, { logoUrl });
+    return { logoUrl };
   }
 
   @Patch(":id/estado")
