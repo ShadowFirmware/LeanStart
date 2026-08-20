@@ -33,7 +33,19 @@
                         "quiero iniciar sesión con mi semilla",
                         "iniciar sesión con mi semilla",
                         "voy a iniciar sesión",
-                        "déjame iniciar sesión"
+                        "déjame iniciar sesión",
+                        "entrar",
+                        "quiero entrar",
+                        "conectarme",
+                        "quiero conectarme",
+                        "verificar mi identidad",
+                        "identifícame",
+                        "autenticarme",
+                        "quiero autenticarme",
+                        "loguearme",
+                        "quiero loguearme",
+                        "dar mi semilla",
+                        "voy a dar mi nombre y semilla"
                     ]
                 },
                 {
@@ -46,7 +58,33 @@
                         "comienza la guía de creación de empresas",
                         "alexa lanza la skill de emprendimiento",
                         "quiero crear mi mini empresa",
-                        "empecemos con el proyecto"
+                        "empecemos con el proyecto",
+                        "hola",
+                        "hola alexa",
+                        "empecemos",
+                        "comencemos",
+                        "quiero empezar",
+                        "vamos a empezar",
+                        "quiero comenzar mi proyecto",
+                        "ayúdame a crear mi empresa",
+                        "quiero crear una empresa",
+                        "inicia la guía",
+                        "abre la guía",
+                        "empieza la guía de emprendedores",
+                        "vamos a crear mi mini empresa",
+                        "oye alexa",
+                        "buenas",
+                        "qué tal",
+                        "buenos días",
+                        "buenas tardes",
+                        "guíame",
+                        "necesito una guía",
+                        "quiero una guía",
+                        "muéstrame cómo empezar",
+                        "cómo empiezo",
+                        "por dónde empiezo",
+                        "empecemos con mi empresa",
+                        "quiero armar mi empresa"
                     ]
                 },
                 {
@@ -63,7 +101,25 @@
                         "cuáles son las fases de la plataforma",
                         "cuál es el proceso completo",
                         "cuántas fases tiene el proyecto",
-                        "dame el menú de fases"
+                        "dame el menú de fases",
+                        "qué puedo hacer",
+                        "qué puedo hacer aquí",
+                        "cuáles son mis opciones",
+                        "dame las opciones",
+                        "qué opciones tengo",
+                        "cuáles son las fases",
+                        "dime las fases",
+                        "muéstrame las fases",
+                        "cuál es el menú",
+                        "dame un resumen",
+                        "info",
+                        "información",
+                        "ayuda general",
+                        "quiero información general",
+                        "dame información",
+                        "explícame todo",
+                        "cómo funciona esto",
+                        "qué es esto"
                     ]
                 },
                 {
@@ -110,7 +166,14 @@
                         "el número {numeroFase}",
                         "número {numeroFase}",
                         "fase {numeroFase}",
-                        "la fase número {numeroFase}"
+                        "la fase número {numeroFase}",
+                        "detalles de la fase {numeroFase}",
+                        "dame detalles de la fase {numeroFase}",
+                        "información sobre la fase {numeroFase}",
+                        "una fase",
+                        "quiero una fase",
+                        "háblame de una fase",
+                        "quiero saber de una fase"
                     ]
                 },
                 {
@@ -147,7 +210,17 @@
                         "{canvasStepName}",
                         "la parte de {canvasStepName}",
                         "es {canvasStepName}",
-                        "el {canvasStepName}"
+                        "el {canvasStepName}",
+                        "detalles sobre {canvasStepName}",
+                        "dame detalles sobre {canvasStepName}",
+                        "información sobre {canvasStepName}",
+                        "cuéntame sobre {canvasStepName}",
+                        "canvas",
+                        "el canvas",
+                        "lean canvas",
+                        "hablemos del canvas",
+                        "quiero ver el canvas",
+                        "el lean canvas"
                     ]
                 },
                 {
@@ -180,7 +253,16 @@
                         "en la parte de {hypothesisStepName}",
                         "{hypothesisStepName}",
                         "la parte de {hypothesisStepName}",
-                        "el {hypothesisStepName}"
+                        "el {hypothesisStepName}",
+                        "detalles sobre {hypothesisStepName}",
+                        "dame detalles sobre {hypothesisStepName}",
+                        "información sobre {hypothesisStepName}",
+                        "cuéntame sobre {hypothesisStepName}",
+                        "hipótesis",
+                        "mi hipótesis",
+                        "la hipótesis",
+                        "hablemos de la hipótesis",
+                        "quiero ver la hipótesis"
                     ]
                 },
                 {
@@ -214,7 +296,33 @@
                         "revisa el estado de mi proyecto {nombreProyecto}",
                         "dime el estado de mi proyecto {nombreProyecto}",
                         "consulta el estado del proyecto {nombreProyecto}",
-                        "cómo va el proyecto {nombreProyecto}"
+                        "cómo va el proyecto {nombreProyecto}",
+                        "detalles sobre {nombreProyecto}",
+                        "dame detalles sobre {nombreProyecto}",
+                        "información sobre {nombreProyecto}",
+                        "dame información de {nombreProyecto}",
+                        "cuéntame sobre {nombreProyecto}",
+                        "cuéntame de {nombreProyecto}",
+                        "háblame de {nombreProyecto}",
+                        "qué sabes de {nombreProyecto}",
+                        "quiero saber de {nombreProyecto}",
+                        "cuáles son mis proyectos",
+                        "qué proyectos tengo",
+                        "dime mis proyectos",
+                        "muéstrame mis proyectos",
+                        "lista de proyectos",
+                        "mis proyectos",
+                        "quiero ver mis proyectos",
+                        "dame mis proyectos",
+                        "estado de proyecto",
+                        "estatus de proyecto",
+                        "mi proyecto",
+                        "proyecto",
+                        "proyectos",
+                        "cómo van mis proyectos",
+                        "cómo va todo con mi proyecto",
+                        "avance de mi proyecto",
+                        "quiero un estatus"
                     ]
                 },
                 {
@@ -242,7 +350,21 @@
                         "cuántos comentarios ha dejado mi mentor en {nombreProyecto}",
                         "revisa los comentarios del proyecto {nombreProyecto}",
                         "cuántas observaciones tiene el proyecto {nombreProyecto}",
-                        "dime cuántos comentarios tiene mi proyecto {nombreProyecto}"
+                        "dime cuántos comentarios tiene mi proyecto {nombreProyecto}",
+                        "detalles de comentarios de {nombreProyecto}",
+                        "información de comentarios de {nombreProyecto}",
+                        "comentarios sobre {nombreProyecto}",
+                        "mis comentarios",
+                        "comentarios",
+                        "notas del mentor",
+                        "qué dijo mi mentor",
+                        "observaciones",
+                        "mis observaciones",
+                        "revisar comentarios",
+                        "ver comentarios",
+                        "quiero ver mis comentarios",
+                        "tengo comentarios",
+                        "hay algo nuevo de mi mentor"
                     ]
                 },
                 {
@@ -278,11 +400,59 @@
                 },
                 {
                     "name": "AMAZON.FallbackIntent",
-                    "samples": []
+                    "samples": [
+                        "no sé qué decir",
+                        "no entiendo",
+                        "estoy confundido",
+                        "eso no tiene sentido",
+                        "no sé"
+                    ]
                 },
                 {
                     "name": "AMAZON.NavigateHomeIntent",
-                    "samples": []
+                    "samples": [
+                        "ve al inicio",
+                        "regresa al inicio",
+                        "menú principal",
+                        "empezar de nuevo",
+                        "vamos al inicio",
+                        "llévame al inicio"
+                    ]
+                },
+                {
+                    "name": "AMAZON.RepeatIntent",
+                    "samples": [
+                        "repite",
+                        "puedes repetir",
+                        "repite eso",
+                        "no escuché",
+                        "no te escuché",
+                        "qué dijiste",
+                        "repite por favor",
+                        "puedes repetirlo"
+                    ]
+                },
+                {
+                    "name": "AMAZON.YesIntent",
+                    "samples": [
+                        "sí",
+                        "claro",
+                        "afirmativo",
+                        "correcto",
+                        "así es",
+                        "por supuesto"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": [
+                        "no",
+                        "no gracias",
+                        "negativo",
+                        "para nada",
+                        "no quiero",
+                        "no por ahora"
+                    ]
                 }
             ],
             "types": [
@@ -538,10 +708,11 @@
                         {
                             "name": "semilla",
                             "type": "AMAZON.FOUR_DIGIT_NUMBER",
-                            "confirmationRequired": false,
+                            "confirmationRequired": true,
                             "elicitationRequired": true,
                             "prompts": {
-                                "elicitation": "Elicit.Slot.LoginIntent.semilla"
+                                "elicitation": "Elicit.Slot.LoginIntent.semilla",
+                                "confirmation": "Confirm.Slot.LoginIntent.semilla"
                             }
                         }
                     ]
@@ -621,6 +792,19 @@
                     {
                         "type": "PlainText",
                         "value": "¿Cuál es tu semilla de 4 dígitos?"
+                    }
+                ]
+            },
+            {
+                "id": "Confirm.Slot.LoginIntent.semilla",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Escuché {semilla}, ¿es correcto?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Tu semilla es {semilla}, ¿verdad?"
                     }
                 ]
             },
