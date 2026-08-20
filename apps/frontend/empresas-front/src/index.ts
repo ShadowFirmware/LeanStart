@@ -27,8 +27,6 @@ export { useObservacionesStore } from "./store/observaciones";
 export type { Observacion, TipoElementoObservacion } from "./store/observaciones";
 export { useReportesEmpresaStore } from "./store/reportes-empresa";
 export type { ReporteEmpresa } from "./store/reportes-empresa";
-export { useAsistenteStore, CLAVE_NUEVA_CONVERSACION } from "./store/asistente";
-export type { MensajeChat } from "./store/asistente";
 
 // Componentes compartidos
 export { ObservacionesButton } from "./components/observaciones-button";
