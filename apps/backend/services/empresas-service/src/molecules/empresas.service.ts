@@ -91,8 +91,9 @@ export class EmpresasService {
    * dueño (comparación sin mayúsculas/espacios de sobra) — evita el caso real
    * que motivó esto: "Levsek" registrada dos veces sin que nadie lo notara.
    */
-  private async assertNombreDisponible(nombre: string, excludeId?: string) {
+  async nombreDisponible(nombre: string, excludeId?: string): Promise<boolean> {
     const normalizado = nombre.trim();
+    if (!normalizado) return true;
     const existente = await this.prisma.empresa.findFirst({
       where: {
         nombre: { equals: normalizado, mode: "insensitive" },
@@ -100,9 +101,12 @@ export class EmpresasService {
       },
       select: { id: true },
     });
-    if (existente) {
-      throw new ConflictException(`Ya existe una empresa registrada con el nombre "${normalizado}".`);
-    }
+    return !existente;
+  }
+
+  private async assertNombreDisponible(nombre: string, excludeId?: string) {
+    if (await this.nombreDisponible(nombre, excludeId)) return;
+    throw new ConflictException(`Ya existe una empresa registrada con el nombre "${nombre.trim()}".`);
   }
 
   async eliminar(user: AuthUser, id: string) {

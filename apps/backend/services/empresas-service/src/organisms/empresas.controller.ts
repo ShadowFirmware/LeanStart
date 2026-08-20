@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { CurrentUser, RequierePrivilegio, Roles, S3UploadService, type AuthUser } from "@leanstart/backend-commons";
@@ -24,6 +24,13 @@ export class EmpresasController {
   @ApiOperation({ summary: "[Interno] Empresas evaluadas sin nivel congelado — solo para el script de backfill" })
   listarPendientesNivelInterno() {
     return this.empresas.listarPendientesNivelInterno();
+  }
+
+  @Get("nombre-disponible")
+  @ApiOperation({ summary: "Verificar en vivo si un nombre de empresa ya está en uso (para el formulario de creación/edición)" })
+  async nombreDisponible(@Query("nombre") nombre: string, @Query("excluirId") excluirId?: string) {
+    const disponible = await this.empresas.nombreDisponible(nombre ?? "", excluirId);
+    return { disponible };
   }
 
   @Get(":id")

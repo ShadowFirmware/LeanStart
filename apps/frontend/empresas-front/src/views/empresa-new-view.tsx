@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@leanstart/commons";
 import {
@@ -31,6 +31,7 @@ import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa } from "@leanstart/commons";
 import { compressImageToDataUrl, compressImageToBlob, apiUpload, modoDemo, useCurrentUser } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { useNombreDuplicado } from "../hooks/use-nombre-duplicado";
 
 const GIROS: { value: GiroEmpresa; label: string }[] = [
   { value: "tecnologia", label: "Tecnología" },
@@ -78,6 +79,7 @@ export function EmpresaNewView() {
   });
 
   const nombreActual = form.watch("nombre");
+  const nombreDuplicado = useNombreDuplicado(nombreActual, empresasExistentes);
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -109,14 +111,7 @@ export function EmpresaNewView() {
   }
 
   async function onSubmit(values: FormValues) {
-    const nombreNormalizado = values.nombre.trim().toLowerCase();
-    const yaExiste = empresasExistentes.some(
-      (e) => e.nombre.trim().toLowerCase() === nombreNormalizado
-    );
-    if (yaExiste) {
-      form.setError("nombre", { message: `Ya tienes una empresa registrada con el nombre "${values.nombre.trim()}".` });
-      return;
-    }
+    if (nombreDuplicado) return;
 
     setLoading(true);
     try {
@@ -417,6 +412,22 @@ export function EmpresaNewView() {
             />
           </div>
 
+          {/* Alerta de nombre duplicado — persistente, no un toast que desaparece solo */}
+          {nombreDuplicado && (
+            <div
+              role="alert"
+              className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm"
+              style={{
+                backgroundColor: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.25)",
+                color: "#EF4444",
+              }}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              El nombre de esta empresa ya está utilizado. Elige uno diferente.
+            </div>
+          )}
+
           {/* Footer */}
           <div className="flex items-center justify-between">
             <p className="text-xs" style={{ color: "var(--text-faint)" }}>
@@ -439,6 +450,7 @@ export function EmpresaNewView() {
               </Button>
               <Button
                 type="submit"
+                disabled={nombreDuplicado}
                 loading={loading}
                 loadingText="Registrando…"
                 className="h-9 px-6 text-sm font-semibold border-0"

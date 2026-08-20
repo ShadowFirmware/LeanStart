@@ -34,6 +34,7 @@ import type { ControllerRenderProps } from "react-hook-form";
 import type { GiroEmpresa, EstadoEmpresa } from "@leanstart/commons";
 import { compressImageToDataUrl, compressImageToBlob, apiUpload, modoDemo, useAccion, useHasHydrated, ViewSkeleton, GIRO_LABELS, ESTADO_EMPRESA_CONFIG } from "@leanstart/commons";
 import { useEmpresasStore } from "../store/empresas";
+import { useNombreDuplicado } from "../hooks/use-nombre-duplicado";
 import { useObservacionesStore, puedeVerObservaciones, mentorPuedeComentarEnEstado, emprendedorPuedeEditar } from "../store/observaciones";
 import { ObservacionesButton } from "../components/observaciones-button";
 import { useReportesEmpresaStore } from "../store/reportes-empresa";
@@ -367,6 +368,7 @@ export function EmpresaDetailView({
   const emprendedor = readOnly ? usuarios.find((u) => u.id === empresa.ownerId) : undefined;
   const logoActual = logoPreview ?? empresa.logoUrl;
   const nombreActual = form.watch("nombre") || empresa.nombre;
+  const nombreDuplicado = useNombreDuplicado(editando ? nombreActual : "", empresas, id);
   const canvasPct = Math.round(((empresa.canvasBloques ?? 0) / CANVAS_TOTAL) * 100);
 
   // Progreso de la revisión del mentor: ¿ya se pronunció sobre todas las hipótesis y no dejó nada pendiente?
@@ -525,14 +527,7 @@ export function EmpresaDetailView({
   }
 
   async function onSubmit(values: FormValues) {
-    const nombreNormalizado = values.nombre.trim().toLowerCase();
-    const yaExiste = empresas.some(
-      (e) => e.id !== id && e.nombre.trim().toLowerCase() === nombreNormalizado
-    );
-    if (yaExiste) {
-      form.setError("nombre", { message: `Ya tienes una empresa registrada con el nombre "${values.nombre.trim()}".` });
-      return;
-    }
+    if (nombreDuplicado) return;
 
     await guardado.ejecutar(
       async () => {
@@ -737,6 +732,21 @@ export function EmpresaDetailView({
                 )}
               />
 
+              {nombreDuplicado && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm"
+                  style={{
+                    backgroundColor: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.25)",
+                    color: "#EF4444",
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  El nombre de esta empresa ya está utilizado. Elige uno diferente.
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-1">
                 <Button
                   type="button"
@@ -749,6 +759,7 @@ export function EmpresaDetailView({
                 </Button>
                 <Button
                   type="submit"
+                  disabled={nombreDuplicado}
                   loading={guardado.cargando}
                   loadingText="Guardando…"
                   className="h-9 px-5 text-sm font-semibold border-0"

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
@@ -18,6 +18,14 @@ export class EmpresasController {
   @ApiOperation({ summary: "Listar empresas visibles para el usuario actual" })
   listar(@CurrentUser() user: AuthUser) {
     return this.proxy.get(this.baseUrl, "/empresas", user);
+  }
+
+  @Get("nombre-disponible")
+  @ApiOperation({ summary: "Verificar en vivo si un nombre de empresa ya está en uso" })
+  nombreDisponible(@CurrentUser() user: AuthUser, @Query("nombre") nombre: string, @Query("excluirId") excluirId?: string) {
+    const query = new URLSearchParams({ nombre: nombre ?? "" });
+    if (excluirId) query.set("excluirId", excluirId);
+    return this.proxy.get(this.baseUrl, `/empresas/nombre-disponible?${query.toString()}`, user);
   }
 
   @Get(":id")
