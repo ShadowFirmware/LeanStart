@@ -22,6 +22,11 @@ export class EventoCorreoEntranteDto {
     from: string;
     to: string[];
     subject: string;
+    /// Cuerpo del correo. `text` es el que se guarda; `html` se ignora a
+    /// propósito — archivar HTML ajeno para pintarlo después en el panel del
+    /// administrador sería inyectar marcado de terceros en nuestra UI.
+    text?: string;
+    html?: string;
     attachments?: { id: string; filename: string; content_type: string }[];
   };
 }

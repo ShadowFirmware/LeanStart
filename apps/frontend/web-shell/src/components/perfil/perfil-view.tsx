@@ -8,6 +8,7 @@ import { z } from "zod";
 import { ArrowLeft, Camera, Trash2, ShieldCheck, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SoporteCard } from "@/components/perfil/soporte-card";
 import type { ControllerRenderProps } from "react-hook-form";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
@@ -268,6 +269,8 @@ export function PerfilView() {
         </div>
         <ThemeToggle />
       </div>
+
+      <SoporteCard />
     </div>
   );
 }

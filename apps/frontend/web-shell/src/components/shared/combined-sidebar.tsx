@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Building2, Bell, History, Users, ShieldCheck,
-  ClipboardList, TrendingUp, BarChart3, ScrollText, LogOut, Menu, X,
+  ClipboardList, TrendingUp, BarChart3, ScrollText, LogOut, Menu, X, LifeBuoy,
 } from "lucide-react";
 import type { Role } from "@leanstart/commons";
 import { cerrarSesionBackend, cerrarSesionUnaVez, useHasHydrated } from "@leanstart/commons";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
 import { useEmpresasStore } from "@leanstart/empresas-front";
+import { useSoporteStore } from "@leanstart/administrador-front";
 import { SidebarUser } from "@/components/perfil/sidebar-user";
 import { Logo } from "@/components/logo";
 
@@ -55,6 +56,7 @@ export function CombinedSidebar({ roles, userName, userEmail }: CombinedSidebarP
   const noLeidasMentor = useNotificacionesStore(
     (s) => s.notificaciones.filter((n) => n.destinatario === "mentor" && !n.leida).length
   );
+  const soporteNuevos = useSoporteStore((s) => s.reportes.filter((r) => r.estado === "nuevo").length);
   const empresas = useEmpresasStore((s) => s.empresas);
   const hayPendientesAsignacion = hydrated && empresas.some((e) => ESTADOS_PENDIENTES_ASIGNACION.includes(e.estado));
 
@@ -103,6 +105,7 @@ export function CombinedSidebar({ roles, userName, userEmail }: CombinedSidebarP
           { href: "/administrador/viabilidad", label: "Viabilidad", icon: TrendingUp },
           { href: "/administrador/reportes", label: "Reportes", icon: BarChart3 },
           { href: "/administrador/bitacora", label: "Bitácora", icon: ScrollText },
+          { href: "/administrador/soporte", label: "Soporte", icon: LifeBuoy, badge: hydrated ? soporteNuevos : 0 },
         ];
     }
   }

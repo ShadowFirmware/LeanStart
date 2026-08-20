@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEmpresasStore, useObservacionesStore } from "@leanstart/empresas-front";
 import { useNotificacionesStore } from "@leanstart/notificaciones-front";
@@ -8,6 +9,7 @@ import { modoDemo, useUsuariosStore, usePerfilStore } from "@leanstart/commons";
 import {
   useCriteriosStore, useEvaluacionesStore, usePrivilegiosStore,
   useReportesGeneradosStore, useViabilidadStore, useRolesStore, useBitacoraStore,
+  useSoporteStore,
 } from "@leanstart/administrador-front";
 
 /**
@@ -24,6 +26,19 @@ import {
  * Limitación: funciona entre pestañas del MISMO navegador (no entre equipos distintos,
  * lo cual requeriría un backend/servidor de tiempo real).
  */
+/**
+ * Ramas de la app que realmente consumen los stores autenticados.
+ *
+ * LiveSync vive en el layout raíz, así que también se monta en la landing, el
+ * login y el registro. Ahí pedir datos a la API solo produce 401 — y con una
+ * sesión que el front cree válida pero el backend ya no (cookie reemitida por
+ * /api/auth/session tras un signOut), cada 401 dispara otro cierre de sesión.
+ *
+ * Es una lista blanca a propósito: una ruta pública nueva no reintroduce el
+ * problema por olvido, al revés que una lista de exclusiones.
+ */
+const PREFIJOS_CON_DATOS = ["/emprendedor", "/mentor", "/evaluador", "/administrador"] as const;
+
 const STORES = [
   { key: "leanstart-empresas", store: useEmpresasStore },
   { key: "leanstart-observaciones", store: useObservacionesStore },
@@ -37,6 +52,7 @@ const STORES = [
   { key: "leanstart-roles", store: useRolesStore },
   { key: "leanstart-viabilidad", store: useViabilidadStore },
   { key: "leanstart-bitacora", store: useBitacoraStore },
+  { key: "leanstart-soporte", store: useSoporteStore },
 ] as const;
 
 /**
@@ -56,6 +72,8 @@ export function LiveSync() {
   // estable en su lugar, que solo cambia cuando los roles realmente cambian.
   const rolesKey = roles?.join(",") ?? "";
   const userId = session?.user?.id;
+  const pathname = usePathname();
+  const enRutaConDatos = PREFIJOS_CON_DATOS.some((prefijo) => pathname.startsWith(prefijo));
 
   // Rehidratación inicial (una vez, tras montar en el cliente).
   useEfectoDePintado(() => {
@@ -65,7 +83,7 @@ export function LiveSync() {
   // Backend real: carga inicial desde la API una vez que hay sesión.
   // (silencioso a propósito: la UI ya maneja el estado vacío / 403 si el rol no aplica.)
   useEffect(() => {
-    if (modoDemo() || status !== "authenticated") return;
+    if (modoDemo() || status !== "authenticated" || !enRutaConDatos) return;
 
     useEmpresasStore.getState().cargarEmpresas().catch(() => {});
     useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
@@ -74,6 +92,7 @@ export function LiveSync() {
     if (roles?.includes("administrador")) {
       useUsuariosStore.getState().cargarUsuarios().catch(() => {});
       useBitacoraStore.getState().cargarBitacora().catch(() => {});
+      useSoporteStore.getState().cargarReportes().catch(() => {});
     }
     if (roles?.includes("administrador") || roles?.includes("evaluador")) {
       useCriteriosStore.getState().cargarCriterios().catch(() => {});
@@ -83,19 +102,19 @@ export function LiveSync() {
     // obtenido en las cards de empresas); solo el administrador puede modificarla.
     useViabilidadStore.getState().cargarViabilidad().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, rolesKey, userId]);
+  }, [status, rolesKey, userId, enRutaConDatos]);
 
   // El backend no empuja notificaciones ni cambios de perfil en tiempo real: si otra
   // persona genera una notificación, o el usuario edita su perfil desde otro
   // dispositivo, esta pestaña solo se entera volviendo a pedirlos.
   useEffect(() => {
-    if (modoDemo() || status !== "authenticated") return;
+    if (modoDemo() || status !== "authenticated" || !enRutaConDatos) return;
     const interval = setInterval(() => {
       useNotificacionesStore.getState().cargarNotificaciones().catch(() => {});
       if (userId) usePerfilStore.getState().cargarPerfil(userId).catch(() => {});
     }, 20000);
     return () => clearInterval(interval);
-  }, [status, userId]);
+  }, [status, userId, enRutaConDatos]);
 
   // Sincronización entre pestañas.
   useEffect(() => {
