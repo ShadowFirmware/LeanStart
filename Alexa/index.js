@@ -196,6 +196,21 @@ const languageStrings = {
       INVALID_RESPONSE: "Tuve un problema generando la respuesta. Intenta de nuevo.",
       REQUEST: "Tuve un problema entendiendo parte de tu petición. ¿Puedes repetirla?",
     },
+    // Mensaje específico por intent cuando algo truena inesperadamente
+    // dentro de su handler (además del ERRORS de arriba, que clasifica por
+    // TIPO de error). Se usa tanto en el catch de cada handler como en el
+    // ErrorHandler global (ver classifyErrorType/getIntentErrorMessage),
+    // con ERRORS.DEFAULT como respaldo si el intent no tiene uno propio.
+    INTENT_ERRORS: {
+      LoginIntent: "Tuve un problema verificando tu semilla. Vamos a intentarlo de nuevo.",
+      StartProjectGuideIntent: "Tuve un problema abriendo la guía. Intenta de nuevo en un momento.",
+      OverviewPhasesIntent: "Tuve un problema mostrando las fases del proyecto. Intenta de nuevo.",
+      GetSpecificPhaseIntent: "Tuve un problema con la información de esa fase. Intenta de nuevo.",
+      CanvasDeepDiveIntent: "Tuve un problema con esa parte del canvas. Intenta de nuevo.",
+      HypothesisDeepDiveIntent: "Tuve un problema con esa parte de la hipótesis. Intenta de nuevo.",
+      GetProjectStatusIntent: "Tuve un problema consultando el estado de tu proyecto. Intenta de nuevo en un momento.",
+      GetMentorCommentsIntent: "Tuve un problema consultando los comentarios de tu mentor. Intenta de nuevo en un momento.",
+    },
     TEMPLATES: {
       loginRetry: (reasonMessage) => `${reasonMessage} Vamos a intentarlo de nuevo, o di 'cancela' si prefieres dejarlo por ahora. ¿Cuál es tu nombre?`,
       loginSuccess: (username, menuMessage) => `Listo, ${username}. ${menuMessage}`,
@@ -332,6 +347,16 @@ const languageStrings = {
       NETWORK: "I had a connection problem reaching the server. Please try again in a moment.",
       INVALID_RESPONSE: "I had a problem generating the response. Please try again.",
       REQUEST: "I had trouble understanding part of your request. Can you repeat it?",
+    },
+    INTENT_ERRORS: {
+      LoginIntent: "I had a problem verifying your seed. Let's try again.",
+      StartProjectGuideIntent: "I had a problem opening the guide. Please try again in a moment.",
+      OverviewPhasesIntent: "I had a problem showing the project's phases. Please try again.",
+      GetSpecificPhaseIntent: "I had a problem with that phase's information. Please try again.",
+      CanvasDeepDiveIntent: "I had a problem with that part of the canvas. Please try again.",
+      HypothesisDeepDiveIntent: "I had a problem with that part of the hypothesis. Please try again.",
+      GetProjectStatusIntent: "I had a problem checking your project's status. Please try again in a moment.",
+      GetMentorCommentsIntent: "I had a problem checking your mentor's comments. Please try again in a moment.",
     },
     TEMPLATES: {
       loginRetry: (reasonMessage) => `${reasonMessage} Let's try again, or say 'cancel' if you'd rather leave it for now. What's your name?`,
@@ -775,7 +800,8 @@ const LaunchAndStartHandler = {
     } catch (error) {
       console.error(`~~~~ Error en LaunchAndStartHandler: ${error}`);
       const resources = getResources(handlerInput);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.StartProjectGuideIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -826,7 +852,8 @@ const LoginIntentHandler = {
       return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.MENU_MESSAGE).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en LoginIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.LoginIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -867,7 +894,8 @@ const OverviewPhasesIntentHandler = {
         .getResponse();
     } catch (error) {
       console.error(`~~~~ Error en OverviewPhasesIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.OverviewPhasesIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -901,7 +929,8 @@ const GetSpecificPhaseIntentHandler = {
       return handlerInput.responseBuilder.speak(speakOutput).reprompt(fase.closing).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en GetSpecificPhaseIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.GetSpecificPhaseIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -952,7 +981,8 @@ const CanvasDeepDiveIntentHandler = {
       return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.CANVAS_CLOSING).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en CanvasDeepDiveIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.CanvasDeepDiveIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -1004,7 +1034,8 @@ const HypothesisDeepDiveIntentHandler = {
       return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.HYPOTHESIS_CLOSING).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en HypothesisDeepDiveIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.HypothesisDeepDiveIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -1101,7 +1132,8 @@ const GetProjectStatusIntentHandler = {
       return handlerInput.responseBuilder.speak(speakOutput).reprompt(resources.ASK_COMMENTS_MESSAGE).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en GetProjectStatusIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.GetProjectStatusIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -1174,7 +1206,8 @@ const GetMentorCommentsIntentHandler = {
       return handlerInput.responseBuilder.speak(commentsResult.speakOutput).reprompt(resources.NEED_ANYTHING_ELSE).getResponse();
     } catch (error) {
       console.error(`~~~~ Error en GetMentorCommentsIntentHandler: ${error}`);
-      return handlerInput.responseBuilder.speak(resources.ERRORS.DEFAULT).reprompt(resources.ERRORS.DEFAULT).getResponse();
+      const speakOutput = resources.INTENT_ERRORS.GetMentorCommentsIntent || resources.ERRORS.DEFAULT;
+      return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
     }
   },
 };
@@ -1382,9 +1415,25 @@ const ErrorHandler = {
       return handlerInput.responseBuilder.getResponse();
     }
 
+    // Si el error truena antes de que el propio handler llegue a su
+    // try/catch (por ejemplo, un canHandle que lanza), este es el único
+    // lugar que sabe qué intent se estaba procesando. Prioridad: mensaje
+    // específico del intent (INTENT_ERRORS) > mensaje por tipo de error
+    // (ERRORS, ver classifyErrorType) > genérico (ERRORS.DEFAULT).
+    let intentName = null;
+    try {
+      if (requestType === 'IntentRequest') {
+        intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+      }
+    } catch (intentNameError) {
+      intentName = null;
+    }
+
     const resources = getResources(handlerInput);
     const errorKey = classifyErrorType(error);
-    const speakOutput = resources.ERRORS[errorKey] || resources.ERRORS.DEFAULT;
+    const speakOutput = (intentName && resources.INTENT_ERRORS[intentName])
+      || resources.ERRORS[errorKey]
+      || resources.ERRORS.DEFAULT;
     return handlerInput.responseBuilder.speak(speakOutput).reprompt(speakOutput).getResponse();
   },
 };
