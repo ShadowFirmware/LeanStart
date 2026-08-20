@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { CurrentUser, type AuthUser } from "@leanstart/backend-commons";
 import { ProxyService } from "../molecules/proxy.service";
@@ -65,5 +66,15 @@ export class EmpresasController {
   @ApiParam({ name: "id" })
   asignarEvaluador(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() body: Record<string, unknown>) {
     return this.proxy.patch(this.baseUrl, `/empresas/${id}/asignar-evaluador`, body, user);
+  }
+
+  @Post(":id/logo")
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Subir logo a S3 (reenvía a empresas-service)" })
+  @ApiParam({ name: "id" })
+  async subirLogo(@CurrentUser() user: AuthUser, @Param("id") id: string, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException("Falta el archivo (campo 'file').");
+    return this.proxy.postFile(this.baseUrl, `/empresas/${id}/logo`, file, user);
   }
 }

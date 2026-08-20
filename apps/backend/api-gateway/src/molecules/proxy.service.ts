@@ -26,4 +26,13 @@ export class ProxyService {
   delete<T>(baseUrl: string, path: string, actingAs?: AuthUser) {
     return this.http.delete<T>(`${baseUrl}${path}`, actingAs);
   }
+
+  postFile<T>(
+    baseUrl: string,
+    path: string,
+    file: { buffer: Buffer; mimetype: string; originalname: string },
+    actingAs?: AuthUser
+  ) {
+    return this.http.postFile<T>(`${baseUrl}${path}`, file, actingAs);
+  }
 }

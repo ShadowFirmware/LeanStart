@@ -55,6 +55,26 @@ export class InternalHttpClient {
   }
 
   /**
+   * Reenvía un archivo recibido por el gateway (multipart/form-data) al
+   * microservicio interno que realmente lo sube a S3. Sin Content-Type
+   * manual: fetch lo arma solo con el boundary correcto a partir del FormData.
+   */
+  async postFile<T>(
+    url: string,
+    file: { buffer: Buffer; mimetype: string; originalname: string },
+    actingAs?: AuthUser
+  ): Promise<T> {
+    const headers = this.headers(actingAs);
+    delete headers["Content-Type"];
+
+    const formData = new FormData();
+    formData.append("file", new Blob([new Uint8Array(file.buffer)], { type: file.mimetype }), file.originalname);
+
+    const res = await fetch(url, { method: "POST", headers, body: formData });
+    return this.parse<T>(res);
+  }
+
+  /**
    * Si el servicio interno respondió con un error "de negocio" (401/403/404/409/400...),
    * lo reenviamos tal cual (mismo status y body) en vez de convertirlo en un 500 genérico —
    * de lo contrario un login inválido o una transición de estado inválida se verían como

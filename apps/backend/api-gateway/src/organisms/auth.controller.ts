@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Patch, Post, Req, UseGuards } from "@nestjs/common";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { BadRequestException, Body, Controller, Get, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import type { Request } from "express";
@@ -72,6 +73,15 @@ export class AuthController {
   @ApiOperation({ summary: "Actualizar perfil propio" })
   updateMe(@CurrentUser() user: AuthUser, @Body() body: Record<string, unknown>) {
     return this.proxy.patch(this.baseUrl, "/auth/me", body, user);
+  }
+
+  @Post("me/avatar")
+  @UseInterceptors(FileInterceptor("file"))
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Subir avatar a S3 (reenvía a auth-service)" })
+  async subirAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException("Falta el archivo (campo 'file').");
+    return this.proxy.postFile(this.baseUrl, "/auth/me/avatar", file, user);
   }
 
   @Post("logout")
